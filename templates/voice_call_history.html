@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Call History — VoiceAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#4f6ef7;--accent-l:#eef0fe;}
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
+  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:var(--bg);color:var(--t1);}
+  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
+  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;white-space:nowrap;}
+  .b-booked{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-resolved{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
+  .b-handoff{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
+  .b-cancelled{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+  .b-noanswer{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+  .b-voicemail{background:#faf5ff;color:#7c3aed;border:1px solid #e9d5ff;}
+  .b-booking{background:#eef0fe;color:#4f46e5;border:1px solid #c7d2fe;}
+  .b-faq{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
+  .b-escalate{background:#fff1f2;color:#be123c;border:1px solid #fecdd3;}
+  .b-cancel{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+  .trow{border-bottom:1px solid var(--border-soft);transition:background 0.1s;}
+  .trow:last-child{border-bottom:none;}
+  .trow:hover{background:#fafbfc;}
+  .btn-primary{background:linear-gradient(135deg,#4f6ef7,#6366f1);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary:hover{opacity:0.92;box-shadow:0 4px 12px rgba(79,110,247,0.25);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
+  .btn-view{font-size:11.5px;font-weight:500;color:var(--accent);padding:4px 10px;border-radius:6px;border:1px solid #c7d2fe;background:#eef0fe;cursor:pointer;transition:all 0.15s;text-decoration:none;}
+  .btn-view:hover{background:#dde3fd;}
+  .filter-select{appearance:none;cursor:pointer;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 28px 6px 10px;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color 0.15s;}
+  .filter-select:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(79,110,247,0.08);}
+  .search-input{background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 12px 6px 34px;outline:none;width:200px;transition:all 0.15s;}
+  .search-input::placeholder{color:var(--t3);}
+  .search-input:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(79,110,247,0.08);width:230px;}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;}
+  .chip-total{background:#eef0fe;color:#4f46e5;}
+  .chip-booked{background:#ecfdf5;color:#059669;}
+  .chip-faq{background:#eff6ff;color:#2563eb;}
+  .chip-handoff{background:#fff1f2;color:#e11d48;}
+  .chip-noanswer{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+  .sentiment-bar{height:5px;border-radius:3px;background:#f1f5f9;width:64px;display:inline-block;overflow:hidden;vertical-align:middle;}
+  .sentiment-fill{height:100%;border-radius:3px;}
+  .th{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;padding:10px 12px;white-space:nowrap;}
+  .td{font-size:12.5px;color:var(--t1);padding:11px 12px;vertical-align:middle;}
+  .td-sub{color:var(--t2);}
+  .pg-btn{font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--t2);cursor:pointer;transition:all 0.15s;}
+  .pg-btn:hover{background:var(--bg);color:var(--t1);}
+  .pg-btn.active{background:var(--accent-l);color:var(--accent);border-color:#c7d2fe;}
+  .pg-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .scrollbar::-webkit-scrollbar{width:5px;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
+  .shadow-card{box-shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.03);}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;display:inline-block;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* Drawer */
+  #call-drawer{position:fixed;top:0;right:-360px;width:340px;height:100vh;background:white;border-left:1px solid var(--border);z-index:50;transition:right 0.28s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,0.06);}
+  #call-drawer.open{right:0;}
+  #drawer-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.15);z-index:40;backdrop-filter:blur(1px);}
+  #drawer-overlay.open{display:block;}
+  .drawer-section{padding:14px 18px;border-bottom:1px solid var(--border-soft);}
+  .transcript-line{font-size:12px;padding:8px 10px;border-radius:7px;background:#f8fafc;border:1px solid #f1f5f9;line-height:1.5;}
+  .transcript-line + .transcript-line{margin-top:6px;}
+  .tool-chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:6px;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  /* Checkbox */
+  input[type="checkbox"]{accent-color:#4f6ef7;width:14px;height:14px;cursor:pointer;}
+  .reset-link{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:none;white-space:nowrap;}
+  .reset-link:hover{text-decoration:underline;}
+  /* Delete modal */
+  #delete-modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;}
+  #delete-modal.hidden{display:none;}
+  #delete-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(2px);}
+  #delete-modal-box{position:relative;background:white;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.15);width:360px;padding:28px 24px 22px;animation:modalIn 0.18s cubic-bezier(0.4,0,0.2,1);}
+  @keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(6px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  /* Profile dropdown */
+  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background 0.12s;text-decoration:none;}
+  .pd-item:hover{background:#f8fafc;color:#0f172a;}
+  .pd-item svg{flex-shrink:0;color:#94a3b8;}
+  .pd-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+  .pd-item.danger{color:#e11d48;}
+  .pd-item.danger svg{color:#e11d48;}
+  .pd-item.danger:hover{background:#fff1f2;}
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<script id="auth-guard">if(!localStorage.getItem("access_token")&&!sessionStorage.getItem("access_token")){window.location.replace("/api/auth/login/");}</script>
+
+<!-- Sidebar -->
+<aside class="sidebar w-56 flex flex-col flex-shrink-0">
+  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5" style="text-decoration:none;">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <span class="font-semibold text-sm text-slate-800">VoiceAI</span>
+    </a>
+  </div>
+  <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
+    <p class="nav-sec">OVERVIEW</p>
+    <a href="{% url 'voice-dashboard' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a href="{% url 'voice-analytics' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </a>
+    <p class="nav-sec">AGENTS</p>
+    <a href="{% url 'voice-agents' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      My Agents
+    </a>
+    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+      New Agent
+    </a>
+    <a href="/api/agents/manage-tools/" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      My Tools
+    </a>
+    <p class="nav-sec">CALLS</p>
+    <a href="{% url 'voice-call-history' %}" class="nav-item active">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Call History
+    </a>
+    <a href="{% url 'voice-bookings' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Bookings
+    </a>
+    <p class="nav-sec">CONFIG</p>
+    <a href="{% url 'voice-knowledge-base' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Knowledge Base
+    </a>
+    <a href="{% url 'voice-integrations' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Integrations
+    </a>
+  </nav>
+
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <!-- Page Header -->
+  <header class="flex items-center justify-between px-6 py-4 bg-white" style="border-bottom:1px solid #f1f5f9;">
+    <div>
+      <h1 class="text-base font-semibold text-slate-800">Call History</h1>
+      <p id="total-calls-label" class="text-xs text-slate-400 mt-0.5">Loading calls...</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div style="width:1px;height:18px;background:#e8edf2;"></div>
+      <!-- Profile avatar -->
+      <div class="relative" id="profile-btn-wrap">
+        <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <!-- Dropdown -->
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+          <!-- User info header -->
+          <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
+            <div class="flex items-center gap-2.5">
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+              <div class="min-w-0">
+                <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
+                <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
+              </div>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between">
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#eef0fe;color:#4f6ef7;">Free</span>
+              <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
+            </div>
+          </div>
+          <!-- Menu items -->
+          <div class="py-1">
+            <a href="{% url 'voice-integrations' %}" class="pd-item">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              Settings & Integrations
+            </a>
+            <div class="pd-divider"></div>
+            <div class="pd-item danger" onclick="closeProfileDropdown();logout();">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Sign Out
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Scrollable Page Body -->
+  <div class="flex-1 overflow-y-auto scrollbar px-6 py-5 space-y-4">
+
+    <!-- Filter Bar Card -->
+    <div class="card shadow-card p-4">
+      <div class="flex flex-wrap items-center gap-3">
+
+        <!-- Date Range -->
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-slate-400 font-medium px-0.5">Date range</span>
+          <select class="filter-select">
+            <option selected>Last 30 days</option>
+            <option>Last 7 days</option>
+            <option>Last 90 days</option>
+            <option>This month</option>
+            <option>Custom range</option>
+          </select>
+        </div>
+
+        <!-- Agent Filter -->
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-slate-400 font-medium px-0.5">Agent</span>
+          <select id="agent-filter" class="filter-select">
+            <option selected>All agents</option>
+          </select>
+        </div>
+
+        <!-- Outcome -->
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-slate-400 font-medium px-0.5">Outcome</span>
+          <select id="outcome-filter" class="filter-select">
+            <option value="" selected>All outcomes</option>
+            <option value="booked">Booked (any)</option>
+            <option value="faq_resolved">FAQ Resolved</option>
+            <option value="no_outcome">No Outcome</option>
+          </select>
+        </div>
+
+        <!-- Sentiment -->
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-slate-400 font-medium px-0.5">Sentiment</span>
+          <select id="sentiment-filter" class="filter-select">
+            <option value="" selected>All sentiments</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+        </div>
+
+        <!-- Search -->
+        <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+          <span class="text-xs text-slate-400 font-medium px-0.5">Search</span>
+          <div class="relative">
+            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input id="call-search" type="text" placeholder="Search by phone number..." class="search-input w-full" />
+          </div>
+        </div>
+
+        <!-- Reset -->
+        <div class="flex flex-col gap-0.5 justify-end pb-0.5 self-end">
+          <a class="reset-link" onclick="resetFilters()">Reset filters</a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Summary Chips Row -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="chip chip-total">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm0 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2z"/></svg>
+        <span id="chip-total-txt">0 total</span>
+      </span>
+      <span class="chip" style="background:#eff6ff;color:#2563eb;">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span id="chip-rooms-txt">0 room bookings</span>
+      </span>
+      <span class="chip chip-booked">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3V3zm0 8h6v10H3V11zm10 0h8v10h-8V11z"/></svg>
+        <span id="chip-tables-txt">0 table bookings</span>
+      </span>
+      <span class="chip chip-faq">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span id="chip-faq-txt">0 FAQ resolved</span>
+      </span>
+      <span class="chip chip-handoff">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+        <span id="chip-handoff-txt">0 transferred</span>
+      </span>
+    </div>
+
+    <!-- Calls Table Card -->
+    <div class="card shadow-card overflow-hidden">
+      <!-- Bulk Actions Bar (appears on select) -->
+      <div id="bulk-bar" class="hidden items-center gap-3 px-4 py-2.5" style="background:#eef0fe;border-bottom:1px solid #c7d2fe;">
+        <span id="bulk-count" class="text-xs font-semibold text-indigo-700">0 selected</span>
+        <button class="btn-ghost" style="font-size:11.5px;padding:4px 10px;" onclick="clearSelection()">Clear selection</button>
+        <div class="flex-1"></div>
+        <button class="btn-ghost" style="font-size:11.5px;padding:4px 10px;color:#e11d48;border-color:#fecdd3;" onclick="deleteSelected()">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete
+        </button>
+      </div>
+
+      <table class="w-full" style="border-collapse:collapse;">
+        <thead style="background:#fafbfc;border-bottom:1px solid var(--border);">
+          <tr>
+            <th class="th w-10">
+              <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" />
+            </th>
+            <th class="th text-left" style="min-width:140px;">Caller</th>
+            <th class="th text-left" style="min-width:150px;">Agent</th>
+            <th class="th text-left">Duration</th>
+            <th class="th text-left">Outcome</th>
+            <th class="th text-left">Booking Type</th>
+            <th class="th text-left" style="min-width:110px;">Sentiment</th>
+            <th class="th text-left" style="min-width:110px;">Date / Time</th>
+            <th class="th text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="calls-table-body">
+          <tr class="trow"><td class="td text-center text-slate-400" colspan="9">Loading calls...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-4 py-3" style="border-top:1px solid var(--border-soft);">
+        <p id="pagination-summary" class="text-xs text-slate-400">Showing <span class="font-medium text-slate-600">0</span> of <span class="font-medium text-slate-600">0</span> calls</p>
+        <div id="pagination-controls" class="flex items-center gap-1.5">
+          <button id="prev-page" class="pg-btn" disabled onclick="changePage(currentPage - 1)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+            Prev
+          </button>
+          <button id="current-page-label" class="pg-btn active">1</button>
+          <button id="next-page" class="pg-btn" onclick="changePage(currentPage + 1)">
+            Next
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end scrollable -->
+</main>
+
+<!-- Drawer Overlay -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- Call Detail Drawer -->
+<div id="call-drawer">
+  <!-- Drawer Header -->
+  <div class="drawer-section flex items-center justify-between" style="padding-top:16px;padding-bottom:16px;">
+    <div>
+      <p class="text-xs text-slate-400 font-medium mb-0.5">Call Detail</p>
+      <h2 id="drawer-phone" class="text-sm font-semibold text-slate-800">—</h2>
+    </div>
+    <button onclick="closeDrawer()" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="drawer-section">
+    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Quick Stats</p>
+    <div class="grid grid-cols-3 gap-2">
+      <div class="rounded-lg p-2.5 text-center" style="background:#f8fafc;border:1px solid #f1f5f9;">
+        <p class="text-xs text-slate-400 mb-1">Duration</p>
+        <p id="drawer-duration" class="text-sm font-semibold text-slate-700">—</p>
+      </div>
+      <div class="rounded-lg p-2.5 text-center" style="background:#f8fafc;border:1px solid #f1f5f9;">
+        <p class="text-xs text-slate-400 mb-1">Outcome</p>
+        <span id="drawer-outcome" class="badge b-noanswer">—</span>
+      </div>
+      <div class="rounded-lg p-2.5 text-center" style="background:#f8fafc;border:1px solid #f1f5f9;">
+        <p class="text-xs text-slate-400 mb-1">Sentiment</p>
+        <div class="flex flex-col items-center gap-1">
+          <span id="drawer-sentiment-badge" class="badge b-noanswer">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent & Date -->
+  <div class="drawer-section">
+    <div class="flex items-center justify-between text-xs">
+      <span class="text-slate-400">Agent</span>
+      <span id="drawer-agent" class="font-medium text-slate-700">—</span>
+    </div>
+    <div class="flex items-center justify-between text-xs mt-2">
+      <span class="text-slate-400">Date &amp; Time</span>
+      <span id="drawer-date" class="font-medium text-slate-700">—</span>
+    </div>
+    <div class="flex items-center justify-between text-xs mt-2">
+      <span class="text-slate-400">Intent</span>
+      <span id="drawer-intent" class="font-medium text-slate-700">—</span>
+    </div>
+  </div>
+
+  <!-- Transcript Preview -->
+  <div class="drawer-section flex-1 overflow-y-auto scrollbar">
+    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Transcript Preview</p>
+    <div id="drawer-transcript" class="space-y-0">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <!-- Tools Used -->
+  <div class="drawer-section">
+    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Tools Used</p>
+    <div id="drawer-tools" class="flex flex-wrap gap-2">
+      <!-- Filled by JS -->
+    </div>
+    <div id="drawer-no-tools" class="hidden text-xs text-slate-400 italic">No tools invoked</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="p-4 mt-auto" style="border-top:1px solid var(--border-soft);">
+    <a id="drawer-detail-link" href="{% url 'voice-call-detail' %}" class="btn-primary w-full justify-center" style="font-size:13px;padding:9px 16px;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      View Full Transcript
+    </a>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="hidden">
+  <div id="delete-modal-backdrop" onclick="closeDeleteModal()"></div>
+  <div id="delete-modal-box">
+    <div class="flex items-start gap-3 mb-4">
+      <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background:#fff1f2;">
+        <svg class="w-4.5 h-4.5" style="width:18px;height:18px;" fill="none" stroke="#e11d48" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-slate-800">Delete calls</h3>
+        <p id="delete-modal-msg" class="text-xs text-slate-500 mt-1">You are about to delete <strong id="delete-modal-count">0</strong> call record(s). This action cannot be undone.</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-2 mt-5">
+      <button onclick="closeDeleteModal()" class="btn-ghost" style="font-size:12.5px;padding:7px 14px;">Cancel</button>
+      <button id="delete-modal-confirm" onclick="confirmDelete()" style="background:#e11d48;color:white;font-size:12.5px;font-weight:500;padding:7px 16px;border-radius:7px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:opacity 0.15s;">
+        <svg style="width:13px;height:13px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentCalls = [];
+  let searchTimer = null;
+
+  const apiHeaders = () => {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+    return token ? {'Authorization': `Bearer ${token}`} : {};
+  };
+
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[ch]));
+
+  function formatDate(value, includeYear = false) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...(includeYear ? {year: 'numeric'} : {}),
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).replace(',', '');
+  }
+
+  function outcomeClass(outcome) {
+    const key = String(outcome || '').toLowerCase();
+    if (key === 'booked') return 'b-booked';
+    if (key === 'faq_resolved') return 'b-resolved';
+    if (key.includes('handoff') || key.includes('transfer')) return 'b-handoff';
+    if (key.includes('cancel')) return 'b-cancelled';
+    if (key.includes('no')) return 'b-noanswer';
+    return 'b-noanswer';
+  }
+
+  function intentClass(intent) {
+    const key = String(intent || '').toLowerCase();
+    if (key.includes('faq')) return 'b-faq';
+    if (key.includes('cancel')) return 'b-cancel';
+    if (key.includes('escalate') || key.includes('handoff')) return 'b-escalate';
+    return 'b-booking';
+  }
+
+  function sentimentLabel(score) {
+    if (score === null || score === undefined) return '—';
+    if (score > 0.05) return 'Positive';
+    if (score < -0.05) return 'Negative';
+    return 'Neutral';
+  }
+
+  function sentimentColor(score) {
+    if (score === null || score === undefined) return '#64748b';
+    if (score > 0.05) return '#059669';
+    if (score < -0.05) return '#e11d48';
+    return '#2563eb';
+  }
+
+  function sentimentBg(score) {
+    if (score === null || score === undefined) return '#f8fafc';
+    if (score > 0.05) return '#ecfdf5';
+    if (score < -0.05) return '#fff1f2';
+    return '#eff6ff';
+  }
+
+  function sentimentBorder(score) {
+    if (score === null || score === undefined) return '#e2e8f0';
+    if (score > 0.05) return '#a7f3d0';
+    if (score < -0.05) return '#fecdd3';
+    return '#bfdbfe';
+  }
+
+  function sentimentPercent(score) {
+    if (score === null || score === undefined) return 0;
+    return Math.max(0, Math.min(100, Math.round(Math.abs(score) * 100)));
+  }
+
+  function buildDetailUrl(id) {
+    return `{% url 'voice-call-detail' %}?pk=${encodeURIComponent(id)}`;
+  }
+
+  async function fetchJson(url) {
+    const response = await fetch(url, {headers: apiHeaders()});
+    const payload = await response.json();
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.message || 'Request failed');
+    }
+    return payload;
+  }
+
+  async function loadDropdowns() {
+    const payload = await fetchJson('/api/calls/call-history/dropdowns/');
+    const data = payload.data || {};
+    populateSelect('agent-filter', data.agents || [], 'All agents', item => item.id, item => item.agent_name);
+    populateSelect('outcome-filter', data.outcomes || [], 'All outcomes', item => item.value, item => item.label);
+    populateSelect('sentiment-filter', data.sentiments || [], 'All sentiments', item => item.value, item => item.label);
+  }
+
+  function populateSelect(id, items, defaultLabel, getValue, getLabel) {
+    const select = document.getElementById(id);
+    select.innerHTML = `<option value="">${defaultLabel}</option>`;
+    items.forEach(item => {
+      const option = document.createElement('option');
+      option.value = getValue(item);
+      option.textContent = getLabel(item);
+      select.appendChild(option);
+    });
+  }
+
+  async function loadCalls(page = 1) {
+    currentPage = page;
+    const params = new URLSearchParams({page});
+    const search = document.getElementById('call-search').value.trim();
+    const agent = document.getElementById('agent-filter').value;
+    const outcome = document.getElementById('outcome-filter').value;
+    const sentiment = document.getElementById('sentiment-filter').value;
+    if (search) params.set('search', search);
+    if (agent) params.set('agent_id', agent);
+    if (outcome) params.set('outcome', outcome);
+    if (sentiment) params.set('sentiment', sentiment);
+
+    const payload = await fetchJson(`/api/calls/call-history/?${params.toString()}`);
+    const rows = payload.results?.data || payload.data || [];
+    const count = payload.count ?? rows.length;
+    currentCalls = rows;
+    totalPages = Math.max(1, Math.ceil(count / 10));
+    renderRows(rows);
+    updatePagination(count, rows.length);
+    updateSummary(rows, count);
+  }
+
+  function renderRows(rows) {
+    const tbody = document.getElementById('calls-table-body');
+    tbody.innerHTML = '';
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="10">No calls found</td></tr>`;
+      clearSelection();
+      return;
+    }
+
+    rows.forEach(call => {
+      const score = call.sentiment_score;
+      const label = (call.outcome_label || call.outcome || '—').toUpperCase();
+      const bkType = call.booking_type || (call.booking || {}).booking_type || '';
+      const bkTypeBadge = bkType === 'room'
+        ? `<span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">Room</span>`
+        : bkType === 'table'
+        ? `<span class="badge" style="background:#eef0fe;color:#4f46e5;border:1px solid #c7d2fe;">Table</span>`
+        : `<span class="td-sub text-xs">—</span>`;
+      const row = document.createElement('tr');
+      row.className = 'trow';
+      row.dataset.id = call.id;
+      row.innerHTML = `
+        <td class="td text-center"><input type="checkbox" class="row-check" onchange="handleRowCheck(this)" /></td>
+        <td class="td">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">${escapeHtml((call.caller_phone || 'C')[1] || '?').toUpperCase()}</div>
+            <span class="font-medium text-slate-800" style="font-size:12.5px;">${escapeHtml(call.caller_phone || '—')}</span>
+          </div>
+        </td>
+        <td class="td td-sub">${escapeHtml(call.agent_name || '—')}</td>
+        <td class="td td-sub font-medium">${escapeHtml(call.duration || '0:00')}</td>
+        <td class="td"><span class="badge ${outcomeClass(call.outcome)}">${escapeHtml(label)}</span></td>
+        <td class="td">${bkTypeBadge}</td>
+        <td class="td">
+          <span class="badge" style="background:${sentimentBg(score)};color:${sentimentColor(score)};border:1px solid ${sentimentBorder(score)};">${sentimentLabel(score)}</span>
+        </td>
+        <td class="td td-sub" style="font-size:12px;">${formatDate(call.started_at || call.created_at)}</td>
+        <td class="td"><button class="btn-view" onclick="openDrawerById('${call.id}')">View</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+    clearSelection();
+  }
+
+  async function openDrawerById(id) {
+    const payload = await fetchJson(`/api/calls/call-history/${id}/`);
+    openDrawer(payload.data);
+  }
+
+  function openDrawer(call) {
+    const score = call.sentiment_score;
+    document.getElementById('drawer-phone').textContent = call.caller_phone || '—';
+    document.getElementById('drawer-duration').textContent = call.duration || '0:00';
+    document.getElementById('drawer-agent').textContent = call.agent_name || '—';
+    document.getElementById('drawer-date').textContent = formatDate(call.started_at || call.created_at, true);
+    document.getElementById('drawer-intent').textContent = call.reason || '—';
+
+    const outcomeBadge = document.getElementById('drawer-outcome');
+    outcomeBadge.textContent = (call.outcome_label || call.outcome || '—').toUpperCase();
+    outcomeBadge.className = 'badge ' + outcomeClass(call.outcome);
+
+    const sentBadge = document.getElementById('drawer-sentiment-badge');
+    sentBadge.textContent = sentimentLabel(score);
+    sentBadge.style.background = sentimentBg(score);
+    sentBadge.style.color = sentimentColor(score);
+    sentBadge.style.borderColor = sentimentBorder(score);
+
+    const transcriptDiv = document.getElementById('drawer-transcript');
+    transcriptDiv.innerHTML = '';
+    (call.transcripts || []).slice(0, 3).forEach(line => {
+      const div = document.createElement('div');
+      div.className = 'transcript-line' + (transcriptDiv.children.length > 0 ? ' mt-1.5' : '');
+      const role = line.speaker === 'caller' ? 'Caller' : 'Agent';
+      const roleColor = role === 'Caller' ? '#4f6ef7' : '#059669';
+      div.innerHTML = `<span class="font-semibold" style="color:${roleColor};font-size:11px;">${role}:</span> <span style="color:#64748b;">${escapeHtml(line.text)}</span>`;
+      transcriptDiv.appendChild(div);
+    });
+    if (!transcriptDiv.children.length) {
+      transcriptDiv.innerHTML = '<div class="transcript-line text-slate-400">No transcript available</div>';
+    }
+
+    const toolsDiv = document.getElementById('drawer-tools');
+    const noTools = document.getElementById('drawer-no-tools');
+    toolsDiv.innerHTML = '';
+    const tools = call.agent_tools || [];
+    if (tools.length > 0) {
+      toolsDiv.classList.remove('hidden');
+      noTools.classList.add('hidden');
+      tools.forEach(tool => {
+        const span = document.createElement('span');
+        span.className = 'tool-chip';
+        span.innerHTML = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>${escapeHtml(tool.name || tool.tool_key || 'Tool')}`;
+        toolsDiv.appendChild(span);
+      });
+    } else {
+      toolsDiv.classList.add('hidden');
+      noTools.classList.remove('hidden');
+    }
+
+    document.getElementById('drawer-detail-link').href = buildDetailUrl(call.id);
+    document.getElementById('call-drawer').classList.add('open');
+    document.getElementById('drawer-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    document.getElementById('call-drawer').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeDrawer(); closeDeleteModal(); }
+  });
+
+  // ---- Bulk Select ----
+  function toggleSelectAll(masterCb) {
+    const checkboxes = document.querySelectorAll('.row-check');
+    checkboxes.forEach(cb => cb.checked = masterCb.checked);
+    updateBulkBar();
+  }
+
+  function handleRowCheck(cb) {
+    const all = document.querySelectorAll('.row-check');
+    const checked = document.querySelectorAll('.row-check:checked');
+    document.getElementById('select-all').checked = all.length === checked.length;
+    document.getElementById('select-all').indeterminate = checked.length > 0 && checked.length < all.length;
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const bar = document.getElementById('bulk-bar');
+    const countEl = document.getElementById('bulk-count');
+    if (checked.length > 0) {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+      countEl.textContent = checked.length + ' selected';
+    } else {
+      bar.classList.add('hidden');
+      bar.classList.remove('flex');
+    }
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+    document.getElementById('select-all').checked = false;
+    document.getElementById('select-all').indeterminate = false;
+    updateBulkBar();
+  }
+
+  let _pendingDeleteIds = [];
+
+  function deleteSelected() {
+    const checkedBoxes = document.querySelectorAll('.row-check:checked');
+    if (!checkedBoxes.length) return;
+    _pendingDeleteIds = Array.from(checkedBoxes).map(cb => cb.closest('tr')?.dataset.id).filter(Boolean);
+    if (!_pendingDeleteIds.length) return;
+    document.getElementById('delete-modal-count').textContent = _pendingDeleteIds.length;
+    document.getElementById('delete-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    _pendingDeleteIds = [];
+    const btn = document.getElementById('delete-modal-confirm');
+    btn.disabled = false;
+    btn.innerHTML = '<svg style="width:13px;height:13px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Delete';
+  }
+
+  async function confirmDelete() {
+    if (!_pendingDeleteIds.length) return;
+    const btn = document.getElementById('delete-modal-confirm');
+    btn.disabled = true;
+    btn.innerHTML = '<svg style="width:13px;height:13px;animation:spin 0.7s linear infinite;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg> Deleting…';
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+      const res = await fetch('/api/calls/call-history/bulk-delete/', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: _pendingDeleteIds }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && json.success !== true) throw new Error(json.message || 'Delete failed');
+      closeDeleteModal();
+      await loadCalls(currentPage);
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg style="width:13px;height:13px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Retry';
+      document.getElementById('delete-modal-msg').innerHTML = `<span style="color:#e11d48;">Error: ${escapeHtml(err.message)}</span>`;
+    }
+  }
+
+  // ---- Reset Filters ----
+  function resetFilters() {
+    document.querySelectorAll('.filter-select').forEach(s => s.selectedIndex = 0);
+    document.querySelector('.search-input').value = '';
+    loadCalls(1);
+  }
+
+  function changePage(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    loadCalls(page);
+  }
+
+  function updatePagination(total, shown) {
+    const start = total === 0 ? 0 : ((currentPage - 1) * 10) + 1;
+    const end = total === 0 ? 0 : start + shown - 1;
+    document.getElementById('pagination-summary').innerHTML = `Showing <span class="font-medium text-slate-600">${start}-${end}</span> of <span class="font-medium text-slate-600">${total}</span> calls`;
+    document.getElementById('current-page-label').textContent = currentPage;
+    document.getElementById('prev-page').disabled = currentPage <= 1;
+    document.getElementById('next-page').disabled = currentPage >= totalPages;
+  }
+
+  function updateSummary(rows, total) {
+    document.getElementById('total-calls-label').textContent = `${total.toLocaleString()} total calls`;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('chip-total-txt',   `${total.toLocaleString()} total`);
+    set('chip-rooms-txt',   `${rows.filter(c => (c.booking_type||(c.booking||{}).booking_type) === 'room').length} room bookings`);
+    set('chip-tables-txt',  `${rows.filter(c => (c.booking_type||(c.booking||{}).booking_type) === 'table').length} table bookings`);
+    set('chip-faq-txt',     `${rows.filter(c => c.outcome === 'faq_resolved').length} FAQ resolved`);
+    set('chip-handoff-txt', `${rows.filter(c => c.was_transferred).length} transferred`);
+  }
+
+  function wireFilters() {
+    ['agent-filter', 'outcome-filter', 'sentiment-filter'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => loadCalls(1));
+    });
+    document.getElementById('call-search').addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => loadCalls(1), 300);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    wireFilters();
+    loadHeaderProfile();
+    try {
+      await loadDropdowns();
+      await loadCalls(1);
+    } catch (error) {
+      document.getElementById('calls-table-body').innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="10">${escapeHtml(error.message)}</td></tr>`;
+      document.getElementById('total-calls-label').textContent = 'Unable to load calls';
+    }
+  });
+
+  // ── Profile dropdown ─────────────────────────────────────────────────────────
+  function toggleProfileDropdown() {
+    document.getElementById('profile-dropdown').classList.toggle('hidden');
+  }
+  function closeProfileDropdown() {
+    document.getElementById('profile-dropdown').classList.add('hidden');
+  }
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('profile-btn-wrap');
+    if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
+  });
+  async function loadHeaderProfile() {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+      const res  = await fetch('/api/auth/profile/', { headers: { 'Authorization': 'Bearer ' + token } });
+      const json = await res.json();
+      if (!json.success) return;
+      const d = json.data;
+      const initials = d.initials || 'U';
+      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+      setTxt('header-avatar',   initials);
+      setTxt('header-username', d.full_name || d.email);
+      setTxt('dd-avatar',       initials);
+      setTxt('dd-name',         d.full_name);
+      setTxt('dd-email',        d.email);
+      setTxt('dd-plan',         d.plan_label || 'Free');
+      setTxt('dd-business',     d.business_name || '');
+    } catch(e) {}
+  }
+</script>
+<script>
+  function logout() {
+    const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
+    fetch('/api/auth/logout/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    }).finally(() => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
+      window.location.href = '/api/auth/login/';
+    });
+  }
+</script>
+</body>
+</html>

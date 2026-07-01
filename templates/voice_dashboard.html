@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — VoiceAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#4f6ef7;--accent-l:#eef0fe;}
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
+  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:var(--bg);color:var(--t1);}
+  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
+  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  .card-inner{background:var(--bg);border:1px solid var(--border-soft);border-radius:8px;}
+  .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;white-space:nowrap;}
+  .b-live{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-paused{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
+  .b-room{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
+  .b-table{background:#eef0fe;color:#4f46e5;border:1px solid #c7d2fe;}
+  .b-faq{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-handoff{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
+  .trow{border-bottom:1px solid var(--border-soft);transition:background 0.1s;}
+  .trow:last-child{border-bottom:none;}
+  .trow:hover{background:#fafbfc;}
+  .prog{height:4px;background:#f1f5f9;border-radius:2px;}
+  .prog-fill{height:100%;border-radius:2px;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;display:inline-block;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+  .btn-primary{background:linear-gradient(135deg,#4f6ef7,#6366f1);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(79,110,247,0.3);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
+  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
+  .scrollbar::-webkit-scrollbar{width:5px;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
+  .shadow-card{box-shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.03);}
+  .kpi-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .kpi-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background 0.12s;text-decoration:none;}
+  .pd-item:hover{background:#f8fafc;color:#0f172a;}
+  .pd-item svg{flex-shrink:0;color:#94a3b8;}
+  .pd-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+  .pd-item.danger{color:#e11d48;}
+  .pd-item.danger svg{color:#e11d48;}
+  .pd-item.danger:hover{background:#fff1f2;}
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<script id="auth-guard">if(!localStorage.getItem("access_token")&&!sessionStorage.getItem("access_token")){window.location.replace("/api/auth/login/");}</script>
+
+<!-- Sidebar -->
+<aside class="sidebar w-56 flex flex-col flex-shrink-0">
+  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <span class="font-semibold text-sm text-slate-800">VoiceAI</span>
+    </a>
+  </div>
+  <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
+    <p class="nav-sec">OVERVIEW</p>
+    <a href="{% url 'voice-dashboard' %}" class="nav-item active">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a href="{% url 'voice-analytics' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </a>
+    <p class="nav-sec">AGENTS</p>
+    <a href="{% url 'voice-agents' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      My Agents
+    </a>
+    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+      New Agent
+    </a>
+    <a href="/api/agents/manage-tools/" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      My Tools
+    </a>
+    <p class="nav-sec">CALLS</p>
+    <a href="{% url 'voice-call-history' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Call History
+    </a>
+    <a href="{% url 'voice-bookings' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Bookings
+    </a>
+    <p class="nav-sec">CONFIG</p>
+    <a href="{% url 'voice-knowledge-base' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Knowledge Base
+    </a>
+    <a href="{% url 'voice-integrations' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Integrations
+    </a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<main class="flex-1 flex flex-col overflow-hidden">
+  <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid #f1f5f9;">
+    <div>
+      <h1 class="text-sm font-semibold text-slate-800">Dashboard</h1>
+      <p class="text-xs text-slate-400" id="dash-date">—</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5"><div class="live-dot"></div><span class="text-xs font-medium text-emerald-600" id="live-call-count">0 live agents</span></div>
+      <div style="width:1px;height:18px;background:#e8edf2;"></div>
+      <a href="{% url 'voice-create-agent' %}" class="btn-primary">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+        New Agent
+      </a>
+      <div class="relative" id="profile-btn-wrap">
+        <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+          <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
+            <div class="flex items-center gap-2.5">
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+              <div class="min-w-0">
+                <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
+                <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
+              </div>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between">
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#eef0fe;color:#4f6ef7;">Free</span>
+              <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
+            </div>
+          </div>
+          <div class="py-1">
+            <a href="{% url 'voice-integrations' %}" class="pd-item">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              Settings & Integrations
+            </a>
+            <div class="pd-divider"></div>
+            <div class="pd-item danger" onclick="closeProfileDropdown();logout();">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Sign Out
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex-1 overflow-y-auto scrollbar px-6 py-5 space-y-5">
+
+    <!-- KPI Row -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="kpi-card">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium text-slate-500">Room Bookings (30d)</p>
+          <div class="kpi-icon" style="background:#eff6ff;"><svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div>
+        </div>
+        <div class="text-3xl font-bold text-slate-800 mb-1" style="letter-spacing:-0.5px;" id="kpi-room-bookings">—</div>
+        <div class="text-xs text-slate-400">room reservations</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium text-slate-500">Table Bookings (30d)</p>
+          <div class="kpi-icon" style="background:#eef0fe;"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3h18v4H3V3zm0 8h6v10H3V11zm10 0h8v10h-8V11z"/></svg></div>
+        </div>
+        <div class="text-3xl font-bold mb-1" style="letter-spacing:-0.5px;color:#4f6ef7;" id="kpi-table-bookings">—</div>
+        <div class="text-xs text-slate-400">restaurant reservations</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium text-slate-500">Total Calls (30d)</p>
+          <div class="kpi-icon" style="background:#ecfdf5;"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></div>
+        </div>
+        <div class="text-3xl font-bold text-slate-800 mb-1" style="letter-spacing:-0.5px;" id="kpi-total-calls">—</div>
+        <div class="text-xs text-slate-400">inbound calls handled</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium text-slate-500">Avg Call Duration</p>
+          <div class="kpi-icon" style="background:#f5f3ff;"><svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v6l4 2"/></svg></div>
+        </div>
+        <div class="text-3xl font-bold text-slate-800 mb-1" style="letter-spacing:-0.5px;" id="kpi-avg-duration">—</div>
+        <div class="text-xs text-slate-400">avg call duration</div>
+      </div>
+    </div>
+
+    <!-- Middle Row: Agents + Today's Bookings split -->
+    <div class="grid grid-cols-5 gap-4">
+
+      <!-- Agents panel -->
+      <div class="col-span-2 card shadow-card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-slate-800">Active Agents <span id="total-agents-count" class="text-slate-400 font-normal"></span></h3>
+          <a href="{% url 'voice-agents' %}" class="text-xs font-medium" style="color:#4f6ef7;">View all →</a>
+        </div>
+        <div id="agents-list" class="space-y-2">
+          <div class="text-xs text-slate-400 text-center py-6">Loading agents…</div>
+        </div>
+      </div>
+
+      <!-- Today's booking split -->
+      <div class="col-span-3 card shadow-card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-slate-800">Today's Bookings</h3>
+          <a href="{% url 'voice-bookings' %}" class="text-xs font-medium" style="color:#4f6ef7;">View all →</a>
+        </div>
+        <!-- Two split cols -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Room bookings today -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full" style="background:#2563eb;"></div>
+              <span class="text-xs font-semibold text-slate-700">Room Reservations</span>
+              <span class="ml-auto text-xs font-bold" style="color:#2563eb;" id="today-rooms">0</span>
+            </div>
+            <div id="today-room-list" class="space-y-1.5">
+              <div class="text-xs text-slate-300 italic">No room bookings today</div>
+            </div>
+          </div>
+          <!-- Table bookings today -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full" style="background:#4f6ef7;"></div>
+              <span class="text-xs font-semibold text-slate-700">Table Reservations</span>
+              <span class="ml-auto text-xs font-bold" style="color:#4f6ef7;" id="today-tables">0</span>
+            </div>
+            <div id="today-table-list" class="space-y-1.5">
+              <div class="text-xs text-slate-300 italic">No table bookings today</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Calls Table -->
+    <div class="card shadow-card">
+      <div class="flex items-center justify-between px-5 py-3.5" style="border-bottom:1px solid #f1f5f9;">
+        <h3 class="text-sm font-semibold text-slate-800">Recent Calls</h3>
+        <a href="{% url 'voice-call-history' %}" class="text-xs font-medium" style="color:#4f6ef7;">View all →</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Caller</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Agent</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Outcome</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Duration</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody id="recent-calls-body">
+            <tr><td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function() {
+  // Token from OAuth redirect
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('access') && p.get('refresh')) {
+    localStorage.setItem('access_token',  p.get('access'));
+    localStorage.setItem('refresh_token', p.get('refresh'));
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  const d = new Date();
+  const el = document.getElementById('dash-date');
+  if (el) {
+    const weekday = d.toLocaleDateString('en-US', {weekday:'long'});
+    const date    = d.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+    el.innerHTML  = `<strong>${date}</strong> — ${weekday}`;
+  }
+})();
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function token() {
+  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+}
+
+function fmtDuration(secs) {
+  const s = Math.round(secs || 0);
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:false});
+}
+
+function outcomeHtml(outcome) {
+  const o = String(outcome||'').toLowerCase();
+  if (o === 'booked' || o.includes('room') || o.includes('table'))
+    return `<span class="badge b-room">BOOKED</span>`;
+  if (o === 'faq_resolved')
+    return `<span class="badge b-faq">RESOLVED</span>`;
+  if (o.includes('handoff') || o.includes('transfer'))
+    return `<span class="badge b-handoff">HANDOFF</span>`;
+  return `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;">${escHtml(outcome||'—').toUpperCase()}</span>`;
+}
+
+function getInitials(name) {
+  const w = (name||'').trim().split(/\s+/);
+  return w.length >= 2 ? (w[0][0]+w[1][0]).toUpperCase() : (name||'AG').slice(0,2).toUpperCase();
+}
+
+function statusBadge(s) {
+  if (s==='live')   return `<span class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>`;
+  if (s==='paused') return `<span class="badge b-paused">PAUSED</span>`;
+  return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">DRAFT</span>`;
+}
+
+async function loadDashboardStats() {
+  try {
+    const res  = await fetch('/api/dashboard/stats/', { headers: { 'Authorization': 'Bearer ' + token() } });
+    const json = await res.json();
+    if (!json.success) return;
+    const d = json.data;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('kpi-total-calls',    d.total_calls ?? '0');
+    set('kpi-room-bookings',  d.room_bookings ?? '0');
+    set('kpi-table-bookings', d.table_bookings ?? '0');
+    set('kpi-avg-duration',   fmtDuration(d.avg_duration_seconds));
+    const liveCount = d.live_agents ?? 0;
+    set('live-call-count', `${liveCount} live agent${liveCount === 1 ? '' : 's'}`);
+    const totalAgents = d.total_agents ?? 0;
+    set('total-agents-count', `(${totalAgents})`);
+  } catch(e) {}
+}
+
+async function loadAgents() {
+  try {
+    const res  = await fetch('/api/agents/agent-list-api/', { headers: { 'Authorization': 'Bearer ' + token() } });
+    const json = await res.json();
+    const agents = (json.results?.data || json.data || []).slice(0,3);
+    const el = document.getElementById('agents-list');
+    if (!agents.length) { el.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">No agents yet.</div>'; return; }
+    el.innerHTML = agents.map(a => {
+      const grad = a.status==='live' ? 'linear-gradient(135deg,#4f6ef7,#818cf8)' :
+                   a.status==='paused' ? 'linear-gradient(135deg,#94a3b8,#64748b)' :
+                   'linear-gradient(135deg,#8b5cf6,#a78bfa)';
+      return `<div class="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50 transition-colors">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:${grad};">${escHtml(getInitials(a.agent_name))}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-semibold text-slate-800 truncate">${escHtml(a.agent_name)}</div>
+          <div class="text-xs text-slate-400 truncate">${escHtml(a.phone_number||'No number')}</div>
+        </div>
+        ${statusBadge(a.status)}
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function loadTodayBookings() {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const res   = await fetch(`/api/dashboard/bookings/data/?from=${today}&to=${today}&page_size=50`, { headers: { 'Authorization': 'Bearer ' + token() } });
+    const json  = await res.json();
+    if (!json.success) return;
+    const results = json.data?.results || [];
+
+    const rooms  = results.filter(b => b.booking_type === 'room').slice(0, 3);
+    const tables = results.filter(b => b.booking_type === 'table').slice(0, 3);
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('today-rooms',  rooms.length);
+    set('today-tables', tables.length);
+
+    function bookingItem(b) {
+      const name = b.guest_name || '—';
+      const time = b.booking_time || '—';
+      const detail = b.booking_type === 'room'
+        ? `${b.room_type || 'Room'} · ${b.nights || 1} night${b.nights>1?'s':''}`
+        : `${b.party_size || b.guests || 1} guest${(b.party_size||b.guests||1)>1?'s':''}`;
+      const confirmed = b.is_confirmed;
+      return `<div class="flex items-center gap-2 rounded-lg px-2.5 py-2" style="background:#f8fafc;border:1px solid #f1f5f9;">
+        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:${confirmed?'#059669':'#94a3b8'};">${escHtml((name[0]||'?').toUpperCase())}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-semibold text-slate-800 truncate">${escHtml(name)}</div>
+          <div class="text-xs text-slate-400">${escHtml(time)} · ${escHtml(detail)}</div>
+        </div>
+        ${confirmed ? '<span class="text-xs text-emerald-600 font-medium flex-shrink-0">✓</span>' : '<span class="text-xs text-amber-500 font-medium flex-shrink-0">Pend</span>'}
+      </div>`;
+    }
+
+    const roomEl  = document.getElementById('today-room-list');
+    const tableEl = document.getElementById('today-table-list');
+    roomEl.innerHTML  = rooms.length  ? rooms.map(bookingItem).join('')  : '<div class="text-xs text-slate-300 italic px-1">No room bookings today</div>';
+    tableEl.innerHTML = tables.length ? tables.map(bookingItem).join('') : '<div class="text-xs text-slate-300 italic px-1">No table bookings today</div>';
+  } catch(e) {}
+}
+
+async function loadRecentCalls() {
+  try {
+    const res  = await fetch('/api/calls/call-history/?page=1', { headers: { 'Authorization': 'Bearer ' + token() } });
+    const json = await res.json();
+    const rows = (json.results?.data || json.data || []).slice(0,6);
+    const tbody = document.getElementById('recent-calls-body');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">No calls yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(c => {
+      const detailUrl = `/api/calls/voice-call-detail/?pk=${c.id}`;
+      return `<tr class="trow" onclick="window.location.href='${detailUrl}'" style="cursor:pointer;">
+        <td class="px-5 py-3 text-xs font-medium text-slate-800">${escHtml(c.caller_phone||'—')}</td>
+        <td class="px-4 py-3 text-xs text-slate-500">${escHtml(c.agent_name||'—')}</td>
+        <td class="px-4 py-3">${outcomeHtml(c.outcome)}</td>
+        <td class="px-4 py-3 text-xs font-mono text-slate-600">${escHtml(c.duration||'0:00')}</td>
+        <td class="px-4 py-3 text-right"><a href="${detailUrl}" class="text-xs font-medium" style="color:#4f6ef7;" onclick="event.stopPropagation()">View →</a></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('recent-calls-body').innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-xs text-red-400">Failed to load calls.</td></tr>';
+  }
+}
+
+// Profile dropdown
+function toggleProfileDropdown() { document.getElementById('profile-dropdown').classList.toggle('hidden'); }
+function closeProfileDropdown()  { document.getElementById('profile-dropdown').classList.add('hidden'); }
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('profile-btn-wrap');
+  if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
+});
+
+async function loadHeaderProfile() {
+  try {
+    const res  = await fetch('/api/auth/profile/', { headers: { 'Authorization': 'Bearer ' + token() } });
+    const json = await res.json();
+    if (!json.success) return;
+    const d = json.data;
+    const initials = d.initials || 'U';
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+    setTxt('header-avatar',   initials);
+    setTxt('header-username', d.full_name || d.email);
+    setTxt('dd-avatar',       initials);
+    setTxt('dd-name',         d.full_name);
+    setTxt('dd-email',        d.email);
+    setTxt('dd-plan',         d.plan_label || 'Free');
+    setTxt('dd-business',     d.business_name || '');
+  } catch(e) {}
+}
+
+function logout() {
+  const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
+  fetch('/api/auth/logout/', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({refresh}),
+  }).finally(() => {
+    localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('access_token'); sessionStorage.removeItem('refresh_token');
+    window.location.href = '/api/auth/login/';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadHeaderProfile();
+  loadDashboardStats();
+  loadAgents();
+  loadTodayBookings();
+  loadRecentCalls();
+});
+</script>
+</body>
+</html>

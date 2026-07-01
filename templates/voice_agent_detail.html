@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Detail — VoiceAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+function logout() {
+  const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
+  fetch('/api/auth/logout/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({refresh}) })
+    .finally(() => {
+      ['access_token','refresh_token'].forEach(k => { localStorage.removeItem(k); sessionStorage.removeItem(k); });
+      window.location.href = '/api/auth/login/';
+    });
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#4f6ef7;--accent-l:#eef0fe;}
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
+  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:var(--bg);color:var(--t1);}
+  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
+  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
+  .b-live{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-paused{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
+  .b-draft{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+  .b-red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;display:inline-block;flex-shrink:0;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+  .btn-primary{background:linear-gradient(135deg,#4f6ef7,#6366f1);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(79,110,247,0.35);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
+  .scrollbar::-webkit-scrollbar{width:5px;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
+  .tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab:hover:not(.active){color:var(--t1);}
+  .kpi-card{background:white;border:1px solid var(--border);border-radius:10px;padding:16px 20px;}
+  .kpi-val{font-size:22px;font-weight:700;color:var(--t1);line-height:1.1;}
+  .kpi-lbl{font-size:11px;color:var(--t3);margin-top:2px;}
+  .tool-chip-green{font-size:10.5px;font-weight:500;padding:3px 10px;border-radius:20px;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .tool-chip-gray{font-size:10.5px;font-weight:500;padding:3px 10px;border-radius:20px;background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;}
+  .tbl-row{border-bottom:1px solid #f8fafc;transition:background 0.1s;}
+  .tbl-row:hover{background:#fafbff;}
+  .tbl-row:last-child{border-bottom:none;}
+  /* Call panel */
+  .call-panel{position:fixed;bottom:28px;right:28px;width:300px;background:white;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.18);z-index:300;overflow:hidden;animation:panelIn 0.22s ease;}
+  @keyframes panelIn{from{opacity:0;transform:translateY(18px) scale(0.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .call-panel-head{padding:16px 18px 12px;background:linear-gradient(135deg,#4f6ef7,#6366f1);}
+  .call-panel-body{padding:18px;}
+  .call-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;position:relative;}
+  .call-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(79,110,247,0.3);animation:ringPulse 1.6s ease-in-out infinite;}
+  .call-ring::after{content:'';position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(79,110,247,0.15);animation:ringPulse 1.6s ease-in-out 0.4s infinite;}
+  @keyframes ringPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.08);}}
+  .call-timer{font-size:22px;font-weight:700;letter-spacing:1px;color:#0f172a;text-align:center;font-variant-numeric:tabular-nums;}
+  .call-btn{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+  .call-btn-green{background:linear-gradient(135deg,#10b981,#059669);color:white;}
+  .call-btn-green:hover{box-shadow:0 4px 14px rgba(16,185,129,0.4);}
+  .call-btn-red{background:linear-gradient(135deg,#ef4444,#e11d48);color:white;}
+  .call-btn-red:hover{box-shadow:0 4px 14px rgba(239,68,68,0.4);}
+  .call-btn-mute{background:#f1f5f9;color:#64748b;}
+  .call-btn-mute.muted{background:#fef2f2;color:#ef4444;}
+  .call-btn:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+  .vol-bar{height:3px;border-radius:2px;background:#e2e8f0;overflow:hidden;flex:1;}
+  .vol-fill{height:100%;background:linear-gradient(90deg,#10b981,#34d399);width:0%;transition:width 0.1s;}
+  /* Profile dropdown */
+  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background 0.12s;text-decoration:none;}
+  .pd-item:hover{background:#f8fafc;color:#0f172a;}
+  .pd-item svg{flex-shrink:0;color:#94a3b8;}
+  .pd-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+  .pd-item.danger{color:#e11d48;}
+  .pd-item.danger svg{color:#e11d48;}
+  .pd-item.danger:hover{background:#fff1f2;}
+  /* Pagination */
+  .page-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);font-size:12px;color:var(--t2);cursor:pointer;background:white;transition:all 0.15s;}
+  .page-btn:hover:not(:disabled){background:var(--bg);color:var(--t1);}
+  .page-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
+  .page-btn:disabled{opacity:0.4;cursor:not-allowed;}
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<script id="auth-guard">if(!localStorage.getItem("access_token")&&!sessionStorage.getItem("access_token")){window.location.replace("/api/auth/login/");}</script>
+
+<!-- Sidebar -->
+<aside class="sidebar w-56 flex flex-col flex-shrink-0">
+  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <span class="font-semibold text-sm text-slate-800">VoiceAI</span>
+    </a>
+  </div>
+  <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
+    <p class="nav-sec">OVERVIEW</p>
+    <a href="{% url 'voice-dashboard' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <p class="nav-sec">AGENTS</p>
+    <a href="{% url 'voice-agents' %}" class="nav-item active">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      My Agents
+    </a>
+    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+      New Agent
+    </a>
+    <a href="/api/agents/manage-tools/" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      My Tools
+    </a>
+    <p class="nav-sec">CALLS</p>
+    <a href="{% url 'voice-call-history' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Call History
+    </a>
+    <a href="{% url 'voice-bookings' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Bookings
+    </a>
+    <p class="nav-sec">CONFIG</p>
+    <a href="{% url 'voice-knowledge-base' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Knowledge Base
+    </a>
+    <a href="{% url 'voice-integrations' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Integrations
+    </a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-4 bg-white" style="border-bottom:1px solid #f1f5f9;">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <a href="{% url 'voice-agents' %}" class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+          Agents
+        </a>
+        <svg class="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        <span id="agent-name-breadcrumb" class="text-xs text-slate-500">Loading…</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <h1 id="agent-name-title" class="text-lg font-semibold text-slate-800">Loading…</h1>
+        <span id="agent-status-badge" class="badge b-live flex items-center gap-1.5"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a id="edit-agent-btn" href="{% url 'voice-create-agent' %}" class="btn-ghost">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Edit Agent
+      </a>
+      <button id="test-call-btn" onclick="openCallPanel()" class="btn-primary">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        Test Call
+      </button>
+      <div class="relative" id="profile-btn-wrap">
+        <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+          <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
+            <div class="flex items-center gap-2.5">
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+              <div class="min-w-0">
+                <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
+                <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
+              </div>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between">
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#eef0fe;color:#4f6ef7;">Free</span>
+              <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
+            </div>
+          </div>
+          <div class="py-1">
+            <a href="{% url 'voice-integrations' %}" class="pd-item">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              Settings & Integrations
+            </a>
+            <div class="pd-divider"></div>
+            <div class="pd-item danger" onclick="closeProfileDropdown();logout();">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Sign Out
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <div class="flex-1 overflow-y-auto scrollbar">
+
+    <!-- KPI Row -->
+    <div class="px-6 pt-5 pb-2 grid grid-cols-4 gap-4">
+      <div class="kpi-card">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#eef0fe;">
+            <svg class="w-3.5 h-3.5" style="color:#4f6ef7;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          </div>
+          <span class="text-xs font-medium text-slate-500">Total Calls</span>
+        </div>
+        <div id="kpi-total-calls" class="kpi-val">—</div>
+        <div class="kpi-lbl">all time</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#ecfdf5;">
+            <svg class="w-3.5 h-3.5" style="color:#059669;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="text-xs font-medium text-slate-500">Booking Rate</span>
+        </div>
+        <div id="kpi-booking-rate" class="kpi-val" style="color:#059669;">—</div>
+        <div class="kpi-lbl">of completed calls</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#fff7ed;">
+            <svg class="w-3.5 h-3.5" style="color:#ea580c;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <span class="text-xs font-medium text-slate-500">Avg Duration</span>
+        </div>
+        <div id="kpi-avg-duration" class="kpi-val">—</div>
+        <div class="kpi-lbl">per call</div>
+      </div>
+      <div class="kpi-card">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#ecfdf5;">
+            <svg class="w-3.5 h-3.5" style="color:#059669;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="text-xs font-medium text-slate-500">Avg Sentiment</span>
+        </div>
+        <div id="kpi-avg-sentiment" class="kpi-val" style="color:#059669;">—</div>
+        <div class="kpi-lbl">caller mood score</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="px-6 flex items-center gap-0 bg-white mt-3 mx-6 rounded-t-lg" style="border:1px solid var(--border);border-bottom:none;">
+      <button class="tab active" onclick="switchTab(this,'overview-tab')">Overview</button>
+      <button class="tab" onclick="switchTab(this,'calls-tab'); loadCallsTab()">Call History</button>
+      <button class="tab" onclick="switchTab(this,'kb-tab'); loadKBTab()">Knowledge Base</button>
+      <button class="tab" onclick="switchTab(this,'settings-tab')">Settings</button>
+    </div>
+
+    <!-- Tab Content Wrapper -->
+    <div class="mx-6 mb-6 bg-white" style="border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;">
+
+      <!-- OVERVIEW TAB -->
+      <div id="overview-tab" class="p-6 space-y-6">
+
+        <!-- Agent Info Card -->
+        <div class="card p-5">
+          <h3 class="text-sm font-semibold text-slate-700 mb-4">Agent Info</h3>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #f8fafc;">
+                <span class="text-xs text-slate-400">Phone Number</span>
+                <span id="info-phone" class="text-xs font-semibold text-slate-700">—</span>
+              </div>
+              <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #f8fafc;">
+                <span class="text-xs text-slate-400">Voice</span>
+                <span id="info-voice" class="text-xs font-semibold text-slate-700">—</span>
+              </div>
+              <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #f8fafc;">
+                <span class="text-xs text-slate-400">Language</span>
+                <span id="info-language" class="text-xs font-semibold text-slate-700">—</span>
+              </div>
+              <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #f8fafc;">
+                <span class="text-xs text-slate-400">Status</span>
+                <span id="info-status" class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>
+              </div>
+              <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #f8fafc;">
+                <span class="text-xs text-slate-400">Created</span>
+                <span id="info-created" class="text-xs font-semibold text-slate-700">—</span>
+              </div>
+              <div class="flex items-center justify-between py-2">
+                <span class="text-xs text-slate-400">Total Bookings</span>
+                <span id="info-total-bookings" class="text-xs font-semibold text-slate-700">—</span>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <div class="text-xs text-slate-400 mb-2">Tools Enabled</div>
+                <div id="info-tools" class="flex flex-wrap gap-2">
+                  <span class="tool-chip-gray">—</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-400 mb-2">System Prompt</div>
+                <div id="info-greeting" class="rounded-lg p-3 text-xs leading-relaxed max-h-48 overflow-y-auto scrollbar" style="background:#f8fafc;border:1px solid #e8edf2;font-family:'Courier New',Courier,monospace;color:#334155;white-space:pre-wrap;">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Calls Mini Table -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-700">Recent Calls</h3>
+            <button onclick="switchTab(document.querySelectorAll('.tab')[1],'calls-tab');loadCallsTab()" class="text-xs font-medium" style="color:#4f6ef7;background:none;border:none;cursor:pointer;">View all →</button>
+          </div>
+          <table class="w-full text-xs">
+            <thead>
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <th class="text-left pb-2.5 font-medium text-slate-400">Caller</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400">Duration</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400">Outcome</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400">Sentiment</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400">Time</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400"></th>
+              </tr>
+            </thead>
+            <tbody id="recent-calls-body">
+              <tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /overview-tab -->
+
+      <!-- CALL HISTORY TAB -->
+      <div id="calls-tab" class="p-6 hidden">
+
+        <!-- Filters -->
+        <div class="flex items-center gap-3 mb-4">
+          <input id="calls-search" type="text" placeholder="Search caller…" oninput="debounceCallSearch()"
+            class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-400 flex-1 max-w-xs" style="font-family:inherit;">
+          <select id="calls-outcome" onchange="loadCallsTab(1)" class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-400" style="font-family:inherit;">
+            <option value="">All Outcomes</option>
+            <option value="booked">Booked</option>
+            <option value="faq_resolved">FAQ Resolved</option>
+            <option value="no_outcome">No Outcome</option>
+          </select>
+          <select id="calls-sentiment" onchange="loadCallsTab(1)" class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-400" style="font-family:inherit;">
+            <option value="">All Sentiments</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+          </select>
+        </div>
+
+        <table class="w-full text-xs">
+          <thead>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <th class="text-left pb-2.5 font-medium text-slate-400">Caller</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400">Duration</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400">Outcome</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400">Sentiment</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400">Date</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400"></th>
+            </tr>
+          </thead>
+          <tbody id="calls-body">
+            <tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading…</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div id="calls-pagination" class="flex items-center justify-between mt-4 hidden">
+          <span id="calls-page-info" class="text-xs text-slate-400"></span>
+          <div class="flex items-center gap-1.5" id="calls-page-btns"></div>
+        </div>
+
+      </div><!-- /calls-tab -->
+
+      <!-- KNOWLEDGE BASE TAB -->
+      <div id="kb-tab" class="p-6 hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-slate-700">Documents</h3>
+          <a href="{% url 'voice-knowledge-base' %}" class="btn-ghost text-xs">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Manage in Knowledge Base
+          </a>
+        </div>
+        <div id="kb-docs-container">
+          <p class="text-xs text-slate-400 text-center py-6">Loading…</p>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div id="settings-tab" class="p-6 hidden">
+        <div class="text-sm text-slate-500 text-center py-12">
+          <svg class="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          <p class="font-medium text-slate-600 mb-1">Agent Settings</p>
+          <p class="text-xs text-slate-400">Configure this agent in the <a id="settings-edit-link" href="{% url 'voice-create-agent' %}" class="text-indigo-500 hover:underline">Edit Agent →</a> view</p>
+        </div>
+      </div>
+
+    </div><!-- /tab content wrapper -->
+  </div><!-- /page body -->
+</main>
+
+<!-- Browser Call Panel -->
+<div id="call-panel" class="call-panel hidden">
+  <div class="call-panel-head flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <div>
+        <div class="text-white text-xs font-semibold" id="cp-agent-name">Test Call</div>
+        <div class="text-white/70 text-xs" id="cp-status-txt">Initialising…</div>
+      </div>
+    </div>
+    <button onclick="closeCallPanel()" class="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+      <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="cp-idle" class="call-panel-body">
+    <div class="call-ring mb-4" style="background:#eef0fe;">
+      <svg class="w-7 h-7" style="color:#4f6ef7;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+    </div>
+    <p class="text-xs text-slate-500 text-center mb-4">Talk to your agent live in the browser — no phone needed.</p>
+    <button id="cp-call-btn" onclick="startCall()" disabled class="call-btn call-btn-green w-full rounded-xl h-10 text-sm font-semibold flex items-center justify-center gap-2" style="border-radius:10px;width:100%;height:40px;">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      <span id="cp-call-label">Connecting…</span>
+    </button>
+  </div>
+  <div id="cp-incall" class="call-panel-body hidden">
+    <div class="call-ring mb-3" style="background:#ecfdf5;">
+      <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+    </div>
+    <div class="call-timer mb-1" id="cp-timer">0:00</div>
+    <p class="text-xs text-slate-400 text-center mb-4">Call in progress</p>
+    <div class="flex items-center gap-2 mb-5">
+      <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 6v12"/><path d="M19.07 4.929a10 10 0 010 14.142"/></svg>
+      <div class="vol-bar"><div class="vol-fill" id="cp-vol-fill"></div></div>
+    </div>
+    <div class="flex items-center justify-center gap-5">
+      <div class="text-center">
+        <button id="cp-mute-btn" onclick="toggleMute()" class="call-btn call-btn-mute">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"/></svg>
+        </button>
+        <div class="text-xs text-slate-400 mt-1.5" id="cp-mute-lbl">Mute</div>
+      </div>
+      <button onclick="hangUp()" class="call-btn call-btn-red" style="width:64px;height:64px;">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      </button>
+      <div class="text-center">
+        <button class="call-btn" style="background:#f1f5f9;color:#64748b;" disabled>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728"/></svg>
+        </button>
+        <div class="text-xs text-slate-400 mt-1.5">Speaker</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LOGIN_URL  = "{% url 'login-render' %}";
+  const AGENT_ID   = "{{ pk }}";
+  const VOICE_API  = `${window.location.protocol}//${window.location.hostname}:8001`;
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function getToken() {
+    const t = localStorage.getItem('access_token') || '';
+    return (t && t !== 'null' && t !== 'undefined' && t.startsWith('eyJ')) ? t : null;
+  }
+
+  function authHeaders() { return { 'Authorization': 'Bearer ' + getToken() }; }
+
+  function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val ?? '—'; }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+  }
+
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    if (isToday) return 'Today ' + d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+    return fmtDate(iso);
+  }
+
+  function fmtDuration(sec) {
+    if (!sec) return '0:00';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return `${m}:${s.toString().padStart(2,'0')}`;
+  }
+
+  function outcomeBadge(outcome) {
+    const map = {
+      booked:       `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">BOOKED</span>`,
+      faq_resolved: `<span class="badge" style="background:#eef0fe;color:#4f46e5;border:1px solid #c7d2fe;font-size:10px;">RESOLVED</span>`,
+      no_outcome:   `<span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">NO OUTCOME</span>`,
+    };
+    return map[outcome] || map.no_outcome;
+  }
+
+  function sentimentBadge(s) {
+    if (s === 'positive') return `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">😊 POS</span>`;
+    if (s === 'negative') return `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">😟 NEG</span>`;
+    return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:10px;">😐 NEU</span>`;
+  }
+
+  // ── Agent Detail ───────────────────────────────────────────────────────────
+  function getBadgeHTML(status) {
+    if (status === 'live')   return `<span class="live-dot" style="width:5px;height:5px;"></span>LIVE`;
+    if (status === 'paused') return `PAUSED`;
+    if (status === 'error')  return `ERROR`;
+    return `DRAFT`;
+  }
+  function getBadgeClass(status) {
+    if (status === 'live')   return 'badge b-live flex items-center gap-1.5';
+    if (status === 'paused') return 'badge b-paused';
+    if (status === 'error')  return 'badge b-red';
+    return 'badge b-draft';
+  }
+
+  function populateAgent(agent) {
+    document.title = `${agent.agent_name} — VoiceAI`;
+    set('agent-name-breadcrumb', agent.agent_name);
+    set('agent-name-title',      agent.agent_name);
+    set('info-phone',    agent.phone_number || 'No number assigned');
+    set('info-voice',    agent.voice_name   || 'Google TTS');
+    set('info-language', agent.language     || 'en');
+    set('info-created',  fmtDate(agent.created_at));
+
+    ['agent-status-badge','info-status'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = getBadgeClass(agent.status);
+      el.innerHTML = getBadgeHTML(agent.status);
+    });
+
+    const editBtn = document.getElementById('edit-agent-btn');
+    if (editBtn) editBtn.href = "{% url 'voice-create-agent' %}?edit=" + agent.id;
+    const settingsLink = document.getElementById('settings-edit-link');
+    if (settingsLink) settingsLink.href = "{% url 'voice-create-agent' %}?edit=" + agent.id;
+
+    const toolsEl = document.getElementById('info-tools');
+    if (toolsEl) {
+      const allTools = [
+        ...(agent.tools      || []).filter(t => t.is_active).map(t => t.tool_name),
+        ...(agent.user_tools || []).filter(t => t.is_active).map(t => t.name),
+      ];
+      toolsEl.innerHTML = allTools.length
+        ? allTools.map(n => `<span class="tool-chip-green">${n}</span>`).join('')
+        : `<span class="tool-chip-gray">No tools</span>`;
+    }
+
+    const promptEl = document.getElementById('info-greeting');
+    if (promptEl) promptEl.textContent = agent.system_prompt || '—';
+  }
+
+  async function loadAgentDetail() {
+    const token = getToken();
+    if (!token) { window.location.href = LOGIN_URL; return; }
+    if (!AGENT_ID) return;
+    try {
+      const res  = await fetch(`/api/agents/get-agent-detail/${AGENT_ID}/`, { headers: authHeaders() });
+      if (res.status === 401) { window.location.href = LOGIN_URL; return; }
+      const json = await res.json();
+      if (json.data) populateAgent(json.data);
+    } catch(e) { set('agent-name-title','Failed to load'); }
+  }
+
+  async function loadAgentStats() {
+    if (!AGENT_ID) return;
+    try {
+      const res  = await fetch(`/api/calls/agent-stats/${AGENT_ID}/`, { headers: authHeaders() });
+      const json = await res.json();
+      if (!json.success || !json.data) return;
+      const d = json.data;
+      set('kpi-total-calls',   d.total_calls);
+      set('kpi-booking-rate',  d.booking_rate + '%');
+      set('kpi-avg-duration',  fmtDuration(d.avg_duration_seconds));
+      set('kpi-avg-sentiment', d.avg_sentiment !== null ? d.avg_sentiment : '—');
+      set('info-total-bookings', d.total_bookings);
+    } catch(e) {}
+  }
+
+  // ── Parse DRF paginated response wrapped in success_response ─────────────
+  // Shape: { count, next, previous, results: { success, message, data: [...] } }
+  function parsePaginatedCalls(json) {
+    const calls = json.results?.data || json.results || [];
+    const count = json.count || 0;
+    return { calls, count };
+  }
+
+  // ── Recent Calls (overview tab, latest 5) ──────────────────────────────────
+  async function loadRecentCalls() {
+    const tbody = document.getElementById('recent-calls-body');
+    try {
+      const res  = await fetch(`/api/calls/call-history/?agent_id=${AGENT_ID}&page_size=5`, { headers: authHeaders() });
+      const json = await res.json();
+      const { calls } = parsePaginatedCalls(json);
+      if (!calls.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">No calls yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = calls.map(c => `
+        <tr class="tbl-row">
+          <td class="py-2.5 font-medium text-slate-700">${c.caller_phone || '—'}</td>
+          <td class="py-2.5 text-slate-500">${c.duration || fmtDuration(c.duration_seconds)}</td>
+          <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
+          <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
+          <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
+          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#4f6ef7;">View →</a></td>
+        </tr>`).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Failed to load.</td></tr>`;
+    }
+  }
+
+  // ── Call History Tab ───────────────────────────────────────────────────────
+  let callsCurrentPage = 1;
+  let callsSearchTimer = null;
+
+  function debounceCallSearch() {
+    clearTimeout(callsSearchTimer);
+    callsSearchTimer = setTimeout(() => loadCallsTab(1), 400);
+  }
+
+  async function loadCallsTab(page) {
+    page = page || callsCurrentPage;
+    callsCurrentPage = page;
+    const tbody = document.getElementById('calls-body');
+    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading…</td></tr>`;
+
+    const search    = document.getElementById('calls-search')?.value.trim() || '';
+    const outcome   = document.getElementById('calls-outcome')?.value        || '';
+    const sentiment = document.getElementById('calls-sentiment')?.value      || '';
+
+    const params = new URLSearchParams({ agent_id: AGENT_ID, page, page_size: 15 });
+    if (search)    params.set('search',    search);
+    if (outcome)   params.set('outcome',   outcome);
+    if (sentiment) params.set('sentiment', sentiment);
+
+    try {
+      const res  = await fetch(`/api/calls/call-history/?${params}`, { headers: authHeaders() });
+      const json = await res.json();
+      const { calls, count } = parsePaginatedCalls(json);
+
+      if (!calls.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">No calls found.</td></tr>`;
+        document.getElementById('calls-pagination').classList.add('hidden');
+        return;
+      }
+
+      tbody.innerHTML = calls.map(c => `
+        <tr class="tbl-row">
+          <td class="py-2.5 font-medium text-slate-700">${c.caller_phone || '—'}</td>
+          <td class="py-2.5 text-slate-500">${c.duration || fmtDuration(c.duration_seconds)}</td>
+          <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
+          <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
+          <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
+          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#4f6ef7;">View →</a></td>
+        </tr>`).join('');
+
+      renderCallsPagination(count, page, 15);
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Failed to load.</td></tr>`;
+    }
+  }
+
+  function renderCallsPagination(total, current, pageSize) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pg = document.getElementById('calls-pagination');
+    if (totalPages <= 1) { pg.classList.add('hidden'); return; }
+    pg.classList.remove('hidden');
+
+    const from = (current - 1) * pageSize + 1;
+    const to   = Math.min(current * pageSize, total);
+    set('calls-page-info', `${from}–${to} of ${total}`);
+
+    const btnsEl = document.getElementById('calls-page-btns');
+    let btns = `<button class="page-btn" onclick="loadCallsTab(${current-1})" ${current===1?'disabled':''}>← Prev</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+      if (p === 1 || p === totalPages || (p >= current-1 && p <= current+1)) {
+        btns += `<button class="page-btn ${p===current?'active':''}" onclick="loadCallsTab(${p})">${p}</button>`;
+      } else if (p === current-2 || p === current+2) {
+        btns += `<span class="text-xs text-slate-400 px-1">…</span>`;
+      }
+    }
+    btns += `<button class="page-btn" onclick="loadCallsTab(${current+1})" ${current===totalPages?'disabled':''}>Next →</button>`;
+    btnsEl.innerHTML = btns;
+  }
+
+  // ── Knowledge Base Tab ─────────────────────────────────────────────────────
+  async function loadKBTab() {
+    const container = document.getElementById('kb-docs-container');
+    if (!container) return;
+    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Loading…</p>`;
+    try {
+      const res  = await fetch(`/api/knowledge/documents/?agent_id=${AGENT_ID}`, { headers: authHeaders() });
+      const json = await res.json();
+      const docs = json.data?.documents || [];
+      if (!docs.length) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">No documents uploaded yet.</p>`;
+        return;
+      }
+      container.innerHTML = docs.map(d => {
+        const statusColor = d.status === 'ready' ? '#059669' : d.status === 'processing' ? '#d97706' : '#94a3b8';
+        const statusBg    = d.status === 'ready' ? '#ecfdf5'  : d.status === 'processing' ? '#fffbeb'  : '#f1f5f9';
+        const statusBdr   = d.status === 'ready' ? '#a7f3d0'  : d.status === 'processing' ? '#fde68a'  : '#e2e8f0';
+        return `
+        <div class="flex items-center justify-between py-3" style="border-bottom:1px solid #f8fafc;">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#eef0fe;">
+              <svg class="w-4 h-4" style="color:#4f6ef7;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-slate-700 truncate">${d.title}</div>
+              <div class="text-xs text-slate-400 mt-0.5">${d.file_size_display || ''} · ${d.chunk_count || 0} chunks · ${fmtDate(d.created_at)}</div>
+            </div>
+          </div>
+          <span class="badge ml-3 flex-shrink-0" style="background:${statusBg};color:${statusColor};border:1px solid ${statusBdr};font-size:10px;">${d.status.toUpperCase()}</span>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Failed to load.</p>`;
+    }
+  }
+
+  // ── Tabs ───────────────────────────────────────────────────────────────────
+  function switchTab(btn, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['overview-tab','calls-tab','kb-tab','settings-tab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+  }
+
+  // ── Profile dropdown ───────────────────────────────────────────────────────
+  function toggleProfileDropdown() { document.getElementById('profile-dropdown').classList.toggle('hidden'); }
+  function closeProfileDropdown()  { document.getElementById('profile-dropdown').classList.add('hidden'); }
+  document.addEventListener('click', e => {
+    const wrap = document.getElementById('profile-btn-wrap');
+    if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
+  });
+
+  async function loadHeaderProfile() {
+    try {
+      const res  = await fetch('/api/auth/profile/', { headers: authHeaders() });
+      const json = await res.json();
+      if (!json.success) return;
+      const d = json.data, initials = d.initials || 'U';
+      set('header-avatar',  initials); set('dd-avatar',   initials);
+      set('header-username', d.full_name || d.email);
+      set('dd-name',  d.full_name); set('dd-email', d.email);
+      set('dd-plan',  d.plan_label || 'Free');
+      set('dd-business', d.business_name || '');
+    } catch(e) {}
+  }
+
+  // ── Browser Call ───────────────────────────────────────────────────────────
+  let twilioDevice = null, activeCall = null, callSeconds = 0;
+  let callTimer = null, isMuted = false, volInterval = null;
+
+  function setCP(id, val) { set(id, val); }
+
+  function showCallState(state) {
+    document.getElementById('cp-idle').classList.toggle('hidden',   state !== 'idle');
+    document.getElementById('cp-incall').classList.toggle('hidden', state !== 'incall');
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  const _log  = (m,...a) => console.log( `%c[Call] ${m}`,'color:#4f6ef7;font-weight:600',...a);
+  const _err  = (m,...a) => console.error(`%c[Call] ${m}`,'color:#e11d48;font-weight:600',...a);
+
+  async function initCallDevice() {
+    if (twilioDevice) return;
+    try {
+      await loadScript('https://unpkg.com/@twilio/voice-sdk@2.12.1/dist/twilio.min.js');
+      const res  = await fetch(`${VOICE_API}/relay/token`);
+      if (!res.ok) throw new Error(`Token ${res.status}`);
+      const data = await res.json();
+      if (data.error || !data.token) throw new Error(data.error || 'No token');
+
+      twilioDevice = new Twilio.Device(data.token, { codecPreferences:['opus','pcmu'], logLevel:1 });
+      twilioDevice.on('registered', () => {
+        setCP('cp-status-txt','Ready'); setCP('cp-call-label','Start Call');
+        const btn = document.getElementById('cp-call-btn');
+        if (btn) btn.disabled = false;
+      });
+      twilioDevice.on('error', e => { _err('Device error', e.message); setCP('cp-status-txt','Error: '+e.message); });
+      await twilioDevice.register();
+    } catch(e) {
+      _err('initCallDevice failed', e.message);
+      setCP('cp-status-txt', e.message.includes('Failed to load') ? 'SDK unavailable' : 'Init failed');
+    }
+  }
+
+  function openCallPanel() {
+    document.getElementById('call-panel').classList.remove('hidden');
+    const title = document.getElementById('agent-name-title');
+    if (title) setCP('cp-agent-name', title.textContent);
+    showCallState('idle');
+    initCallDevice();
+  }
+
+  function closeCallPanel() {
+    if (activeCall) hangUp();
+    document.getElementById('call-panel').classList.add('hidden');
+  }
+
+  async function startCall() {
+    if (!twilioDevice) { setCP('cp-status-txt','Not ready'); return; }
+    setCP('cp-status-txt','Calling…'); setCP('cp-call-label','Calling…');
+    const btn = document.getElementById('cp-call-btn');
+    if (btn) btn.disabled = true;
+    try {
+      activeCall = await twilioDevice.connect({ params:{ AgentId: AGENT_ID } });
+      activeCall.on('ringing',    ()  => setCP('cp-status-txt','Ringing…'));
+      activeCall.on('accept',     ()  => { setCP('cp-status-txt','Connected'); showCallState('incall'); startTimer(); startVolMeter(); });
+      activeCall.on('disconnect', ()  => onCallEnd('Call ended'));
+      activeCall.on('cancel',     ()  => onCallEnd('Cancelled'));
+      activeCall.on('error',      e   => onCallEnd('Error: '+(e.message||'unknown')));
+    } catch(e) {
+      _err('startCall failed', e.message);
+      setCP('cp-status-txt','Failed: '+e.message);
+      if (btn) { btn.disabled = false; setCP('cp-call-label','Retry'); }
+    }
+  }
+
+  function hangUp() { if (activeCall) { activeCall.disconnect(); activeCall = null; } }
+
+  function onCallEnd(msg) {
+    activeCall = null; stopTimer(); stopVolMeter(); isMuted = false;
+    showCallState('idle'); setCP('cp-status-txt', msg); setCP('cp-call-label','Call Again');
+    const btn = document.getElementById('cp-call-btn');
+    if (btn) btn.disabled = false;
+    document.getElementById('cp-mute-btn')?.classList.remove('muted');
+    setCP('cp-mute-lbl','Mute');
+  }
+
+  function toggleMute() {
+    if (!activeCall) return;
+    isMuted = !isMuted; activeCall.mute(isMuted);
+    document.getElementById('cp-mute-btn').classList.toggle('muted', isMuted);
+    setCP('cp-mute-lbl', isMuted ? 'Unmute' : 'Mute');
+  }
+
+  function startTimer() {
+    callSeconds = 0; setCP('cp-timer','0:00'); clearInterval(callTimer);
+    callTimer = setInterval(() => {
+      callSeconds++;
+      setCP('cp-timer', `${Math.floor(callSeconds/60)}:${(callSeconds%60).toString().padStart(2,'0')}`);
+    }, 1000);
+  }
+  function stopTimer() { clearInterval(callTimer); callTimer = null; }
+
+  function startVolMeter() {
+    const fill = document.getElementById('cp-vol-fill'); if (!fill) return;
+    let phase = 0;
+    volInterval = setInterval(() => {
+      phase += 0.15;
+      fill.style.width = Math.min(100, Math.max(0, Math.sin(phase)*40+35+Math.random()*20)) + '%';
+    }, 120);
+  }
+  function stopVolMeter() {
+    clearInterval(volInterval); volInterval = null;
+    const fill = document.getElementById('cp-vol-fill'); if (fill) fill.style.width = '0%';
+  }
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!getToken()) { window.location.href = LOGIN_URL; return; }
+    loadAgentDetail();
+    loadAgentStats();
+    loadRecentCalls();
+    loadHeaderProfile();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Base — VoiceAI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+function logout() {
+  const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
+  fetch('/api/auth/logout/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh }),
+  }).finally(() => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    window.location.href = '/api/auth/login/';
+  });
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f8fafc;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#4f6ef7;--accent-l:#eef0fe;}
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
+  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:var(--bg);color:var(--t1);}
+  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
+  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  .badge{font-size:10.5px;font-weight:500;padding:2.5px 8px;border-radius:20px;display:inline-block;}
+  .b-green{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
+  .b-gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+  .b-yellow{background:#fefce8;color:#ca8a04;border:1px solid #fde68a;}
+  .btn-primary{background:linear-gradient(135deg,#4f6ef7,#6366f1);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(79,110,247,0.35);}
+  .btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;}
+  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
+  .btn-red-ghost{background:transparent;color:#e11d48;font-size:11px;font-weight:500;padding:3px 9px;border-radius:6px;border:1px solid #fecdd3;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:3px;}
+  .btn-red-ghost:hover{background:#fff1f2;}
+  .btn-cancel{background:transparent;color:#64748b;font-size:11px;font-weight:500;padding:3px 9px;border-radius:6px;border:1px solid #e2e8f0;cursor:pointer;display:inline-flex;align-items:center;}
+  .scrollbar::-webkit-scrollbar{width:5px;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
+  .input-field{width:100%;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:var(--t1);padding:8px 12px;outline:none;font-family:'Inter',sans-serif;transition:border-color 0.15s;}
+  .input-field:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(129,140,248,0.12);}
+  .label{font-size:12.5px;font-weight:500;color:var(--t1);margin-bottom:5px;display:block;}
+  .stat-mini{background:white;border:1px solid var(--border);border-radius:9px;padding:12px 16px;}
+  .drop-zone{border:2px dashed #c7d2fe;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all 0.15s;background:white;}
+  .drop-zone:hover,.drop-zone.dragover{border-color:#4f6ef7;background:#fafbff;}
+  .spinner{width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);z-index:100;display:flex;align-items:center;justify-content:center;}
+  .modal-box{background:white;border-radius:12px;padding:28px;width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.18);animation:modal-in 0.18s ease;}
+  @keyframes modal-in{from{opacity:0;transform:scale(0.96) translateY(8px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  .toggle{position:relative;display:inline-block;width:36px;height:20px;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#e2e8f0;border-radius:20px;transition:0.2s;}
+  .toggle-slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s;}
+  input:checked + .toggle-slider{background:#4f6ef7;}
+  input:checked + .toggle-slider:before{transform:translateX(16px);}
+  .pg-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:white;font-size:11.5px;color:#64748b;cursor:pointer;transition:all 0.15s;}
+  .pg-btn:hover:not(:disabled){background:#f8fafc;border-color:#c7d2fe;color:#4f6ef7;}
+  .pg-btn.active{background:#4f6ef7;border-color:#4f6ef7;color:white;font-weight:600;}
+  .pg-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  select.input-field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;padding-right:32px;}
+  /* Profile dropdown */
+  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background 0.12s;text-decoration:none;}
+  .pd-item:hover{background:#f8fafc;color:#0f172a;}
+  .pd-item svg{flex-shrink:0;color:#94a3b8;}
+  .pd-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+  .pd-item.danger{color:#e11d48;}
+  .pd-item.danger svg{color:#e11d48;}
+  .pd-item.danger:hover{background:#fff1f2;}
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<script id="auth-guard">if(!localStorage.getItem("access_token")&&!sessionStorage.getItem("access_token")){window.location.replace("/api/auth/login/");}</script>
+
+<!-- Sidebar -->
+<aside class="sidebar w-56 flex flex-col flex-shrink-0">
+  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <span class="font-semibold text-sm text-slate-800">VoiceAI</span>
+    </a>
+  </div>
+  <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
+    <p class="nav-sec">OVERVIEW</p>
+    <a href="{% url 'voice-dashboard' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a href="{% url 'voice-analytics' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </a>
+    <p class="nav-sec">AGENTS</p>
+    <a href="{% url 'voice-agents' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      My Agents
+    </a>
+    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+      New Agent
+    </a>
+    <p class="nav-sec">CALLS</p>
+    <a href="{% url 'voice-call-history' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Call History
+    </a>
+    <a href="{% url 'voice-bookings' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Bookings
+    </a>
+    <p class="nav-sec">CONFIG</p>
+    <a href="{% url 'voice-knowledge-base' %}" class="nav-item active">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Knowledge Base
+    </a>
+    <a href="{% url 'voice-integrations' %}" class="nav-item">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Integrations
+    </a>
+  </nav>
+  <div class="px-4 py-3" style="border-top:1px solid #f1f5f9;">
+    <button onclick="logout()" style="width:100%;display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:7px;background:none;border:1px solid #e2e8f0;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:background 0.15s;" onmouseover="this.style.background='#fff1f2';this.style.color='#e11d48';this.style.borderColor='#fecdd3'" onmouseout="this.style.background='none';this.style.color='#64748b';this.style.borderColor='#e2e8f0'"><svg style="width:13px;height:13px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Logout</button>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid #f1f5f9;">
+    <div>
+      <h1 class="text-sm font-semibold text-slate-800">Knowledge Base</h1>
+      <p class="text-xs text-slate-400 mt-0.5">All documents across your agents · indexed into Pinecone</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="btn-primary" onclick="openUploadModal()">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload Document
+      </button>
+      <!-- Profile avatar -->
+      <div class="relative" id="profile-btn-wrap">
+        <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <!-- Dropdown -->
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+          <!-- User info header -->
+          <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
+            <div class="flex items-center gap-2.5">
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#4f6ef7,#818cf8);">U</div>
+              <div class="min-w-0">
+                <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
+                <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
+              </div>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between">
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#eef0fe;color:#4f6ef7;">Free</span>
+              <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
+            </div>
+          </div>
+          <!-- Menu items -->
+          <div class="py-1">
+            <a href="{% url 'voice-integrations' %}" class="pd-item">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              Settings & Integrations
+            </a>
+            <div class="pd-divider"></div>
+            <div class="pd-item danger" onclick="closeProfileDropdown();logout();">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Sign Out
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="flex-1 overflow-y-auto scrollbar px-6 py-5 space-y-4">
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="stat-mini">
+        <div class="text-xs text-slate-400 mb-1">Total Documents</div>
+        <div id="stat-docs" class="text-2xl font-bold text-slate-800">—</div>
+        <div class="text-xs text-slate-400 mt-0.5">across all agents</div>
+      </div>
+      <div class="stat-mini">
+        <div class="text-xs text-slate-400 mb-1">Total Chunks</div>
+        <div id="stat-chunks" class="text-2xl font-bold text-slate-800">—</div>
+        <div class="text-xs text-slate-400 mt-0.5">searchable text blocks</div>
+      </div>
+      <div class="stat-mini">
+        <div class="text-xs text-slate-400 mb-1">Last Updated</div>
+        <div id="stat-updated" class="text-xl font-bold" style="color:#059669;">—</div>
+        <div class="text-xs text-slate-400 mt-0.5">knowledge freshness</div>
+      </div>
+    </div>
+
+    <!-- Document List Card -->
+    <div class="card">
+      <div class="flex items-center justify-between px-5 py-3" style="border-bottom:1px solid #f1f5f9;">
+        <h2 class="text-sm font-semibold text-slate-800">All Documents</h2>
+        <span class="text-xs text-slate-400" id="doc-list-count"></span>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+        <colgroup>
+          <col><!-- Document: flexible -->
+          <col style="width:120px;"><!-- Agent -->
+          <col style="width:80px;"><!-- Size -->
+          <col style="width:75px;"><!-- Chunks -->
+          <col style="width:100px;"><!-- Status -->
+          <col style="width:100px;"><!-- Uploaded -->
+          <col style="width:95px;"><!-- Actions -->
+        </colgroup>
+        <thead>
+          <tr style="border-bottom:1px solid #f1f5f9;background:#fafbff;">
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Document</th>
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Agent</th>
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Size</th>
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Chunks</th>
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Status</th>
+            <th style="padding:7px 20px;text-align:left;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Uploaded</th>
+            <th style="padding:7px 20px;text-align:right;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="doc-table-body">
+          <tr><td colspan="7" style="text-align:center;padding:40px;font-size:12px;color:#94a3b8;">Loading…</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div id="pagination-container" style="display:none;border-top:1px solid #f1f5f9;padding:10px 20px;"></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal-backdrop hidden">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-800">Upload Document</h3>
+        <p class="text-xs text-slate-400 mt-0.5">File will be indexed into Pinecone</p>
+      </div>
+      <button onclick="closeUploadModal()" class="text-slate-300 hover:text-slate-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="label">Assign to Agent</label>
+        <select id="modal-agent-select" class="input-field">
+          <option value="">Loading agents…</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Select File <span class="text-slate-400 font-normal">(PDF, DOCX, TXT, MD — max 10MB)</span></label>
+        <div id="file-drop-area" class="border-2 border-dashed border-indigo-200 rounded-lg p-5 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all" onclick="document.getElementById('modal-file-input').click()">
+          <input type="file" id="modal-file-input" accept=".pdf,.docx,.doc,.txt,.md" class="hidden" onchange="onFileSelected(this)"/>
+          <svg id="file-icon" class="w-7 h-7 mx-auto mb-1.5" style="color:#4f6ef7;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <p id="file-label" class="text-xs text-slate-500">Click to select or drag file here</p>
+          <p id="file-size-label" class="text-xs text-slate-400 mt-0.5"></p>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2.5 mt-5">
+      <button class="btn-ghost flex-1" onclick="closeUploadModal()">Cancel</button>
+      <button id="upload-btn" class="btn-primary flex-1 justify-center" onclick="submitUpload()">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload & Index
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-doc-modal" class="modal-backdrop hidden">
+  <div class="modal-box">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#fff1f2;">
+        <svg class="w-5 h-5" style="color:#e11d48;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-slate-800">Delete <span id="delete-doc-name">Document</span>?</h3>
+        <p class="text-xs text-slate-400">Permanently removes <strong id="delete-doc-chunks">0</strong> chunks from Pinecone</p>
+      </div>
+    </div>
+    <div class="flex gap-2.5">
+      <button class="btn-ghost flex-1" onclick="document.getElementById('delete-doc-modal').classList.add('hidden')">Cancel</button>
+      <button id="confirm-delete-btn" class="flex-1 inline-flex justify-center items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white border-none cursor-pointer" style="background:#e11d48;" onclick="confirmDelete()">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Delete Document
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const pagination = { page: 1, total_pages: 1, total: 0, page_size: 10 };
+let agents      = [];
+let deleteDocId = null;
+
+const token      = () => localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+const authHeader = () => ({ Authorization: `Bearer ${token()}` });
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadAgents();
+  loadDocuments(1);
+  loadHeaderProfile();
+});
+
+// ─── Agents (for upload modal only) ──────────────────────────────────────────
+async function loadAgents() {
+  try {
+    const res  = await fetch('/api/knowledge/agents/', { headers: authHeader() });
+    const data = await res.json();
+    agents = data.success ? (data.data || []) : [];
+    const sel = document.getElementById('modal-agent-select');
+    sel.innerHTML = agents.length
+      ? agents.map(a => `<option value="${a.id}">${a.agent_name}</option>`).join('')
+      : '<option value="">No agents found</option>';
+  } catch (e) {
+    console.error('loadAgents:', e);
+  }
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+async function loadDocuments(page) {
+  pagination.page = page;
+  document.getElementById('doc-table-body').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:40px;"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  document.getElementById('pagination-container').style.display = 'none';
+
+  try {
+    const res  = await fetch(`/api/knowledge/documents/?page=${page}`, { headers: authHeader() });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    const d = data.data;
+    Object.assign(pagination, d.pagination);
+
+    document.getElementById('stat-docs').textContent    = d.total_docs;
+    document.getElementById('stat-chunks').textContent  = (d.total_chunks || 0).toLocaleString();
+    document.getElementById('stat-updated').textContent = relTime(d.last_updated);
+    document.getElementById('doc-list-count').textContent =
+      `${d.total_docs} document${d.total_docs !== 1 ? 's' : ''}`;
+
+    renderRows(d.documents);
+    renderPagination(d.pagination);
+  } catch (e) {
+    document.getElementById('doc-table-body').innerHTML =
+      `<tr><td colspan="7" style="text-align:center;padding:40px;font-size:12px;color:#e11d48;">Failed to load documents</td></tr>`;
+  }
+}
+
+function renderRows(docs) {
+  const tbody = document.getElementById('doc-table-body');
+  if (!docs || !docs.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="7" style="text-align:center;padding:48px 20px;">
+        <svg style="width:28px;height:28px;color:#cbd5e1;margin:0 auto 8px;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p style="font-size:12px;font-weight:500;color:#94a3b8;">No documents yet</p>
+        <p style="font-size:11px;color:#cbd5e1;margin-top:2px;">Upload a PDF or DOCX to get started</p>
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = docs.map(doc => {
+    const ext       = (doc.title || '').split('.').pop().toLowerCase();
+    const isPdf     = ext === 'pdf';
+    const iconColor = isPdf ? '#e11d48' : '#2563eb';
+    const iconBg    = isPdf ? '#fff1f2' : '#eff6ff';
+    const date      = new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+    const badge = {
+      pending:    '<span class="badge b-yellow">PENDING</span>',
+      processing: `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:500;color:#2563eb;"><span class="spinner"></span>INDEXING</span>`,
+      ready:      '<span class="badge b-green">INDEXED</span>',
+      error:      '<span class="badge b-red">ERROR</span>',
+    }[doc.status] || `<span class="badge b-gray">${doc.status.toUpperCase()}</span>`;
+
+    const action = (doc.status === 'processing' || doc.status === 'pending')
+      ? `<button class="btn-cancel" disabled style="opacity:0.5;cursor:not-allowed;">Indexing…</button>`
+      : `<button class="btn-red-ghost" onclick="openDeleteModal('${doc.id}','${(doc.title||'').replace(/'/g,"\\'")}',${doc.chunk_count})">
+           <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+           Delete
+         </button>`;
+
+    return `
+      <tr style="border-bottom:1px solid #f8fafc;">
+        <td style="padding:8px 20px;vertical-align:middle;">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+            <div style="width:28px;height:28px;border-radius:7px;background:${iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg style="width:14px;height:14px;color:${iconColor};" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm0 1.5L19.5 8H14V3.5z"/></svg>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-size:11.5px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${doc.title}">${doc.title}</div>
+              <div style="font-size:10.5px;color:#94a3b8;">.${ext}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:8px 20px;vertical-align:middle;">
+          <span style="font-size:11.5px;font-weight:500;color:#4f6ef7;background:#eef0fe;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:110px;" title="${doc.agent_name||''}">${doc.agent_name || '—'}</span>
+        </td>
+        <td style="padding:8px 20px;vertical-align:middle;font-size:11.5px;color:#64748b;">${doc.file_size_display || '—'}</td>
+        <td style="padding:8px 20px;vertical-align:middle;font-size:11.5px;color:#64748b;">${(doc.chunk_count||0).toLocaleString()}</td>
+        <td style="padding:8px 20px;vertical-align:middle;">${badge}</td>
+        <td style="padding:8px 20px;vertical-align:middle;font-size:11.5px;color:#94a3b8;">${date}</td>
+        <td style="padding:8px 20px;vertical-align:middle;text-align:right;">${action}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderPagination(p) {
+  const el = document.getElementById('pagination-container');
+  if (!p || p.total_pages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.style.alignItems = 'center';
+  el.style.justifyContent = 'space-between';
+
+  const pages = [];
+  for (let i = 1; i <= p.total_pages; i++) {
+    if (i === 1 || i === p.total_pages || Math.abs(i - p.page) <= 1) pages.push(i);
+  }
+  const withEllipsis = [];
+  for (let i = 0; i < pages.length; i++) {
+    if (i > 0 && pages[i] - pages[i-1] > 1) withEllipsis.push('…');
+    withEllipsis.push(pages[i]);
+  }
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="pg-btn" onclick="loadDocuments(${p.page-1})" ${p.page===1?'disabled':''}>&#8592;</button>
+      ${withEllipsis.map(pg => pg==='…'
+        ? `<span style="font-size:11px;color:#94a3b8;padding:0 2px;">…</span>`
+        : `<button class="pg-btn${pg===p.page?' active':''}" onclick="loadDocuments(${pg})">${pg}</button>`
+      ).join('')}
+      <button class="pg-btn" onclick="loadDocuments(${p.page+1})" ${p.page===p.total_pages?'disabled':''}>&#8594;</button>
+    </div>
+    <span style="font-size:11px;color:#94a3b8;">Showing ${(p.page-1)*p.page_size+1}–${Math.min(p.page*p.page_size,p.total)} of ${p.total}</span>`;
+}
+
+// ─── Upload ───────────────────────────────────────────────────────────────────
+function openUploadModal() {
+  document.getElementById('upload-modal').classList.remove('hidden');
+}
+function closeUploadModal() {
+  document.getElementById('upload-modal').classList.add('hidden');
+  document.getElementById('modal-file-input').value = '';
+  document.getElementById('file-label').textContent = 'Click to select or drag file here';
+  document.getElementById('file-size-label').textContent = '';
+  document.getElementById('file-drop-area').style.borderColor = '';
+}
+function onFileSelected(input) {
+  if (!input.files.length) return;
+  const f = input.files[0];
+  document.getElementById('file-label').textContent = f.name;
+  document.getElementById('file-size-label').textContent = fmtBytes(f.size);
+  document.getElementById('file-drop-area').style.borderColor = '#4f6ef7';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  if (!e.dataTransfer.files.length) return;
+  const inp = document.getElementById('modal-file-input');
+  inp.files = e.dataTransfer.files;
+  onFileSelected(inp);
+  openUploadModal();
+}
+async function submitUpload() {
+  const agentId = document.getElementById('modal-agent-select').value;
+  const inp     = document.getElementById('modal-file-input');
+  if (!agentId) { showToast('Select an agent', 'error'); return; }
+  if (!inp.files.length) { showToast('Select a file', 'error'); return; }
+
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>&nbsp;Uploading…';
+
+  const fd = new FormData();
+  fd.append('agent_id', agentId);
+  fd.append('file', inp.files[0]);
+
+  try {
+    const res  = await fetch('/api/knowledge/documents/upload/', {
+      method: 'POST', headers: authHeader(), body: fd,
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeUploadModal();
+      showToast('Document uploaded! Indexing started.', 'success');
+      loadDocuments(1);
+    } else {
+      showToast(data.message || 'Upload failed', 'error');
+    }
+  } catch (e) {
+    showToast('Upload failed', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Upload & Index';
+  }
+}
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+function openDeleteModal(id, title, chunks) {
+  deleteDocId = id;
+  document.getElementById('delete-doc-name').textContent   = title;
+  document.getElementById('delete-doc-chunks').textContent = chunks;
+  document.getElementById('delete-doc-modal').classList.remove('hidden');
+}
+async function confirmDelete() {
+  if (!deleteDocId) return;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  try {
+    const res  = await fetch(`/api/knowledge/documents/${deleteDocId}/delete/`, {
+      method: 'DELETE', headers: authHeader(),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('delete-doc-modal').classList.add('hidden');
+      showToast('Document deleted', 'success');
+      loadDocuments(pagination.page);
+    } else {
+      showToast(data.message || 'Delete failed', 'error');
+    }
+  } catch (e) {
+    showToast('Delete failed', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Delete Document';
+    deleteDocId = null;
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function relTime(iso) {
+  if (!iso) return '—';
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1)    return 'Just now';
+  if (mins < 60)   return `${mins}m ago`;
+  if (mins < 1440) return `${Math.floor(mins/60)}h ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+function fmtBytes(b) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1048576) return `${(b/1024).toFixed(1)} KB`;
+  return `${(b/1048576).toFixed(1)} MB`;
+}
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:500;font-family:'Inter',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.12);${
+    type==='success'
+      ? 'background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;'
+      : 'background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── Profile dropdown ─────────────────────────────────────────────────────────
+function toggleProfileDropdown() {
+  document.getElementById('profile-dropdown').classList.toggle('hidden');
+}
+function closeProfileDropdown() {
+  document.getElementById('profile-dropdown').classList.add('hidden');
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('profile-btn-wrap');
+  if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
+});
+async function loadHeaderProfile() {
+  try {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+    const res  = await fetch('/api/auth/profile/', { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+    if (!json.success) return;
+    const d = json.data;
+    const initials = d.initials || 'U';
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+    setTxt('header-avatar',   initials);
+    setTxt('header-username', d.full_name || d.email);
+    setTxt('dd-avatar',       initials);
+    setTxt('dd-name',         d.full_name);
+    setTxt('dd-email',        d.email);
+    setTxt('dd-plan',         d.plan_label || 'Free');
+    setTxt('dd-business',     d.business_name || '');
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
