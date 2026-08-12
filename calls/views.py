@@ -333,25 +333,15 @@ class DemoTokenView(APIView):
 
             agent_info = None
             if agent:
-                catalog_tools = list(
-                    agent.tools.select_related("tool")
-                    .values_list("tool__name", flat=True)
-                )
-                user_tools = list(
+                tools = list(
                     agent.user_tools.select_related("user_tool")
+                    .filter(is_active=True, user_tool__is_active=True)
                     .values_list("user_tool__name", flat=True)
                 )
-                seen, tools = set(), []
-                for t in catalog_tools + user_tools:
-                    key = t.lower()
-                    if key not in seen:
-                        seen.add(key)
-                        tools.append(t)
-
                 agent_info = {
-                    "name":        agent.agent_name,
+                    "name": agent.agent_name,
                     "description": agent.system_prompt[:200] if agent.system_prompt else "",
-                    "tools":       tools,
+                    "tools": list(tools),
                 }
 
             return Response({"token": token.to_jwt(), "agent_id": agent_id, "agent_info": agent_info})

@@ -14,7 +14,7 @@ Setup:
      Set TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET in .env
 """
 
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VoiceGrant
@@ -22,9 +22,6 @@ from core.logger import logger
 from .db import get_live_agents, get_agent_by_id, create_call_log, get_demo_agent
 from ..config import settings
 from .utils import store_call_session
-
-_base   = settings.FASTAPI_BASE_URL.rstrip("/")
-_ws_url = _base.replace("https://", "wss://").replace("http://", "ws://") + "/relay/ws"
 
 router = APIRouter(prefix="/relay", tags=["browser-call"])
 
@@ -102,18 +99,25 @@ async def list_agents():
 
 
 @router.post("/browser-outbound")
-async def browser_outbound(
-    CallSid: str  = Form(default=""),
-    From:    str  = Form(default="browser-user"),
-    AgentId: str  = Form(default=""),
-):
+async def browser_outbound(request: Request):
     """
     TwiML returned when browser client places a call.
     Mirrors InboundWebhookForCalls: agent lookup → call log → session → TwiML.
     """
-    logger.info(f"[OUTBOUND] ──────────────────────────────────────────")
-    logger.info(f"[OUTBOUND] CallSid={CallSid!r}  From={From!r}  AgentId={AgentId!r}")
+    form = await request.form()
+    CallSid = str(form.get("CallSid") or "")
+    From = str(form.get("From") or "browser-user")
+    # Twilio Voice SDK may send AgentId / agent_id / AgentID
+    AgentId = str(
+        form.get("AgentId")
+        or form.get("agent_id")
+        or form.get("AgentID")
+        or ""
+    )
 
+    logger.info(f"[OUTBOUND] ------------------------------------------")
+    logger.info(f"[OUTBOUND] CallSid={CallSid!r}  From={From!r}  AgentId={AgentId!r}")
+    logger.info(f"[OUTBOUND] form keys={list(form.keys())}")
     # ── Step 1: agent lookup ──────────────────────────────────
     agent = None
     if AgentId:
@@ -164,9 +168,9 @@ async def browser_outbound(
         welcome_greeting = "Hello! Thank you for calling. How can I help you today?"
 
     agent_id_param    = agent["agent_id"] if agent else ""
-    ws_url_with_agent = f"{_ws_url}?agent_id={agent_id_param}"
+    ws_url_with_agent = f"{settings.relay_ws_url}?agent_id={agent_id_param}"
 
-    logger.info(f"[OUTBOUND] WS URL → {ws_url_with_agent}")
+    logger.info(f"[OUTBOUND] WS URL -> {ws_url_with_agent}")
     logger.info(f"[OUTBOUND] Voice={voice!r}  Language={language!r}  Greeting={welcome_greeting!r}")
 
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>

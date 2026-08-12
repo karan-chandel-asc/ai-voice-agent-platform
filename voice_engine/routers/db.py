@@ -1,213 +1,199 @@
-import uuid
-import asyncpg
-from ..config import settings
+"""
+DB access for the voice engine via Django ORM (works with SQLite or Postgres).
+No Docker / asyncpg required for local runs.
+"""
+import os
+from asgiref.sync import sync_to_async
 
 
-# ── Agent lookup ───────────────────────────────────────────────────────────────
-async def get_demo_agent() -> dict | None:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        row = await conn.fetchrow(
-            "SELECT id::text AS agent_id, agent_name FROM agents_agent "
-            "WHERE is_demo = true AND status = 'live' LIMIT 1"
-        )
-        return dict(row) if row else None
-    finally:
-        await conn.close()
-
-
-async def get_live_agents() -> list[dict]:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        rows = await conn.fetch(
-            "SELECT id::text AS agent_id, agent_name FROM agents_agent WHERE status = 'live' ORDER BY agent_name"
-        )
-        return [dict(r) for r in rows]
-    finally:
-        await conn.close()
-
-
-async def get_agent_by_id(agent_id: str) -> dict | None:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        row = await conn.fetchrow(
-            """
-            SELECT
-                a.id::text         AS agent_id,
-                a.agent_name,
-                a.system_prompt,
-                a.status,
-                a.language,
-                e.voice_id         AS elevenlabs_voice_id
-            FROM agents_agent a
-            LEFT JOIN agents_elevenlabsvoice e ON e.id = a.elevenlabs_voice_id
-            WHERE a.id = $1::uuid AND a.status = 'live'
-            """,
-            agent_id,
-        )
-        if not row:
-            return None
-
-        agent = dict(row)
-
-        user_tools = await conn.fetch(
-            """
-            SELECT ut.id::text, ut.name, ut.description, ut.webhook_url, ut.parameters
-            FROM agents_agentusertool aut
-            JOIN agents_usertool      ut ON ut.id = aut.user_tool_id
-            WHERE aut.agent_id = $1::uuid AND aut.is_active = true AND ut.is_active = true
-            """,
-            agent["agent_id"],
-        )
-        agent["tools"] = []
-        agent["user_tools"] = [dict(t) for t in user_tools]
-
-        kb_docs = await conn.fetch(
-            """
-            SELECT id::text FROM knowledge_agentdocument
-            WHERE agent_id = $1::uuid AND status = 'ready'
-            """,
-            agent["agent_id"],
-        )
-        agent["kb_doc_ids"] = [r["id"] for r in kb_docs]
-        return agent
-    finally:
-        await conn.close()
-
-
-async def get_agent_by_phone(to_number: str) -> dict | None:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        row = await conn.fetchrow(
-            """
-            SELECT
-                a.id::text         AS agent_id,
-                a.agent_name,
-                a.system_prompt,
-                a.status,
-                a.language,
-                e.voice_id         AS elevenlabs_voice_id
-            FROM agents_phonenumber p
-            JOIN agents_agent        a ON a.id = p.agent_id
-            LEFT JOIN agents_elevenlabsvoice e ON e.id = a.elevenlabs_voice_id
-            WHERE p.phone_number = $1
-              AND a.status       = 'live'
-            """,
-            to_number,
-        )
-        if not row:
-            return None
-
-        agent = dict(row)
-
-        user_tools = await conn.fetch(
-            """
-            SELECT ut.id::text, ut.name, ut.description, ut.webhook_url, ut.parameters
-            FROM agents_agentusertool aut
-            JOIN agents_usertool      ut ON ut.id = aut.user_tool_id
-            WHERE aut.agent_id = $1::uuid AND aut.is_active = true AND ut.is_active = true
-            """,
-            agent["agent_id"],
-        )
-        agent["tools"] = []
-        agent["user_tools"] = [dict(t) for t in user_tools]
-
-        kb_docs = await conn.fetch(
-            """
-            SELECT id::text FROM knowledge_agentdocument
-            WHERE agent_id = $1::uuid AND status = 'ready'
-            """,
-            agent["agent_id"],
-        )
-        agent["kb_doc_ids"] = [r["id"] for r in kb_docs]
-        return agent
-    finally:
-        await conn.close()
-
-
-# ── Call log ───────────────────────────────────────────────────────────────────
-async def create_call_log(call_sid: str, from_number: str, agent_id: str | None = None) -> None:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        await conn.execute(
-            """
-            INSERT INTO calls_calllog (
-                id, twilio_call_sid, caller_phone, agent_id,
-                direction, status, outcome,
-                duration_seconds, was_transferred, recording_url,
-                reason, started_at, created_at
-            ) VALUES (
-                gen_random_uuid(), $1, $2, $3,
-                'inbound', 'initiated', 'no_outcome',
-                0, false, '',
-                '', NOW(), NOW()
-            )
-            ON CONFLICT (twilio_call_sid) DO NOTHING
-            """,
-            call_sid, from_number, uuid.UUID(agent_id) if agent_id else None,
-        )
-    finally:
-        await conn.close()
-
-
-async def update_call_log(call_sid: str, **fields) -> None:
-    """
-    Update only the fields you pass as keyword arguments.
-
-    Examples:
-        await update_call_log(call_sid, status="completed", duration_seconds=120)
-        await update_call_log(call_sid, status="failed")
-        await update_call_log(call_sid, outcome="booked", sentiment_score=0.8)
-        await update_call_log(call_sid, was_transferred=True, recording_url="https://...")
-    """
-    if not fields:
+def _ensure_django():
+    import django
+    from django.apps import apps
+    if apps.ready:
         return
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+    django.setup()
 
-    # allowed columns — prevents SQL injection from arbitrary kwargs
-    # ended_at is excluded here: always set via SQL NOW() when present in fields
+
+def _agent_payload(agent) -> dict:
+    voice_id = None
+    if agent.elevenlabs_voice_id:
+        voice_id = getattr(agent.elevenlabs_voice, "voice_id", None)
+
+    tools = []
+    for link in agent.user_tools.filter(is_active=True).select_related("user_tool"):
+        ut = link.user_tool
+        if not ut.is_active:
+            continue
+        tools.append({
+            "id": str(ut.id),
+            "name": ut.name,
+            "description": ut.description,
+            "parameters": ut.parameters or {},
+        })
+
+    kb_doc_ids = []
+    try:
+        from knowledge.models import AgentDocument
+        kb_doc_ids = [
+            str(d.id)
+            for d in AgentDocument.objects.filter(agent=agent, status="ready").only("id")
+        ]
+    except Exception:
+        kb_doc_ids = []
+
+    return {
+        "agent_id": str(agent.id),
+        "agent_name": agent.agent_name,
+        "system_prompt": agent.system_prompt or "",
+        "status": agent.status,
+        "language": agent.language or "en",
+        "elevenlabs_voice_id": voice_id,
+        "tools": [],
+        "user_tools": tools,
+        "kb_doc_ids": kb_doc_ids,
+    }
+
+
+def _get_demo_agent_sync() -> dict | None:
+    _ensure_django()
+    from agents.models import Agent
+    agent = (
+        Agent.objects.filter(is_demo=True, status="live")
+        .select_related("elevenlabs_voice")
+        .first()
+    )
+    return _agent_payload(agent) if agent else None
+
+
+def _get_live_agents_sync() -> list[dict]:
+    _ensure_django()
+    from agents.models import Agent
+    agents = (
+        Agent.objects.filter(status="live")
+        .select_related("elevenlabs_voice")
+        .order_by("agent_name")
+    )
+    return [
+        {"agent_id": str(a.id), "agent_name": a.agent_name}
+        for a in agents
+    ]
+
+
+def _get_agent_by_id_sync(agent_id: str) -> dict | None:
+    _ensure_django()
+    from agents.models import Agent
+    try:
+        agent = (
+            Agent.objects.filter(id=agent_id, status="live")
+            .select_related("elevenlabs_voice")
+            .prefetch_related("user_tools__user_tool")
+            .get()
+        )
+    except (Agent.DoesNotExist, ValueError, TypeError):
+        return None
+    return _agent_payload(agent)
+
+
+def _get_agent_by_phone_sync(to_number: str) -> dict | None:
+    _ensure_django()
+    from agents.models import Agent
+    agent = (
+        Agent.objects.filter(phone_number=to_number, status="live")
+        .select_related("elevenlabs_voice")
+        .prefetch_related("user_tools__user_tool")
+        .first()
+    )
+    return _agent_payload(agent) if agent else None
+
+
+def _create_call_log_sync(call_sid: str, from_number: str, agent_id: str | None = None) -> None:
+    _ensure_django()
+    from calls.models import CallLog
+    from agents.models import Agent
+
+    agent = None
+    if agent_id:
+        try:
+            agent = Agent.objects.filter(id=agent_id).first()
+        except (ValueError, TypeError):
+            agent = None
+
+    CallLog.objects.get_or_create(
+        twilio_call_sid=call_sid,
+        defaults={
+            "caller_phone": from_number or "",
+            "agent": agent,
+            "direction": "inbound",
+            "status": "initiated",
+            "outcome": "no_outcome",
+            "duration_seconds": 0,
+            "was_transferred": False,
+            "recording_url": "",
+            "reason": "",
+        },
+    )
+
+
+def _update_call_log_sync(call_sid: str, **fields) -> None:
+    _ensure_django()
+    from django.utils import timezone
+    from calls.models import CallLog
+
     ALLOWED = {
         "status", "duration_seconds", "outcome", "sentiment_score",
         "was_transferred", "recording_url", "reason",
     }
     safe = {k: v for k, v in fields.items() if k in ALLOWED}
-    set_ended_at = fields.get("ended_at", False)  # pass ended_at=True to stamp it
-
+    set_ended_at = fields.get("ended_at", False)
     if not safe and not set_ended_at:
         return
-
-    clauses = []
-    values  = [call_sid]   # $1 is always call_sid
-    idx     = 2
-
-    for col, val in safe.items():
-        clauses.append(f"{col} = ${idx}")
-        values.append(val)
-        idx += 1
-
     if set_ended_at:
-        clauses.append("ended_at = NOW()")   # SQL expression, not a parameter
-
-    sql = f"UPDATE calls_calllog SET {', '.join(clauses)} WHERE twilio_call_sid = $1"
-
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        await conn.execute(sql, *values)
-    finally:
-        await conn.close()
+        safe["ended_at"] = timezone.now()
+    CallLog.objects.filter(twilio_call_sid=call_sid).update(**safe)
 
 
-# ── Transcripts ────────────────────────────────────────────────────────────────
+def _save_transcript_sync(call_sid: str, speaker: str, text: str) -> None:
+    _ensure_django()
+    from django.utils import timezone
+    from calls.models import CallLog, CallTranscript
+
+    call = CallLog.objects.filter(twilio_call_sid=call_sid).first()
+    if not call:
+        return
+    CallTranscript.objects.create(
+        call=call,
+        speaker=speaker,
+        text=text,
+        langgraph_node="",
+        timestamp=timezone.now(),
+    )
+
+
+# ── Async wrappers ─────────────────────────────────────────────────────────────
+async def get_demo_agent() -> dict | None:
+    return await sync_to_async(_get_demo_agent_sync, thread_sensitive=True)()
+
+
+async def get_live_agents() -> list[dict]:
+    return await sync_to_async(_get_live_agents_sync, thread_sensitive=True)()
+
+
+async def get_agent_by_id(agent_id: str) -> dict | None:
+    return await sync_to_async(_get_agent_by_id_sync, thread_sensitive=True)(agent_id)
+
+
+async def get_agent_by_phone(to_number: str) -> dict | None:
+    return await sync_to_async(_get_agent_by_phone_sync, thread_sensitive=True)(to_number)
+
+
+async def create_call_log(call_sid: str, from_number: str, agent_id: str | None = None) -> None:
+    await sync_to_async(_create_call_log_sync, thread_sensitive=True)(call_sid, from_number, agent_id)
+
+
+async def update_call_log(call_sid: str, **fields) -> None:
+    await sync_to_async(_update_call_log_sync, thread_sensitive=True)(call_sid, **fields)
+
+
 async def save_transcript(call_sid: str, speaker: str, text: str) -> None:
-    conn = await asyncpg.connect(settings.DATABASE_URL)
-    try:
-        await conn.execute(
-            """
-            INSERT INTO calls_calltranscript (id, call_id, speaker, text, langgraph_node, timestamp)
-            SELECT gen_random_uuid(), id, $2, $3, '', NOW()
-            FROM   calls_calllog
-            WHERE  twilio_call_sid = $1
-            """,
-            call_sid, speaker, text,
-        )
-    finally:
-        await conn.close()
+    await sync_to_async(_save_transcript_sync, thread_sensitive=True)(call_sid, speaker, text)

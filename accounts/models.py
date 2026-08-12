@@ -4,6 +4,8 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    """Single-operator account for the hotel/restaurant desk."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     business_name = models.CharField(max_length=255, blank=True)
@@ -16,14 +18,6 @@ class CustomUser(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    tenant = models.ForeignKey(
-        "Tenant",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="users",
-    )
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
@@ -34,18 +28,3 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
-
-
-class Tenant(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Tenant"
-        verbose_name_plural = "Tenants"
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return self.name

@@ -1,5 +1,5 @@
 from typing import Optional, Any
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator
 
 
 class UpdateAgentSchema(BaseModel):
@@ -8,7 +8,7 @@ class UpdateAgentSchema(BaseModel):
     system_prompt:       Optional[str]       = None
     language:            Optional[str]       = None
     user_tools:          Optional[list[str]] = None
-    phone_number_id:     Optional[str]       = None
+    phone_number:        Optional[str]       = None
     is_draft:            Optional[bool]      = None
 
     @field_validator("agent_name")
@@ -29,6 +29,15 @@ class UpdateAgentSchema(BaseModel):
             raise ValueError("Language code must be 10 characters or less")
         return v
 
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None:
+            v = v.strip()
+            if len(v) > 20:
+                raise ValueError("Phone number must be 20 characters or less")
+        return v
+
 
 class CreateAgentSchema(BaseModel):
     agent_name:          str
@@ -36,7 +45,7 @@ class CreateAgentSchema(BaseModel):
     system_prompt:       Optional[str]       = None
     language:            Optional[str]       = "en"
     user_tools:          Optional[list[str]] = []
-    phone_number_id:     Optional[str]       = None
+    phone_number:        Optional[str]       = ""
     is_draft:            Optional[bool]      = False
 
     @field_validator("agent_name")
@@ -56,14 +65,21 @@ class CreateAgentSchema(BaseModel):
             raise ValueError("Language code must be 10 characters or less")
         return v
 
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is None:
+            return ""
+        v = v.strip()
+        if len(v) > 20:
+            raise ValueError("Phone number must be 20 characters or less")
+        return v
 
-# ── UserTool schemas ───────────────────────────────────────────────────────────
 
 class CreateUserToolSchema(BaseModel):
     name:        str
     description: Optional[str] = ""
-    tool_type:   Optional[str] = "webhook"
-    webhook_url: Optional[str] = ""
+    tool_type:   Optional[str] = "builtin"
     parameters:  Optional[Any] = {}
 
     @field_validator("name")
@@ -79,22 +95,15 @@ class CreateUserToolSchema(BaseModel):
     @field_validator("tool_type")
     @classmethod
     def validate_tool_type(cls, v):
-        if v not in ("webhook", "builtin"):
-            raise ValueError("tool_type must be 'webhook' or 'builtin'")
+        if v not in ("builtin",):
+            raise ValueError("tool_type must be 'builtin'")
         return v
-
-    @model_validator(mode="after")
-    def webhook_requires_url(self):
-        if self.tool_type == "webhook" and not self.webhook_url:
-            raise ValueError("webhook_url is required for webhook tools")
-        return self
 
 
 class UpdateUserToolSchema(BaseModel):
     name:        Optional[str]  = None
     description: Optional[str]  = None
     tool_type:   Optional[str]  = None
-    webhook_url: Optional[str]  = None
     parameters:  Optional[Any]  = None
     is_active:   Optional[bool] = None
 
@@ -112,6 +121,6 @@ class UpdateUserToolSchema(BaseModel):
     @field_validator("tool_type")
     @classmethod
     def validate_tool_type(cls, v):
-        if v is not None and v not in ("webhook", "builtin"):
-            raise ValueError("tool_type must be 'webhook' or 'builtin'")
+        if v is not None and v not in ("builtin",):
+            raise ValueError("tool_type must be 'builtin'")
         return v

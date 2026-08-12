@@ -76,9 +76,9 @@ class BookingsView(APIView):
             if agent_id:
                 qs = qs.filter(agent_id=agent_id)
             if date_from:
-                qs = qs.filter(date__gte=date_from)
+                qs = qs.filter(check_in__gte=date_from)
             if date_to:
-                qs = qs.filter(date__lte=date_to)
+                qs = qs.filter(check_in__lte=date_to)
             if booking_type in ("room", "table"):
                 qs = qs.filter(booking_type=booking_type)
             if confirmed in ("0", "1"):
@@ -87,7 +87,6 @@ class BookingsView(APIView):
                 qs = qs.filter(
                     Q(guest_name__icontains=search) |
                     Q(guest_email__icontains=search) |
-                    Q(phone__icontains=search) |
                     Q(agent__agent_name__icontains=search)
                 )
 

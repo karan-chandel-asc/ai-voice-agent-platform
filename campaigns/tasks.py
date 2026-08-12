@@ -18,7 +18,7 @@ def run_campaign(self, campaign_id):
             number_obj.save(update_fields=["status"])
             client.calls.create(
                 to=number_obj.phone_number,
-                from_=campaign.agent.twilio_phone_number,
+                from_=campaign.agent.phone_number,
                 url=f"{settings.FASTAPI_BASE_URL}/voice/outbound",
                 status_callback=f"{settings.FASTAPI_BASE_URL}/voice/status",
             )

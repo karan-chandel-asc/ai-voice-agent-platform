@@ -50,40 +50,29 @@ GROQ_TOOL_MODEL  = "llama-3.3-70b-versatile" # reliable tool calling
 # sender-only Celery — just pushes tasks to Redis broker, no Django needed
 _celery = Celery(broker=settings.REDIS_URL)
 
-# ── Tool executor: call webhook if configured, else use mock ───────────────────
+# ── Tool executor: save locally in DB (no external webhooks) ───────────────────
 async def execute_tool(name: str, arguments: dict, agent_tools: list[dict], user_tools: list[dict] | None = None) -> str:
-    import httpx
+    from asgiref.sync import sync_to_async
 
-    # find webhook_url from user tools only
-    webhook_url = None
-    for ut in (user_tools or []):
-        ut_name = ut.get("name", "").replace(" ", "_").lower()
-        if ut_name == name and ut.get("webhook_url"):
-            webhook_url = ut["webhook_url"]
-            break
-
-    if webhook_url:
-        try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                resp = await client.post(webhook_url, json=arguments)
-                return resp.text
-        except Exception as e:
-            return json.dumps({"error": str(e)})
-
-    # mocks — used when no webhook_url is set
-    if name == "check_availability":
-        return json.dumps({"date": arguments.get("date"), "slots": ["9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM"]})
-    if name == "book_appointment":
-        return json.dumps({"success": True, "confirmation_code": "APT-001",
-                           "summary": f"Booked for {arguments.get('name')} on {arguments.get('date')} at {arguments.get('time')}."})
-    if name == "search_faq":
-        return json.dumps({"answer": "I'm sorry, I don't have that information right now."})
-    if name == "send_sms":
-        return json.dumps({"sent": True})
-    if name == "update_crm":
-        return json.dumps({"logged": True})
     if name == "end_call":
         return json.dumps({"end": True})
+
+    if name in ("book_room", "book_hotel_room", "room_booking"):
+        from agents.booking_service import save_room_booking
+        result = await sync_to_async(save_room_booking)(arguments)
+        return json.dumps(result)
+
+    if name in ("book_table", "book_restaurant", "table_booking"):
+        from agents.booking_service import save_table_booking
+        result = await sync_to_async(save_table_booking)(arguments)
+        return json.dumps(result)
+
+    if name == "check_availability":
+        return json.dumps({
+            "date": arguments.get("date"),
+            "slots": ["9:00 AM", "10:30 AM", "2:00 PM", "3:30 PM"],
+            "note": "Availability checked locally",
+        })
 
     return json.dumps({"error": f"Unknown tool: {name}"})
 
@@ -141,8 +130,7 @@ async def InboundWebhookForCalls(
     await store_call_session(form.call_sid, agent)
 
     # ── Step 5: reply with ConversationRelay TwiML ────────────────────────────
-    base   = settings.FASTAPI_BASE_URL.rstrip("/")
-    ws_url = base.replace("https://", "wss://").replace("http://", "ws://") + "/relay/ws"
+    ws_url = settings.relay_ws_url
 
     # use voice from DB
     language      = agent.get("language") or "en"
@@ -528,7 +516,7 @@ async def respond(
                 args = json.loads(tc["function"]["arguments"])
             except Exception:
                 args = {}
-            # inject context so the webhook can link booking to agent + call
+            # inject context so booking can link to agent + call
             if name not in ("end_call",):
                 args.setdefault("agent_id", agent_config.get("agent_id") or "")
                 args.setdefault("call_sid", call_sid or "")
