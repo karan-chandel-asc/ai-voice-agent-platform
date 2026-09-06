@@ -1,20 +1,13 @@
 import uuid
 from django.shortcuts import render
-from django.http import HttpResponse
-from django.conf import settings
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from datetime import timedelta
-from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
-from twilio.jwt.access_token import AccessToken
-from twilio.jwt.access_token.grants import VoiceGrant
-from twilio.twiml.voice_response import VoiceResponse, Dial
-from .models import CallLog, CallTranscript
-from .serializers import CallLogSerializer, CallLogDetailSerializer, CallTranscriptSerializer
+from .models import CallLog
+from .serializers import CallLogSerializer, CallLogDetailSerializer
 from core.auth_utils import RenderAPIView
 from core.logger import logger
 from agents.services import AgentMechanism
@@ -308,25 +301,11 @@ class AnalyticsView(APIView):
 
 
 class DemoTokenView(APIView):
-    """Proxy demo token — Django calls FastAPI server-to-server, returns token to browser."""
+    """Demo agent metadata only — Twilio voice tokens removed."""
     permission_classes = [AllowAny]
 
     def get(self, request):
         try:
-            token = AccessToken(
-                settings.TWILIO_ACCOUNT_SID,
-                settings.TWILIO_API_KEY_SID,
-                settings.TWILIO_API_KEY_SECRET,
-                identity="demo-guest",
-                ttl=1800,
-            )
-            grant = VoiceGrant(
-                outgoing_application_sid=settings.TWILIO_APP_SID,
-                incoming_allow=False,
-            )
-            token.add_grant(grant)
-
-            # get demo agent id from DB
             from agents.models import Agent
             agent = Agent.objects.filter(is_demo=True, status="live").first()
             agent_id = str(agent.id) if agent else None
@@ -344,6 +323,11 @@ class DemoTokenView(APIView):
                     "tools": list(tools),
                 }
 
-            return Response({"token": token.to_jwt(), "agent_id": agent_id, "agent_info": agent_info})
+            return Response({
+                "token": None,
+                "agent_id": agent_id,
+                "agent_info": agent_info,
+                "message": "Twilio FastAPI voice runtime removed. Use Retell for live calls.",
+            })
         except Exception as e:
             return Response({"error": str(e)}, status=500)

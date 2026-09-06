@@ -1,21 +1,20 @@
 # Deskline — AI Voice Agents for Hospitality
 
-**Deskline** is a full-stack platform that lets hotels and restaurants run custom AI voice agents for room bookings, table reservations, and guest FAQs — without Retell or Vapi.
+**Deskline** is a Django platform for managing hospitality voice agents, bookings, call history, and analytics.
 
-Built on an **owned stack**: Twilio + ConversationRelay, Groq LLM, Django REST, and FastAPI.
+Voice runtime is intended to live on **Retell** (or similar). This repo stores agent/config details and ops data in Django — the old Twilio + FastAPI ConversationRelay stack has been removed.
 
 ---
 
 ## Features
 
-- **Live voice agents** for front desk & restaurant hosting
-- **Browser calling** (Twilio Voice SDK) + inbound phone webhooks
-- **Local booking tools** (`book_room` / `book_table`) — no external webhook glue
+- **Agent management** for front desk & restaurant hosting configs
+- **Local booking records** (`book_room` / `book_table` style tools data)
 - **Dashboard** — KPIs, today’s reservations, recent calls
 - **Call history & analytics** — outcomes, sentiment, agent performance
-- **My Tools** — attach OpenAI-style tool schemas to agents
+- **My Tools** — attach tool schemas to agents
 - **One-command demo seed** for portfolio screenshots
-
+- Live calling is **out of process** (use Retell); Twilio FastAPI relay removed
 ---
 
 ## Screenshots
@@ -171,9 +170,7 @@ erDiagram
 | Layer | Technology |
 |--------|------------|
 | Web / API | Django 4.2, Django REST Framework, SimpleJWT |
-| Voice runtime | FastAPI, Uvicorn, Twilio ConversationRelay |
-| LLM | Groq (tool calling) |
-| Speech | Deepgram (via Twilio CR), Twilio TTS |
+| Voice runtime | Retell (external) — Twilio FastAPI stack removed |
 | UI | Django templates, Tailwind CSS (local build) |
 | Data | SQLite (local) / Postgres (optional) |
 | Jobs | Celery (optional; eager mode for local) |
@@ -190,9 +187,8 @@ ai-voice-agent-platform/
 ├── dashboard/         # Stats & booking panels
 ├── knowledge/         # Documents / RAG hooks
 ├── integrations/      # Third-party connectors
-├── voice_engine/      # FastAPI: relay, browser call, WS
 ├── templates/         # Deskline UI
-├── static/            # Tailwind CSS, Twilio SDK
+├── static/            # CSS / frontend assets
 ├── manage.py
 └── requirements.txt
 ```
@@ -221,7 +217,6 @@ Ensure in `.env`:
 ```env
 USE_SQLITE=True
 DATABASE_URL=sqlite:///db.sqlite3
-FASTAPI_BASE_URL=http://localhost:8001
 DJANGO_BASE_URL=http://localhost:8000
 CELERY_TASK_ALWAYS_EAGER=True
 ```
@@ -242,49 +237,22 @@ npm run build:css
 | Email | `demo@deskline.io` |
 | Password | `demo1234` |
 
-### 3. Run (two terminals)
+### 3. Run
 
 ```bash
-# Terminal 1 — Django UI + API
 python manage.py runserver
-
-# Terminal 2 — Voice engine
-uvicorn voice_engine.main:app --reload --port 8001
 ```
 
 Open **http://127.0.0.1:8000** → Log in → Dashboard.
 
+Live voice calls are handled outside this app (e.g. Retell). Django stores agents, tools, bookings, and call/ops data.
+
 ---
 
-## Twilio (optional — live calls)
+## Voice runtime note
 
-For real phone / browser softphone testing:
-
-1. Create a **TwiML App**  
-   Voice Request URL (POST):
-   ```
-   https://<your-ngrok>.ngrok-free.dev/relay/browser-outbound
-   ```
-2. Point phone number inbound webhook to:
-   ```
-   https://<your-ngrok>.ngrok-free.dev/relay/inbound
-   ```
-3. Tunnel FastAPI:
-   ```bash
-   ngrok http 8001
-   ```
-4. Set in `.env`:
-   ```env
-   FASTAPI_BASE_URL=https://<your-ngrok>.ngrok-free.dev
-   TWILIO_ACCOUNT_SID=...
-   TWILIO_AUTH_TOKEN=...
-   TWILIO_APP_SID=...
-   TWILIO_API_KEY_SID=...
-   TWILIO_API_KEY_SECRET=...
-   ```
-5. Restart Uvicorn after changing `.env`.
-
-Agent status must be **Live** for lookup during calls.
+The previous Twilio ConversationRelay + FastAPI (`voice_engine`) stack was removed.
+Use Retell (or another voice provider) for agents; keep Deskline for storing agent fields and business data.
 
 ---
 
@@ -308,9 +276,6 @@ Login: `demo@deskline.io` / `demo1234`
 | Agents & tools | `/api/agents/` |
 | Calls & analytics | `/api/calls/` |
 | Dashboard | `/api/dashboard/` |
-| Voice token / relay | `http://localhost:8001/relay/` |
-
-Health check: `GET http://localhost:8001/health`
 
 ---
 
@@ -333,9 +298,9 @@ LLM receives OpenAI-style function schemas from `UserTool.parameters`.
 See `.env.example` for the full list. Minimum for UI-only screenshots:
 
 - `SECRET_KEY`, `USE_SQLITE=True`
-- `FASTAPI_BASE_URL`, `DJANGO_BASE_URL`
+- `DJANGO_BASE_URL`
 
-For live voice: Twilio + Groq (+ Deepgram via Twilio CR).
+Live voice: configure Retell separately; Deskline stores agent and ops fields.
 
 ---
 

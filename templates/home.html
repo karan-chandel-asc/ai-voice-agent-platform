@@ -88,7 +88,7 @@
       <div class="flex items-center justify-center gap-6 mt-5">
         <p class="text-xs text-slate-400">• Hotels & restaurants</p>
         <p class="text-xs text-slate-400">• Rooms, tables & guest FAQs</p>
-        <p class="text-xs text-slate-400">• Owned stack — Twilio + Groq</p>
+        <p class="text-xs text-slate-400">• Agents + bookings in Django · voice on Retell</p>
       </div>
     </div>
 
@@ -298,17 +298,17 @@
   <div class="max-w-5xl mx-auto">
     <div class="grid grid-cols-2 gap-16 items-center">
       <div>
-        <div class="inline-block badge badge-new mb-4">BUILT DIFFERENT</div>
-        <h2 class="text-3xl font-bold mb-4" style="letter-spacing:-0.5px;">No Retell. No Vapi. <br><span class="gradient-text">100% Custom Stack.</span></h2>
-        <p class="text-slate-500 leading-relaxed mb-6">Every client gets a voice agent built on a fully custom pipeline — Twilio for calls, Deepgram for speech-to-text, custom LangGraph conversation engine, and your choice of TTS. No monthly platform fees. No vendor lock-in.</p>
+        <div class="inline-block badge badge-new mb-4">SIMPLE STACK</div>
+        <h2 class="text-3xl font-bold mb-4" style="letter-spacing:-0.5px;">Retell for voice. <br><span class="gradient-text">Deskline for ops.</span></h2>
+        <p class="text-slate-500 leading-relaxed mb-6">Manage agents, tools, bookings, and call analytics in Deskline. Run live voice on Retell, then store outcomes and guest details here for ops and demos.</p>
         <div class="flex flex-wrap gap-2 mb-8">
           <span class="tech-badge">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            Twilio
+            Retell
           </span>
           <span class="tech-badge">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-            Deepgram STT
+            Django Ops
           </span>
           <span class="tech-badge">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
@@ -393,7 +393,7 @@
       <div class="flex items-start gap-6 p-6 card">
         <div class="step-num">2</div>
         <div class="flex-1">
-          <h3 class="font-semibold text-slate-800 mb-1">Get a phone number via Twilio</h3>
+          <h3 class="font-semibold text-slate-800 mb-1">Connect a Retell number to your agent</h3>
           <p class="text-sm text-slate-500 leading-relaxed">We automatically provision a real phone number and wire it to your agent. Your agent is instantly reachable at that number — inbound or outbound.</p>
         </div>
         <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-green-50">
@@ -576,33 +576,22 @@
 
     <!-- Call Section -->
     <div style="padding:20px 28px 28px;text-align:center;">
-      <p style="color:#64748b;font-size:12px;margin-bottom:14px;">Live call through your browser — no phone needed</p>
-
-      <!-- Status -->
+      <p style="color:#64748b;font-size:12px;margin-bottom:14px;">Live Twilio browser calling was removed. Use Retell for voice agents.</p>
       <div id="demo-status" style="display:inline-flex;align-items:center;gap:8px;background:#0f172a;border-radius:20px;padding:6px 16px;font-size:12px;color:#94a3b8;margin-bottom:18px;">
         <span id="demo-dot" style="width:8px;height:8px;border-radius:50%;background:#475569;display:inline-block;"></span>
-        <span id="demo-status-text">Initialising…</span>
+        <span id="demo-status-text">Demo call unavailable</span>
       </div>
-
-      <!-- Call button -->
       <div style="margin-bottom:10px;">
-        <button id="demo-call-btn" onclick="demoToggleCall()" disabled
-          style="width:72px;height:72px;border-radius:50%;border:none;font-size:1.7rem;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 8px 24px rgba(34,197,94,0.35);transition:transform 0.15s;">📞</button>
+        <button id="demo-call-btn" disabled style="width:72px;height:72px;border-radius:50%;border:none;font-size:1.7rem;cursor:not-allowed;background:#334155;opacity:0.6;">📞</button>
       </div>
-      <p id="demo-btn-label" style="font-size:12px;color:#64748b;margin-bottom:16px;">Loading…</p>
-
-      <!-- Log -->
-      <div id="demo-log" style="background:#0f172a;border-radius:8px;padding:10px;font-size:11px;color:#64748b;text-align:left;max-height:80px;overflow-y:auto;line-height:1.6;">Connecting…</div>
+      <p id="demo-btn-label" style="font-size:12px;color:#64748b;margin-bottom:16px;">Voice runs on Retell</p>
+      <div id="demo-log" style="background:#0f172a;border-radius:8px;padding:10px;font-size:11px;color:#64748b;text-align:left;max-height:80px;overflow-y:auto;line-height:1.6;">Twilio FastAPI voice runtime removed.</div>
     </div>
   </div>
 </div>
 
 <script>
-  // ── Demo modal state ──────────────────────────────────────────────
-  let demoDevice = null;
-  let demoCall   = null;
   let demoAgentId = null;
-  let demoReady  = false;
 
   function demoLog(msg) {
     const el = document.getElementById('demo-log');
@@ -615,39 +604,13 @@
     const dot = document.getElementById('demo-dot');
     const dotStyles = { ready:'#22c55e', calling:'#f59e0b', connected:'#3b82f6', error:'#ef4444', idle:'#475569' };
     dot.style.background = dotStyles[dotClass] || '#475569';
-    if (dotClass === 'calling' || dotClass === 'connected') {
-      dot.style.animation = 'blink 1s infinite';
-    } else {
-      dot.style.animation = 'none';
-    }
     document.getElementById('demo-status-text').textContent = text;
   }
 
-  function demoSetBtn(active) {
-    const btn = document.getElementById('demo-call-btn');
-    const lbl = document.getElementById('demo-btn-label');
-    if (active) {
-      btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
-      btn.style.boxShadow  = '0 8px 24px rgba(239,68,68,0.35)';
-      btn.textContent = '📵';
-      lbl.textContent = 'Tap to hang up';
-    } else {
-      btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
-      btn.style.boxShadow  = '0 8px 24px rgba(34,197,94,0.35)';
-      btn.textContent = '📞';
-      lbl.textContent = demoReady ? 'Tap to call' : 'Loading…';
-    }
-  }
-
-
   const TOOL_ICONS = {
-    'book room':    '🛏️', 'room':        '🛏️',
-    'book table':   '🍽️', 'table':       '🍽️',
-    'faq':          '❓', 'knowledge':   '📚',
-    'search':       '🔍', 'email':       '📧',
-    'sms':          '💬', 'calendar':    '📅',
-    'crm':          '📋', 'handoff':     '🤝',
-    'transfer':     '🤝',
+    'book room': '🛏️', 'room': '🛏️', 'book table': '🍽️', 'table': '🍽️',
+    'faq': '❓', 'knowledge': '📚', 'search': '🔍', 'email': '📧',
+    'sms': '💬', 'calendar': '📅', 'crm': '📋', 'handoff': '🤝', 'transfer': '🤝',
   };
 
   function toolIcon(name) {
@@ -660,19 +623,13 @@
 
   function populateAgentInfo(info) {
     if (!info) return;
-
-    // Name
     const nameEl = document.getElementById('demo-agent-name');
     if (nameEl) nameEl.textContent = info.name;
-
-    // Description — extract a clean short sentence from system_prompt
     const descEl = document.getElementById('demo-agent-desc');
     if (descEl && info.description) {
       const clean = info.description.replace(/\n+/g, ' ').trim();
       descEl.textContent = clean.length > 160 ? clean.slice(0, 157) + '…' : clean;
     }
-
-    // Tools chips
     const toolsEl = document.getElementById('demo-tools-list');
     if (toolsEl && info.tools && info.tools.length > 0) {
       toolsEl.innerHTML = info.tools.map(t =>
@@ -683,139 +640,43 @@
 
   async function demoInit() {
     try {
-      // Fetch token + demo agent from Django (same origin, no CORS)
       const res  = await fetch('/api/calls/demo-token/');
       const data = await res.json();
       demoAgentId = data.agent_id;
-
-      // Populate agent info panel
       populateAgentInfo(data.agent_info);
-
-      demoDevice = new Twilio.Device(data.token, { logLevel: 1 });
-
-      demoDevice.on('registered', () => {
-        demoReady = true;
-        demoSetStatus('ready', 'Ready');
-        const btn = document.getElementById('demo-call-btn');
-        btn.disabled = false;
-        document.getElementById('demo-btn-label').textContent = 'Tap to call';
-        demoLog('Connected to Twilio — ready to call.');
-      });
-
-      demoDevice.on('error', (e) => {
-        demoSetStatus('error', 'Error');
-        demoLog('Error: ' + e.message);
-      });
-
-      demoDevice.on('disconnect', () => {
-        demoSetStatus('ready', 'Ready');
-        demoCall = null;
-        demoSetBtn(false);
-        demoLog('Call ended.');
-      });
-
-      await demoDevice.register();
-    } catch(e) {
-      demoSetStatus('error', 'Failed');
-      demoLog('Init error: ' + e.message);
-    }
-  }
-
-  async function demoToggleCall() {
-    if (demoCall) {
-      demoCall.disconnect();
-      return;
-    }
-    try {
-      demoSetStatus('calling', 'Calling…');
-      demoSetBtn(true);
-      demoLog('Calling AI agent…');
-      const params = demoAgentId ? { AgentId: demoAgentId } : {};
-      demoCall = await demoDevice.connect({ params });
-      demoCall.on('accept', () => {
-        demoSetStatus('connected', 'Connected');
-        demoLog('Call connected — say hello!');
-      });
-      demoCall.on('disconnect', () => {
-        demoCall = null;
-        demoSetStatus('ready', 'Ready');
-        demoSetBtn(false);
-        demoLog('Call ended.');
-      });
-      demoCall.on('error', (e) => {
-        demoCall = null;
-        demoSetStatus('error', 'Call failed');
-        demoSetBtn(false);
-        demoLog('Call error: ' + e.message);
-      });
-    } catch(e) {
-      demoSetStatus('error', 'Failed');
-      demoSetBtn(false);
+      demoSetStatus('idle', 'Retell voice — no Twilio demo');
+      demoLog(data.message || 'Live Twilio calling removed from this app.');
+    } catch (e) {
+      demoSetStatus('error', 'Could not load demo agent');
       demoLog('Error: ' + e.message);
     }
   }
 
-  // ── Modal open/close ──────────────────────────────────────────────
-  let twilioSdkLoaded = false;
-
   async function openDemo() {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     if (!token) {
-      // Verify with server — token might be missing but user may have session
       try {
-        const res = await fetch('/api/auth/me/', {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (!res.ok) {
-          window.location.href = "{% url 'login-render' %}?next=demo";
-          return;
-        }
+        const res = await fetch('/api/auth/me/', { headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) { window.location.href = "{% url 'login-render' %}?next=demo"; return; }
       } catch {
         window.location.href = "{% url 'login-render' %}?next=demo";
         return;
       }
     }
     document.getElementById('demo-modal').style.display = 'flex';
-    if (twilioSdkLoaded) return;
-
-    // Load Twilio SDK once (local first — CDNs often blocked)
-    const urls = [
-      '{% static "js/twilio.min.js" %}',
-      'https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2.12.1/dist/twilio.min.js',
-      'https://unpkg.com/@twilio/voice-sdk@2.12.1/dist/twilio.min.js',
-    ];
-    const tryLoad = (i) => {
-      if (i >= urls.length) {
-        demoSetStatus('error','SDK failed');
-        demoLog('Could not load Twilio SDK.');
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = urls[i];
-      script.onload = async () => {
-        twilioSdkLoaded = true;
-        demoLog('SDK loaded.');
-        await demoInit();
-      };
-      script.onerror = () => tryLoad(i + 1);
-      document.head.appendChild(script);
-    };
-    tryLoad(0);
+    await demoInit();
   }
 
   function closeDemo() {
-    if (demoCall) demoCall.disconnect();
     document.getElementById('demo-modal').style.display = 'none';
   }
 
-  // Close on backdrop click
   document.getElementById('demo-modal').addEventListener('click', function(e) {
     if (e.target === this) closeDemo();
   });
 
-  // Auto-open demo modal if redirected back from login with ?demo=1
   if (new URLSearchParams(window.location.search).get('demo') === '1') {
-    history.replaceState(null, '', '/');  // clean URL
+    history.replaceState(null, '', '/');
     openDemo();
   }
 </script>

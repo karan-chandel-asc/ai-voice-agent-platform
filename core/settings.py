@@ -170,7 +170,7 @@ LANGSMITH_API_KEY = env("LANGSMITH_API_KEY", default="")
 LANGCHAIN_TRACING_V2 = env("LANGCHAIN_TRACING_V2", default="true")
 LANGCHAIN_PROJECT = env("LANGCHAIN_PROJECT", default="voice-agent-platform")
 
-FASTAPI_BASE_URL = env("FASTAPI_BASE_URL", default="http://localhost:8001")
+FASTAPI_BASE_URL = env("FASTAPI_BASE_URL", default="")  # legacy; FastAPI voice engine removed
 
 GOOGLE_CLIENT_ID     = env("GOOGLE_CLIENT_ID", default="")
 GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")

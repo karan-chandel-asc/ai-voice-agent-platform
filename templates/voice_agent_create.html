@@ -311,10 +311,10 @@ function logout() {
             </div>
           </div>
           <div class="p-5">
-            <label class="field-label">Twilio Phone Number <span style="color:#f43f5e;">*</span></label>
+            <label class="field-label">Phone Number</label>
             <input class="field-input" id="phone-number-input" type="text" placeholder="+1XXXXXXXXXX" style="max-width:320px;"
-              oninput="setFieldError(this,!this.value.trim());document.getElementById('phone-err').classList.toggle('hidden',!!this.value.trim())" />
-            <p class="text-xs text-slate-400 mt-1.5">Enter the Twilio number that should route to this agent.</p>
+              oninput="setFieldError(this,false);document.getElementById('phone-err').classList.add('hidden')" />
+            <p class="text-xs text-slate-400 mt-1.5">Optional reference number. Live voice runs on Retell, not Twilio.</p>
             <p id="phone-err" class="hidden text-xs mt-1.5" style="color:#f43f5e;">Please enter a phone number.</p>
           </div>
         </div>

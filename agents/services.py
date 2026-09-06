@@ -1,27 +1,5 @@
-from django.conf import settings
 from django.db.models import Q
 from .models import Agent, ElevenLabsVoice, AgentUserTool, UserTool
-
-
-def provision_twilio_number(agent):
-    """Purchase and assign a Twilio phone number to the agent."""
-    try:
-        from twilio.rest import Client
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        numbers = client.available_phone_numbers("US").local.list(limit=1)
-        if numbers:
-            purchased = client.incoming_phone_numbers.create(
-                phone_number=numbers[0].phone_number,
-                voice_url=f"{settings.FASTAPI_BASE_URL}/relay/inbound",
-                status_callback=f"{settings.FASTAPI_BASE_URL}/voice/status",
-            )
-            agent.phone_number = purchased.phone_number
-            agent.status = "live"
-            agent.save(update_fields=["phone_number", "status"])
-    except Exception as e:
-        agent.status = "error"
-        agent.save(update_fields=["status"])
-        raise e
 
 
 class ElevenLabsVoiceMechanism:

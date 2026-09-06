@@ -1,11 +1,8 @@
 from django.shortcuts import render
-from django.conf import settings
 
 
 def home(request):
-    return render(request, 'home.html', {
-        'FASTAPI_BASE_URL': settings.FASTAPI_BASE_URL,
-    })
+    return render(request, 'home.html')
 
 def login_page(request):
     return render(request, 'voice_login.html')
