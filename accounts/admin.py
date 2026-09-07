@@ -5,6 +5,12 @@ from .models import CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    """Admin UI for CustomUser accounts.
+
+    Extends Django UserAdmin with business fields.
+    Supports search by email, username, and business.
+    """
+
     list_display = ["email", "username", "business_name", "plan", "is_staff"]
     list_filter = ["plan", "is_staff", "is_active"]
     search_fields = ["email", "username", "business_name"]

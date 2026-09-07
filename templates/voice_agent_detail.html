@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -16,17 +16,18 @@ function logout() {
     });
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <style>
-  :root{--bg:#F4F7F6;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#0F766E;--accent-l:#D8F3EF;}
+  :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
-  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
-  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
-  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
-  .nav-item:hover{background:var(--bg);color:var(--t1);}
-  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
-  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:none;}
+  .nav-item{padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
+  .nav-item.active{background:rgba(201,164,110,0.14);color:#C9A46E;font-weight:600;}
+  .nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.1em;padding:0 10px;margin:16px 0 6px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
   .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
   .b-live{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
   .b-paused{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
@@ -34,9 +35,9 @@ function logout() {
   .b-red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
   .live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;display:inline-block;flex-shrink:0;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
-  .btn-primary{background:linear-gradient(135deg,#0F766E,#0D9488);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(15,118,110,0.35);}
-  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary{background:#A9814A;color:#1B1408;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 14px rgba(169,129,74,0.25);}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(169,129,74,0.35);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
   .btn-ghost:hover{background:var(--bg);color:var(--t1);}
   .scrollbar::-webkit-scrollbar{width:5px;}
   .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
@@ -54,11 +55,11 @@ function logout() {
   /* Call panel */
   .call-panel{position:fixed;bottom:28px;right:28px;width:300px;background:white;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.18);z-index:300;overflow:hidden;animation:panelIn 0.22s ease;}
   @keyframes panelIn{from{opacity:0;transform:translateY(18px) scale(0.96);}to{opacity:1;transform:translateY(0) scale(1);}}
-  .call-panel-head{padding:16px 18px 12px;background:linear-gradient(135deg,#0F766E,#0D9488);}
+  .call-panel-head{padding:16px 18px 12px;background:linear-gradient(135deg,#16332B,#1F4839);}
   .call-panel-body{padding:18px;}
   .call-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;position:relative;}
-  .call-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(15,118,110,0.3);animation:ringPulse 1.6s ease-in-out infinite;}
-  .call-ring::after{content:'';position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(15,118,110,0.15);animation:ringPulse 1.6s ease-in-out 0.4s infinite;}
+  .call-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(169,129,74,0.3);animation:ringPulse 1.6s ease-in-out infinite;}
+  .call-ring::after{content:'';position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(169,129,74,0.15);animation:ringPulse 1.6s ease-in-out 0.4s infinite;}
   @keyframes ringPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.08);}}
   .call-timer{font-size:22px;font-weight:700;letter-spacing:1px;color:#0f172a;text-align:center;font-variant-numeric:tabular-nums;}
   .call-btn{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
@@ -93,12 +94,12 @@ function logout() {
 
 <!-- Sidebar -->
 <aside class="sidebar w-56 flex flex-col flex-shrink-0">
-  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">
-        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+  <div class="px-5 py-4 sidebar-brand">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5 no-underline">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#A9814A;">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#1B1408" stroke-width="1.7"><path d="M3 10.5L12 4l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.2c1-1.4 4-1.4 5 0" stroke-linecap="round"/></svg>
       </div>
-      <span class="font-semibold text-sm text-slate-800" style="font-family:'Cormorant Garamond',serif;letter-spacing:0.02em;">Deskline</span>
+      <span class="display text-sm text-white tracking-wide">Deskline</span>
     </a>
   </div>
   <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
@@ -153,10 +154,10 @@ function logout() {
           Agents
         </a>
         <svg class="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-        <span id="agent-name-breadcrumb" class="text-xs text-slate-500">Loading…</span>
+        <span id="agent-name-breadcrumb" class="text-xs text-slate-500">Loading—</span>
       </div>
       <div class="flex items-center gap-3">
-        <h1 id="agent-name-title" class="text-lg font-semibold text-slate-800">Loading…</h1>
+        <h1 id="agent-name-title" class="text-lg font-semibold text-slate-800">Loading—</h1>
         <span id="agent-status-badge" class="badge b-live flex items-center gap-1.5"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>
       </div>
     </div>
@@ -172,21 +173,21 @@ function logout() {
       </button>
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
-          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
-          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading—</span>
           <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="profile-dropdown" class="profile-dropdown hidden">
           <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
             <div class="flex items-center gap-2.5">
-              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
               <div class="min-w-0">
                 <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
                 <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
               </div>
             </div>
             <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#CCFBF1;color:#0F766E;">Free</span>
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
               <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
             </div>
           </div>
@@ -213,8 +214,8 @@ function logout() {
     <div class="px-6 pt-5 pb-2 grid grid-cols-4 gap-4">
       <div class="kpi-card">
         <div class="flex items-center gap-2 mb-2">
-          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#CCFBF1;">
-            <svg class="w-3.5 h-3.5" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#F0E6D4;">
+            <svg class="w-3.5 h-3.5" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
           </div>
           <span class="text-xs font-medium text-slate-500">Total Calls</span>
         </div>
@@ -316,7 +317,7 @@ function logout() {
         <div class="card p-5">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold text-slate-700">Recent Calls</h3>
-            <button onclick="switchTab(document.querySelectorAll('.tab')[1],'calls-tab');loadCallsTab()" class="text-xs font-medium" style="color:#0F766E;background:none;border:none;cursor:pointer;">View all →</button>
+            <button onclick="switchTab(document.querySelectorAll('.tab')[1],'calls-tab');loadCallsTab()" class="text-xs font-medium" style="color:#16332B;background:none;border:none;cursor:pointer;">View all ?</button>
           </div>
           <table class="w-full text-xs">
             <thead>
@@ -330,7 +331,7 @@ function logout() {
               </tr>
             </thead>
             <tbody id="recent-calls-body">
-              <tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Loading…</td></tr>
+              <tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Loading—</td></tr>
             </tbody>
           </table>
         </div>
@@ -342,7 +343,7 @@ function logout() {
 
         <!-- Filters -->
         <div class="flex items-center gap-3 mb-4">
-          <input id="calls-search" type="text" placeholder="Search caller…" oninput="debounceCallSearch()"
+          <input id="calls-search" type="text" placeholder="Search caller—" oninput="debounceCallSearch()"
             class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-teal-400 flex-1 max-w-xs" style="font-family:inherit;">
           <select id="calls-outcome" onchange="loadCallsTab(1)" class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-teal-400" style="font-family:inherit;">
             <option value="">All Outcomes</option>
@@ -370,7 +371,7 @@ function logout() {
             </tr>
           </thead>
           <tbody id="calls-body">
-            <tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading…</td></tr>
+            <tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading—</td></tr>
           </tbody>
         </table>
 
@@ -392,7 +393,7 @@ function logout() {
           </a>
         </div>
         <div id="kb-docs-container">
-          <p class="text-xs text-slate-400 text-center py-6">Loading…</p>
+          <p class="text-xs text-slate-400 text-center py-6">Loading—</p>
         </div>
       </div>
 
@@ -401,7 +402,7 @@ function logout() {
         <div class="text-sm text-slate-500 text-center py-12">
           <svg class="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
           <p class="font-medium text-slate-600 mb-1">Agent Settings</p>
-          <p class="text-xs text-slate-400">Configure this agent in the <a id="settings-edit-link" href="{% url 'voice-create-agent' %}" class="text-teal-600 hover:underline">Edit Agent →</a> view</p>
+          <p class="text-xs text-slate-400">Configure this agent in the <a id="settings-edit-link" href="{% url 'voice-create-agent' %}" class="text-amber-700 hover:underline">Edit Agent ?</a> view</p>
         </div>
       </div>
 
@@ -413,7 +414,7 @@ function logout() {
   const LOGIN_URL  = "{% url 'login-render' %}";
   const AGENT_ID   = "{{ pk }}";
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // -- Helpers ----------------------------------------------------------------
   function getToken() {
     const t = localStorage.getItem('access_token') || '';
     return (t && t !== 'null' && t !== 'undefined' && t.startsWith('eyJ')) ? t : null;
@@ -446,19 +447,19 @@ function logout() {
   function outcomeBadge(outcome) {
     const map = {
       booked:       `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">BOOKED</span>`,
-      faq_resolved: `<span class="badge" style="background:#CCFBF1;color:#4f46e5;border:1px solid #5EEAD4;font-size:10px;">RESOLVED</span>`,
+      faq_resolved: `<span class="badge" style="background:#F0E6D4;color:#4f46e5;border:1px solid #C9A46E;font-size:10px;">RESOLVED</span>`,
       no_outcome:   `<span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">NO OUTCOME</span>`,
     };
     return map[outcome] || map.no_outcome;
   }
 
   function sentimentBadge(s) {
-    if (s === 'positive') return `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">😊 POS</span>`;
-    if (s === 'negative') return `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">😟 NEG</span>`;
-    return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:10px;">😐 NEU</span>`;
+    if (s === 'positive') return `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">?? POS</span>`;
+    if (s === 'negative') return `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">?? NEG</span>`;
+    return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:10px;">?? NEU</span>`;
   }
 
-  // ── Agent Detail ───────────────────────────────────────────────────────────
+  // -- Agent Detail -----------------------------------------------------------
   function getBadgeHTML(status) {
     if (status === 'live')   return `<span class="live-dot" style="width:5px;height:5px;"></span>LIVE`;
     if (status === 'paused') return `PAUSED`;
@@ -535,7 +536,7 @@ function logout() {
     } catch(e) {}
   }
 
-  // ── Parse DRF paginated response wrapped in success_response ─────────────
+  // -- Parse DRF paginated response wrapped in success_response -------------
   // Shape: { count, next, previous, results: { success, message, data: [...] } }
   function parsePaginatedCalls(json) {
     const calls = json.results?.data || json.results || [];
@@ -543,7 +544,7 @@ function logout() {
     return { calls, count };
   }
 
-  // ── Recent Calls (overview tab, latest 5) ──────────────────────────────────
+  // -- Recent Calls (overview tab, latest 5) ----------------------------------
   async function loadRecentCalls() {
     const tbody = document.getElementById('recent-calls-body');
     try {
@@ -561,14 +562,14 @@ function logout() {
           <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
           <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
           <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
-          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#0F766E;">View →</a></td>
+          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#16332B;">View ?</a></td>
         </tr>`).join('');
     } catch(e) {
       tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-xs text-slate-400">Failed to load.</td></tr>`;
     }
   }
 
-  // ── Call History Tab ───────────────────────────────────────────────────────
+  // -- Call History Tab -------------------------------------------------------
   let callsCurrentPage = 1;
   let callsSearchTimer = null;
 
@@ -581,7 +582,7 @@ function logout() {
     page = page || callsCurrentPage;
     callsCurrentPage = page;
     const tbody = document.getElementById('calls-body');
-    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading—</td></tr>`;
 
     const search    = document.getElementById('calls-search')?.value.trim() || '';
     const outcome   = document.getElementById('calls-outcome')?.value        || '';
@@ -610,7 +611,7 @@ function logout() {
           <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
           <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
           <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
-          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#0F766E;">View →</a></td>
+          <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#16332B;">View ?</a></td>
         </tr>`).join('');
 
       renderCallsPagination(count, page, 15);
@@ -627,26 +628,26 @@ function logout() {
 
     const from = (current - 1) * pageSize + 1;
     const to   = Math.min(current * pageSize, total);
-    set('calls-page-info', `${from}–${to} of ${total}`);
+    set('calls-page-info', `${from}—${to} of ${total}`);
 
     const btnsEl = document.getElementById('calls-page-btns');
-    let btns = `<button class="page-btn" onclick="loadCallsTab(${current-1})" ${current===1?'disabled':''}>← Prev</button>`;
+    let btns = `<button class="page-btn" onclick="loadCallsTab(${current-1})" ${current===1?'disabled':''}>? Prev</button>`;
     for (let p = 1; p <= totalPages; p++) {
       if (p === 1 || p === totalPages || (p >= current-1 && p <= current+1)) {
         btns += `<button class="page-btn ${p===current?'active':''}" onclick="loadCallsTab(${p})">${p}</button>`;
       } else if (p === current-2 || p === current+2) {
-        btns += `<span class="text-xs text-slate-400 px-1">…</span>`;
+        btns += `<span class="text-xs text-slate-400 px-1">—</span>`;
       }
     }
-    btns += `<button class="page-btn" onclick="loadCallsTab(${current+1})" ${current===totalPages?'disabled':''}>Next →</button>`;
+    btns += `<button class="page-btn" onclick="loadCallsTab(${current+1})" ${current===totalPages?'disabled':''}>Next ?</button>`;
     btnsEl.innerHTML = btns;
   }
 
-  // ── Knowledge Base Tab ─────────────────────────────────────────────────────
+  // -- Knowledge Base Tab -----------------------------------------------------
   async function loadKBTab() {
     const container = document.getElementById('kb-docs-container');
     if (!container) return;
-    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Loading…</p>`;
+    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Loading—</p>`;
     try {
       const res  = await fetch(`/api/knowledge/documents/?agent_id=${AGENT_ID}`, { headers: authHeaders() });
       const json = await res.json();
@@ -662,12 +663,12 @@ function logout() {
         return `
         <div class="flex items-center justify-between py-3" style="border-bottom:1px solid #f8fafc;">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#CCFBF1;">
-              <svg class="w-4 h-4" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#F0E6D4;">
+              <svg class="w-4 h-4" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
             <div class="min-w-0">
               <div class="text-xs font-semibold text-slate-700 truncate">${d.title}</div>
-              <div class="text-xs text-slate-400 mt-0.5">${d.file_size_display || ''} · ${d.chunk_count || 0} chunks · ${fmtDate(d.created_at)}</div>
+              <div class="text-xs text-slate-400 mt-0.5">${d.file_size_display || ''} — ${d.chunk_count || 0} chunks — ${fmtDate(d.created_at)}</div>
             </div>
           </div>
           <span class="badge ml-3 flex-shrink-0" style="background:${statusBg};color:${statusColor};border:1px solid ${statusBdr};font-size:10px;">${d.status.toUpperCase()}</span>
@@ -678,7 +679,7 @@ function logout() {
     }
   }
 
-  // ── Tabs ───────────────────────────────────────────────────────────────────
+  // -- Tabs -------------------------------------------------------------------
   function switchTab(btn, tabId) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
@@ -686,7 +687,7 @@ function logout() {
     document.getElementById(tabId).classList.remove('hidden');
   }
 
-  // ── Profile dropdown ───────────────────────────────────────────────────────
+  // -- Profile dropdown -------------------------------------------------------
   function toggleProfileDropdown() { document.getElementById('profile-dropdown').classList.toggle('hidden'); }
   function closeProfileDropdown()  { document.getElementById('profile-dropdown').classList.add('hidden'); }
   document.addEventListener('click', e => {
@@ -708,7 +709,7 @@ function logout() {
     } catch(e) {}
   }
 
-  // ── Boot ───────────────────────────────────────────────────────────────────
+  // -- Boot -------------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
     if (!getToken()) { window.location.href = LOGIN_URL; return; }
     loadAgentDetail();

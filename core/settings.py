@@ -172,10 +172,6 @@ LANGCHAIN_PROJECT = env("LANGCHAIN_PROJECT", default="voice-agent-platform")
 
 FASTAPI_BASE_URL = env("FASTAPI_BASE_URL", default="")  # legacy; FastAPI voice engine removed
 
-GOOGLE_CLIENT_ID     = env("GOOGLE_CLIENT_ID", default="")
-GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
-GOOGLE_REDIRECT_URI  = env("GOOGLE_REDIRECT_URI", default="http://127.0.0.1:8000/api/integrations/google-calendar/callback/")
-
 GROQ_API_KEY = env("GROQ_API_KEY", default="")
 
 EMAIL_BACKEND       = "django.core.mail.backends.smtp.EmailBackend"

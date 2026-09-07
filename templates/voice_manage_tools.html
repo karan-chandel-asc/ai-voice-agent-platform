@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,34 +22,35 @@ function logout() {
   });
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <style>
-  :root{--bg:#F4F7F6;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#0F766E;--accent-l:#D8F3EF;}
+  :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
-  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
-  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
-  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
-  .nav-item:hover{background:var(--bg);color:var(--t1);}
-  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
-  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
-  .btn-primary{background:linear-gradient(135deg,#0F766E,#0D9488);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(15,118,110,0.35);}
-  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:none;}
+  .nav-item{padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
+  .nav-item.active{background:rgba(201,164,110,0.14);color:#C9A46E;font-weight:600;}
+  .nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.1em;padding:0 10px;margin:16px 0 6px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
+  .btn-primary{background:#A9814A;color:#1B1408;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 14px rgba(169,129,74,0.25);}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(169,129,74,0.35);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
   .btn-ghost:hover{background:var(--bg);color:var(--t1);}
   .btn-red{background:transparent;color:#e11d48;font-size:12px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid #fecdd3;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:4px;}
   .btn-red:hover{background:#fff1f2;}
   .search{background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 12px 6px 32px;outline:none;width:220px;}
   .search::placeholder{color:var(--t3);}
-  .search:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(15,118,110,0.08);}
+  .search:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(169,129,74,0.08);}
   .scrollbar::-webkit-scrollbar{width:5px;}
   .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
   .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
-  .b-webhook{background:#CCFBF1;color:#0F766E;border:1px solid #5EEAD4;}
+  .b-webhook{background:#F0E6D4;color:#16332B;border:1px solid #C9A46E;}
   .b-builtin{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
   .b-inactive{background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;}
   .input{background:white;border:1px solid var(--border);border-radius:7px;font-size:13px;color:var(--t1);padding:8px 12px;outline:none;width:100%;}
-  .input:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(15,118,110,0.08);}
+  .input:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(169,129,74,0.08);}
   textarea.input{resize:vertical;min-height:72px;}
   select.input{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;padding-right:32px;}
   label{font-size:12px;font-weight:500;color:#475569;display:block;margin-bottom:5px;}
@@ -67,9 +68,9 @@ function logout() {
   .pd-item.danger svg{color:#e11d48;}
   .pd-item.danger:hover{background:#fff1f2;}
   .tool-card{background:white;border:1px solid var(--border);border-radius:10px;transition:box-shadow 0.18s,border-color 0.18s;}
-  .tool-card:hover{box-shadow:0 4px 16px rgba(15,118,110,0.08);border-color:#5EEAD4;}
+  .tool-card:hover{box-shadow:0 4px 16px rgba(169,129,74,0.08);border-color:#C9A46E;}
   .toggle-track{width:32px;height:18px;border-radius:9px;background:#e2e8f0;cursor:pointer;transition:background 0.2s;position:relative;flex-shrink:0;}
-  .toggle-track.on{background:#0F766E;}
+  .toggle-track.on{background:#16332B;}
   .toggle-track::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.2);transition:transform 0.2s;}
   .toggle-track.on::after{transform:translateX(14px);}
   .pill{display:inline-flex;align-items:center;gap:5px;background:white;border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:var(--t2);}
@@ -84,12 +85,12 @@ function logout() {
 
 <!-- Sidebar -->
 <aside class="sidebar w-56 flex flex-col flex-shrink-0">
-  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">
-        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+  <div class="px-5 py-4 sidebar-brand">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5 no-underline">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#A9814A;">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#1B1408" stroke-width="1.7"><path d="M3 10.5L12 4l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.2c1-1.4 4-1.4 5 0" stroke-linecap="round"/></svg>
       </div>
-      <span class="font-semibold text-sm text-slate-800" style="font-family:'Cormorant Garamond',serif;letter-spacing:0.02em;">Deskline</span>
+      <span class="display text-sm text-white tracking-wide">Deskline</span>
     </a>
   </div>
   <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
@@ -142,13 +143,13 @@ function logout() {
   <!-- Header -->
   <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid #f1f5f9;">
     <div>
-      <h1 class="text-sm font-semibold text-slate-800">My Tools</h1>
+      <h1 class="display text-xl text-slate-800" style="letter-spacing:-0.02em;">My Tools</h1>
       <p class="text-xs text-slate-400">Built-in tools your agents can use during calls</p>
     </div>
     <div class="flex items-center gap-3">
       <div class="relative">
         <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="search-input" class="search" type="text" placeholder="Search tools…" oninput="handleSearch(this.value)" />
+        <input id="search-input" class="search" type="text" placeholder="Search tools—" oninput="handleSearch(this.value)" />
       </div>
       <button class="btn-primary" onclick="openCreateModal()">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
@@ -157,21 +158,21 @@ function logout() {
       <!-- Profile avatar -->
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
-          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
-          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading—</span>
           <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="profile-dropdown" class="profile-dropdown hidden">
           <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
             <div class="flex items-center gap-2.5">
-              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
               <div class="min-w-0">
                 <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
                 <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
               </div>
             </div>
             <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#CCFBF1;color:#0F766E;">Free</span>
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
               <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
             </div>
           </div>
@@ -201,8 +202,8 @@ function logout() {
         Total&nbsp;<span id="stat-total" class="pill-val">—</span>&nbsp;<span class="text-slate-400">tools</span>
       </div>
       <div class="pill">
-        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#0F766E;display:inline-block;"></span>
-        Active&nbsp;<span id="stat-active" class="pill-val" style="color:#0F766E;">—</span>
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#16332B;display:inline-block;"></span>
+        Active&nbsp;<span id="stat-active" class="pill-val" style="color:#16332B;">—</span>
       </div>
       <div class="pill">
         <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#94a3b8;display:inline-block;"></span>
@@ -212,13 +213,13 @@ function logout() {
 
     <!-- Tools grid -->
     <div id="tools-grid" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-      <div class="col-span-3 flex justify-center py-12 text-slate-400 text-sm">Loading tools…</div>
+      <div class="col-span-3 flex justify-center py-12 text-slate-400 text-sm">Loading tools—</div>
     </div>
 
   </div>
 </main>
 
-<!-- ── Create / Edit Modal ───────────────────────────────────────── -->
+<!-- -- Create / Edit Modal ----------------------------------------- -->
 <div id="tool-modal" class="modal-backdrop hidden" onclick="handleBackdropClick(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="flex items-center justify-between mb-5">
@@ -238,7 +239,7 @@ function logout() {
         </div>
         <div>
           <label for="f-description">Description</label>
-          <textarea id="f-description" class="input" placeholder="What this tool does…"></textarea>
+          <textarea id="f-description" class="input" placeholder="What this tool does—"></textarea>
         </div>
         <input type="hidden" id="f-type" value="builtin" />
         <div>
@@ -265,7 +266,7 @@ function logout() {
   </div>
 </div>
 
-<!-- ── Delete Confirm Modal ──────────────────────────────────────── -->
+<!-- -- Delete Confirm Modal ---------------------------------------- -->
 <div id="delete-modal" class="modal-backdrop hidden" onclick="handleDeleteBackdropClick(event)">
   <div class="modal-box" style="width:360px;" onclick="event.stopPropagation()">
     <div class="flex items-center gap-3 mb-4">
@@ -290,7 +291,7 @@ function logout() {
   const API_BASE = '/api';
   let searchTimer = null;
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // -- Auth ------------------------------------------------------------------
   function getToken() {
     return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
   }
@@ -307,7 +308,7 @@ function logout() {
     return m ? m[1] : '';
   }
 
-  // ── Profile dropdown ──────────────────────────────────────────────────────
+  // -- Profile dropdown ------------------------------------------------------
   function toggleProfileDropdown() {
     document.getElementById('profile-dropdown').classList.toggle('hidden');
   }
@@ -318,7 +319,7 @@ function logout() {
     if (!document.getElementById('profile-btn-wrap')?.contains(e.target)) closeProfileDropdown();
   });
 
-  // ── Load user info ────────────────────────────────────────────────────────
+  // -- Load user info --------------------------------------------------------
   async function loadHeaderProfile() {
     try {
       const token = getToken();
@@ -338,7 +339,7 @@ function logout() {
     } catch (_) {}
   }
 
-  // ── Tool helpers ──────────────────────────────────────────────────────────
+  // -- Tool helpers ----------------------------------------------------------
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -348,8 +349,8 @@ function logout() {
     if (!tools.length) {
       grid.innerHTML = `
         <div class="col-span-3 empty-card flex flex-col items-center justify-center py-14 cursor-pointer" onclick="openCreateModal()">
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style="background:#CCFBF1;">
-            <svg class="w-5 h-5" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style="background:#F0E6D4;">
+            <svg class="w-5 h-5" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
           </div>
           <p class="text-sm font-medium text-slate-600 mb-1">No tools yet</p>
           <p class="text-xs text-slate-400">Click to create your first custom tool</p>
@@ -372,8 +373,8 @@ function logout() {
         <div class="tool-card p-4 flex flex-col gap-3">
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#CCFBF1;">
-                <svg class="w-4 h-4" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#F0E6D4;">
+                <svg class="w-4 h-4" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
               </div>
               <div class="min-w-0">
                 <p class="text-xs font-semibold text-slate-800 truncate">${escHtml(t.name)}</p>
@@ -423,7 +424,7 @@ function logout() {
     searchTimer = setTimeout(() => loadTools(val.trim()), 280);
   }
 
-  // ── Create modal ──────────────────────────────────────────────────────────
+  // -- Create modal ----------------------------------------------------------
   function openCreateModal() {
     document.getElementById('modal-title').textContent = 'New Tool';
     document.getElementById('modal-submit-label').textContent = 'Create Tool';
@@ -521,7 +522,7 @@ function logout() {
     }
   }
 
-  // ── Delete modal ──────────────────────────────────────────────────────────
+  // -- Delete modal ----------------------------------------------------------
   function openDeleteModal(toolId, toolName) {
     document.getElementById('delete-tool-id').value = toolId;
     document.getElementById('delete-tool-name').textContent = toolName;
@@ -550,7 +551,7 @@ function logout() {
     }
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // -- Init ------------------------------------------------------------------
   loadHeaderProfile();
   loadTools();
 </script>

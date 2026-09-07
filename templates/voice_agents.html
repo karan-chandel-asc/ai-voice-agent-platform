@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,61 +22,63 @@ function logout() {
     });
   }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <style>
-  :root{--bg:#F4F7F6;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#0F766E;--accent-l:#D8F3EF;}
+  :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;}
   *{box-sizing:border-box;}
-  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
-  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
-  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
-  .nav-item:hover{background:var(--bg);color:var(--t1);}
-  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
-  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
-  .agent-card{background:var(--card);border:1px solid var(--border);border-radius:10px;transition:box-shadow 0.18s,transform 0.18s,border-color 0.18s;}
-  .agent-card:hover{box-shadow:0 6px 24px rgba(15,118,110,0.10),0 2px 8px rgba(0,0,0,0.05);transform:translateY(-2px);border-color:#5EEAD4;}
-  .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;-webkit-font-smoothing:antialiased;}
+  .display{font-family:'Fraunces',Georgia,serif;}
+  .sidebar{background:var(--sidebar);border-right:none;}
+  .nav-item{padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
+  .nav-item.active{background:rgba(201,164,110,0.14);color:#C9A46E;font-weight:600;}
+  .nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.1em;padding:0 10px;margin:16px 0 6px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
+  .agent-card{background:var(--card);border:1px solid var(--border);border-radius:14px;transition:box-shadow 0.18s,transform 0.18s,border-color 0.18s;}
+  .agent-card:hover{box-shadow:0 12px 32px rgba(22,51,43,0.08);transform:translateY(-2px);border-color:rgba(169,129,74,0.35);}
+  .badge{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-block;}
   .b-live{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
   .b-paused{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
   .b-red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
   .live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;display:inline-block;flex-shrink:0;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
-  .prog{height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+  .prog{height:5px;background:#efe9dc;border-radius:3px;overflow:hidden;}
   .prog-fill{height:100%;border-radius:3px;}
-  .btn-primary{background:linear-gradient(135deg,#0F766E,#0D9488);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(15,118,110,0.35);}
-  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
-  .btn-green{background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary{background:#A9814A;color:#1B1408;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 14px rgba(169,129,74,0.25);}
+  .btn-primary:hover{opacity:0.95;box-shadow:0 6px 18px rgba(169,129,74,0.35);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-ghost:hover{background:#fff;color:var(--t1);}
+  .btn-green{background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
   .btn-green:hover{opacity:0.9;box-shadow:0 4px 12px rgba(16,185,129,0.35);}
-  .btn-red{background:linear-gradient(135deg,#ef4444,#e11d48);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;}
+  .btn-red{background:linear-gradient(135deg,#ef4444,#e11d48);color:white;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;}
   .btn-red:hover{opacity:0.9;box-shadow:0 4px 12px rgba(225,29,72,0.3);}
-  .search{background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 12px 6px 32px;outline:none;width:220px;}
+  .search{background:#fff;border:1px solid var(--border);border-radius:4px;font-size:12.5px;color:var(--t1);padding:7px 14px 7px 34px;outline:none;width:220px;}
   .search::placeholder{color:var(--t3);}
-  .search:focus{border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(15,118,110,0.08);}
+  .search:focus{border-color:#A9814A;box-shadow:0 0 0 3px rgba(169,129,74,0.1);}
   .scrollbar::-webkit-scrollbar{width:5px;}
-  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#ddd4c2;border-radius:3px;}
   .tool-chip{font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;white-space:nowrap;}
   .stat-val{font-size:13.5px;font-weight:600;color:var(--t1);}
   .stat-lbl{font-size:10.5px;color:var(--t3);margin-top:1px;}
-  .stat-divider{width:1px;background:#f1f5f9;align-self:stretch;margin:0 2px;}
+  .stat-divider{width:1px;background:#efe9dc;align-self:stretch;margin:0 2px;}
   .pill{display:inline-flex;align-items:center;gap:5px;background:white;border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:var(--t2);}
   .pill-val{font-size:13px;font-weight:600;color:var(--t1);}
-  .kebab-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;cursor:pointer;color:var(--t3);transition:all 0.15s;background:transparent;}
-  .kebab-btn:hover{background:var(--bg);border-color:var(--border);color:var(--t2);}
-  .dropdown-menu{position:absolute;right:0;top:34px;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:50;min-width:160px;padding:4px;}
-  .dropdown-item{padding:7px 12px;font-size:12.5px;color:var(--t2);cursor:pointer;border-radius:5px;display:flex;align-items:center;gap:8px;transition:background 0.1s;}
-  .dropdown-item:hover{background:var(--bg);color:var(--t1);}
+  .kebab-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid transparent;cursor:pointer;color:var(--t3);transition:all 0.15s;background:transparent;}
+  .kebab-btn:hover{background:#fff;border-color:var(--border);color:var(--t2);}
+  .dropdown-menu{position:absolute;right:0;top:34px;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(22,51,43,0.12);z-index:50;min-width:160px;padding:4px;}
+  .dropdown-item{padding:7px 12px;font-size:12.5px;color:var(--t2);cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:8px;transition:background 0.1s;}
+  .dropdown-item:hover{background:#f7f3ea;color:var(--t1);}
   .dropdown-item.danger{color:#e11d48;}
   .dropdown-item.danger:hover{background:#fff1f2;color:#e11d48;}
-  .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);z-index:100;display:none;align-items:center;justify-content:center;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(22,51,43,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;}
   .modal-backdrop:not(.hidden){display:flex;}
-  .modal-box{background:white;border-radius:12px;padding:28px;width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.18);animation:modal-in 0.18s ease;}
+  .modal-box{background:white;border-radius:16px;padding:28px;width:420px;box-shadow:0 24px 60px rgba(22,51,43,0.2);animation:modal-in 0.18s ease;}
   @keyframes modal-in{from{opacity:0;transform:scale(0.96) translateY(8px);}to{opacity:1;transform:scale(1) translateY(0);}}
   .avatar-ring{border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.15);}
-  .empty-card{border:2px dashed #e2e8f0;border-radius:10px;background:white;transition:border-color 0.15s,background 0.15s;}
-  .empty-card:hover{border-color:#a5b4fc;background:#fafbff;}
-  select{appearance:none;cursor:pointer;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 28px 6px 10px;outline:none;}
+  .empty-card{border:2px dashed #ddd4c2;border-radius:14px;background:white;transition:border-color 0.15s,background 0.15s;}
+  .empty-card:hover{border-color:#A9814A;background:#f7f3ea;}
+  select{appearance:none;cursor:pointer;background:#fff;border:1px solid var(--border);border-radius:4px;font-size:12.5px;color:var(--t1);padding:6px 28px 6px 12px;outline:none;}
   /* Profile dropdown */
   .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
   @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
@@ -94,12 +96,12 @@ function logout() {
 
 <!-- Sidebar -->
 <aside class="sidebar w-56 flex flex-col flex-shrink-0">
-  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">
-        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+  <div class="px-5 py-4" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5 no-underline">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#A9814A;">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#1B1408" stroke-width="1.7"><path d="M3 10.5L12 4l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.2c1-1.4 4-1.4 5 0" stroke-linecap="round"/></svg>
       </div>
-      <span class="font-semibold text-sm text-slate-800" style="font-family:'Cormorant Garamond',serif;letter-spacing:0.02em;">Deskline</span>
+      <span class="display text-sm text-white tracking-wide">Deskline</span>
     </a>
   </div>
   <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
@@ -153,7 +155,7 @@ function logout() {
   <!-- Header -->
   <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid #f1f5f9;">
     <div>
-      <h1 class="text-sm font-semibold text-slate-800">My Agents</h1>
+      <h1 class="display text-xl text-slate-800" style="letter-spacing:-0.02em;">My Agents</h1>
       <p class="text-xs text-slate-400">Manage your AI voice agents</p>
     </div>
     <div class="flex items-center gap-3">
@@ -168,8 +170,8 @@ function logout() {
       <!-- Profile avatar -->
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
-          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
-          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading—</span>
           <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <!-- Dropdown -->
@@ -177,14 +179,14 @@ function logout() {
           <!-- User info header -->
           <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
             <div class="flex items-center gap-2.5">
-              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
               <div class="min-w-0">
                 <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
                 <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
               </div>
             </div>
             <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#CCFBF1;color:#0F766E;">Free</span>
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
               <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
             </div>
           </div>
@@ -232,7 +234,7 @@ function logout() {
     <div id="agents-grid" class="grid grid-cols-3 gap-4">
       <div class="col-span-3 flex flex-col items-center justify-center py-14 gap-3">
         <svg class="w-6 h-6 text-slate-300 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-        <span class="text-slate-400 text-sm">Loading agents…</span>
+        <span class="text-slate-400 text-sm">Loading agents—</span>
       </div>
     </div>
 
@@ -244,7 +246,7 @@ function logout() {
         <!-- Card header -->
         <div class="flex items-start">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white avatar-ring flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">SR</div>
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white avatar-ring flex-shrink-0" style="background:#A9814A;">SR</div>
             <div>
               <div class="text-sm font-semibold text-slate-800 leading-snug">Savanta Receptionist</div>
               <div class="flex items-center gap-1.5 mt-1">
@@ -269,7 +271,7 @@ function logout() {
         <!-- Stats row -->
         <div class="flex items-center gap-0" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:10px 12px;">
           <div class="flex-1 text-center">
-            <div class="stat-val" style="color:#0F766E;">68%</div>
+            <div class="stat-val" style="color:#16332B;">68%</div>
             <div class="stat-lbl">booking</div>
           </div>
           <div class="stat-divider"></div>
@@ -288,10 +290,10 @@ function logout() {
         <div>
           <div class="flex justify-between mb-1.5">
             <span class="text-xs text-slate-500">Booking rate</span>
-            <span class="text-xs font-semibold" style="color:#0F766E;">68%</span>
+            <span class="text-xs font-semibold" style="color:#16332B;">68%</span>
           </div>
           <div class="prog">
-            <div class="prog-fill" style="width:68%;background:linear-gradient(90deg,#0F766E,#14B8A6);"></div>
+            <div class="prog-fill" style="width:68%;background:linear-gradient(90deg,#16332B,#A9814A);"></div>
           </div>
         </div>
 
@@ -303,7 +305,7 @@ function logout() {
               <svg class="w-2.5 h-2.5 inline mr-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
               Calendar
             </span>
-            <span class="tool-chip" style="background:#CCFBF1;color:#4f46e5;border-color:#5EEAD4;">FAQ RAG</span>
+            <span class="tool-chip" style="background:#F0E6D4;color:#4f46e5;border-color:#C9A46E;">FAQ RAG</span>
             <span class="tool-chip" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;">SMS</span>
             <span class="tool-chip" style="background:#fff7ed;color:#ea580c;border-color:#fed7aa;">CRM</span>
           </div>
@@ -463,7 +465,7 @@ function logout() {
         <div>
           <div class="text-xs text-slate-400 mb-1.5">Tools enabled</div>
           <div class="flex flex-wrap gap-1.5">
-            <span class="tool-chip" style="background:#CCFBF1;color:#4f46e5;border-color:#5EEAD4;">FAQ RAG</span>
+            <span class="tool-chip" style="background:#F0E6D4;color:#4f46e5;border-color:#C9A46E;">FAQ RAG</span>
           </div>
         </div>
 
@@ -512,12 +514,12 @@ function logout() {
 
 
 <script>
-  // ── URL helpers ────────────────────────────────────────────
+  // -- URL helpers --------------------------------------------
   const AGENT_DETAIL_URL = (id) => `/api/agents/voice-agent-detail/?pk=${id}`;
   const AGENT_CREATE_URL = "{% url 'voice-create-agent' %}";
   const LOGIN_URL        = "{% url 'login-render' %}";
 
-  // ── State ──────────────────────────────────────────────────
+  // -- State --------------------------------------------------
   let allAgents      = [];
   let currentAgentId = null;
   let nextPageUrl    = null;
@@ -526,7 +528,7 @@ function logout() {
   let cardIndex      = 0;
   let searchQuery    = '';
 
-  // ── Utils ──────────────────────────────────────────────────
+  // -- Utils --------------------------------------------------
   function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -541,7 +543,7 @@ function logout() {
 
   function getAvatarGradient(status) {
     const g = {
-      live:   'linear-gradient(135deg,#0F766E,#14B8A6)',
+      live:   'linear-gradient(135deg,#16332B,#A9814A)',
       paused: 'linear-gradient(135deg,#94a3b8,#64748b)',
       draft:  'linear-gradient(135deg,#8b5cf6,#a78bfa)',
       error:  'linear-gradient(135deg,#ef4444,#e11d48)',
@@ -556,13 +558,13 @@ function logout() {
     return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">DRAFT</span>`;
   }
 
-  // ── Card renderer ──────────────────────────────────────────
+  // -- Card renderer ------------------------------------------
   function renderAgentCard(agent, index) {
     const initials    = getInitials(agent.agent_name);
     const grad        = getAvatarGradient(agent.status);
     const allTools = (agent.user_tools || []).filter(t => t.is_active).map(t => ({ name: t.name, type: 'user' }));
     const CATALOG_COLORS = [
-      'background:#CCFBF1;color:#4f46e5;border-color:#5EEAD4;',
+      'background:#F0E6D4;color:#4f46e5;border-color:#C9A46E;',
       'background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;',
       'background:#fff7ed;color:#ea580c;border-color:#fed7aa;',
       'background:#eff6ff;color:#2563eb;border-color:#bfdbfe;',
@@ -579,7 +581,7 @@ function logout() {
       let ci = 0;
       toolsHtml = visible.map(t => {
         if (t.type === 'user') {
-          return `<span class="tool-chip" style="background:#f0f4ff;color:#0F766E;border-color:#5EEAD4;" title="Custom tool">${escapeHtml(t.name)}</span>`;
+          return `<span class="tool-chip" style="background:#f0f4ff;color:#16332B;border-color:#C9A46E;" title="Custom tool">${escapeHtml(t.name)}</span>`;
         }
         return `<span class="tool-chip" style="${CATALOG_COLORS[ci++ % CATALOG_COLORS.length]}">${escapeHtml(t.name)}</span>`;
       }).join('');
@@ -591,7 +593,7 @@ function logout() {
     const totalToolCount = allTools.length;
     const userToolCount  = allTools.filter(t => t.type === 'user').length;
     const toolCountBadge = totalToolCount > 0
-      ? `<span class="text-xs text-slate-400">${totalToolCount} tool${totalToolCount !== 1 ? 's' : ''}${userToolCount > 0 ? ` · <span style="color:#0F766E;">${userToolCount} custom</span>` : ''}</span>`
+      ? `<span class="text-xs text-slate-400">${totalToolCount} tool${totalToolCount !== 1 ? 's' : ''}${userToolCount > 0 ? ` — <span style="color:#16332B;">${userToolCount} custom</span>` : ''}</span>`
       : '';
 
     const createdDate = agent.created_at ? new Date(agent.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -631,7 +633,7 @@ function logout() {
   <!-- Stats row -->
   <div class="flex items-center gap-0" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:10px 12px;">
     <div class="flex-1 text-center">
-      <div class="stat-val" style="color:#0F766E;">—</div>
+      <div class="stat-val" style="color:#16332B;">—</div>
       <div class="stat-lbl">booking</div>
     </div>
     <div class="stat-divider"></div>
@@ -670,15 +672,15 @@ function logout() {
 </div>`;
   }
 
-  // ── Render helpers ─────────────────────────────────────────
+  // -- Render helpers -----------------------------------------
   function renderAgents(agents) {
     const grid = document.getElementById('agents-grid');
     if (!agents.length) {
       grid.innerHTML = `
         <div class="col-span-3">
           <div class="empty-card flex flex-col items-center justify-center py-16 gap-4 cursor-pointer" onclick="window.location.href=AGENT_CREATE_URL">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,#CCFBF1,#99F6E4);">
-              <svg class="w-7 h-7" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:#F0E6D4;">
+              <svg class="w-7 h-7" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
             <div class="text-center">
               <div class="text-sm font-semibold text-slate-700">No agents yet</div>
@@ -721,7 +723,7 @@ function logout() {
     if (cal) cal.textContent = totalCalls > 0 ? totalCalls : '0';
   }
 
-  // ── Loading sentinel ───────────────────────────────────────
+  // -- Loading sentinel ---------------------------------------
   function showScrollLoader() {
     let el = document.getElementById('scroll-loader');
     if (!el) {
@@ -730,7 +732,7 @@ function logout() {
       el.className = 'col-span-3 flex justify-center py-5';
       el.innerHTML = `<div class="flex items-center gap-2 text-slate-400 text-xs">
         <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-        Loading more…
+        Loading more—
       </div>`;
       document.getElementById('agents-grid').appendChild(el);
     }
@@ -741,7 +743,7 @@ function logout() {
     if (el) el.remove();
   }
 
-  // ── Search (backend) ──────────────────────────────────────
+  // -- Search (backend) --------------------------------------
   let debounceTimer = null;
 
   function filterAgents(query) {
@@ -752,7 +754,7 @@ function logout() {
     }, 400);
   }
 
-  // ── API fetch ──────────────────────────────────────────────
+  // -- API fetch ----------------------------------------------
   function getValidToken() {
     const t = localStorage.getItem('access_token') || '';
     return (t && t !== 'null' && t !== 'undefined' && t.startsWith('eyJ')) ? t : null;
@@ -771,7 +773,7 @@ function logout() {
     if (!token) { window.location.href = LOGIN_URL; return; }
 
     const grid = document.getElementById('agents-grid');
-    grid.innerHTML = `<div class="col-span-3 flex flex-col items-center justify-center py-14 gap-3"><svg class="w-6 h-6 text-slate-300 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg><span class="text-slate-400 text-sm">Loading agents…</span></div>`;
+    grid.innerHTML = `<div class="col-span-3 flex flex-col items-center justify-center py-14 gap-3"><svg class="w-6 h-6 text-slate-300 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg><span class="text-slate-400 text-sm">Loading agents—</span></div>`;
     allAgents  = [];
     cardIndex  = 0;
     nextPageUrl = null;
@@ -820,7 +822,7 @@ function logout() {
     }
   }
 
-  // ── Infinite scroll ────────────────────────────────────────
+  // -- Infinite scroll ----------------------------------------
   function onPageScroll() {
     if (!nextPageUrl || isLoading) return;
     const el = document.getElementById('page-body');
@@ -829,7 +831,7 @@ function logout() {
     if (nearBottom) loadNextPage();
   }
 
-  // ── Modal helpers ──────────────────────────────────────────
+  // -- Modal helpers ------------------------------------------
   function openModal(id) {
     document.getElementById(id).classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -858,7 +860,7 @@ function logout() {
 
     confirmBtn.disabled = true;
     cancelBtn.disabled  = true;
-    confirmBtn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Deleting…`;
+    confirmBtn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Deleting—`;
 
     try {
       const res = await fetch(`/api/agents/delete-agent/${agentId}/`, {
@@ -882,7 +884,7 @@ function logout() {
   }
 
 
-  // ── Dropdown helpers ───────────────────────────────────────
+  // -- Dropdown helpers ---------------------------------------
   function toggleMenu(id) {
     const el = document.getElementById(id);
     document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.add('hidden'); });
@@ -893,7 +895,7 @@ function logout() {
     document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.add('hidden'));
   }
 
-  // ── Event listeners ────────────────────────────────────────
+  // -- Event listeners ----------------------------------------
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.relative')) closeAllMenus();
   });
@@ -913,7 +915,7 @@ function logout() {
     }
   });
 
-  // ── Init ───────────────────────────────────────────────────
+  // -- Init ---------------------------------------------------
   document.addEventListener('DOMContentLoaded', function() {
     loadAgents();
     loadHeaderProfile();
@@ -925,7 +927,7 @@ function logout() {
     if (pageBody) pageBody.addEventListener('scroll', onPageScroll);
   });
 
-  // ── Profile dropdown ─────────────────────────────────────────────────────────
+  // -- Profile dropdown ---------------------------------------------------------
   function toggleProfileDropdown() {
     document.getElementById('profile-dropdown').classList.toggle('hidden');
   }

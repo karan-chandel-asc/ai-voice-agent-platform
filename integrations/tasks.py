@@ -44,14 +44,14 @@ def send_daily_call_report():
         excel_data = _build_excel(calls, yesterday_start)
 
         date_str    = timezone.now().strftime("%d %b %Y")
-        subject     = f"VoiceAI Daily Report — {date_str}"
+        subject     = f"Deskline Daily Report — {date_str}"
         name        = user.first_name or user.email.split("@")[0].capitalize()
         html_body   = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>VoiceAI Daily Report</title>
+<title>Deskline Daily Report</title>
 </head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
@@ -65,7 +65,7 @@ def send_daily_call_report():
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <span style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">&#9742; VoiceAI</span>
+                    <span style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">&#9742; Deskline</span>
                   </td>
                   <td align="right">
                     <span style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:500;">Daily Report</span>
@@ -166,7 +166,7 @@ def send_daily_call_report():
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <div style="font-size:12px;color:#94a3b8;">Sent by <strong style="color:#64748b;">VoiceAI</strong> · Daily report every morning at 8 AM</div>
+                    <div style="font-size:12px;color:#94a3b8;">Sent by <strong style="color:#64748b;">Deskline</strong> · Daily report every morning at 8 AM</div>
                     <div style="font-size:11px;color:#cbd5e1;margin-top:4px;">To stop receiving these emails, disconnect Google Sheets from your integrations.</div>
                   </td>
                   <td align="right">

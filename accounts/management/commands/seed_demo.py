@@ -74,9 +74,16 @@ TRANSCRIPTS = [
 
 
 class Command(BaseCommand):
+    """Seed hospitality demo data for screenshots.
+
+    Creates a demo user, agents, calls, and bookings.
+    Use --flush to wipe existing demo data first.
+    """
+
     help = "Seed hospitality demo data for screenshots (login: demo@deskline.io / demo1234)"
 
     def add_arguments(self, parser):
+        """Register optional --flush flag for reseeding."""
         parser.add_argument(
             "--flush",
             action="store_true",
@@ -85,6 +92,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        """Create or refresh the full demo dataset."""
         if options["flush"]:
             deleted, _ = CustomUser.objects.filter(email=DEMO_EMAIL).delete()
             self.stdout.write(self.style.WARNING(f"Flushed demo user (+cascade): {deleted} objects"))
@@ -109,7 +117,9 @@ class Command(BaseCommand):
         self.stdout.write("Login, then open Dashboard / Agents / Bookings / Calls / Analytics.")
 
     def _user(self) -> CustomUser:
+        """Create or update the demo operator account."""
         user, created = CustomUser.objects.get_or_create(
+
             email=DEMO_EMAIL,
             defaults={
                 "username": "deskline_demo",
@@ -132,7 +142,9 @@ class Command(BaseCommand):
         return user
 
     def _voices(self) -> list[ElevenLabsVoice]:
+        """Ensure demo ElevenLabs voice rows exist."""
         specs = [
+
             ("Maya — Warm Concierge", "demo_voice_maya"),
             ("Alex — Restaurant Host", "demo_voice_alex"),
             ("Sofia — Soft Front Desk", "demo_voice_sofia"),
@@ -147,7 +159,9 @@ class Command(BaseCommand):
         return voices
 
     def _tools(self, user: CustomUser) -> list[UserTool]:
+        """Create built-in booking tools for the demo user."""
         specs = [
+
             (
                 "book_room",
                 "Book a hotel room after the guest confirms name, email, check-in, check-out, and guests.",
@@ -215,7 +229,9 @@ class Command(BaseCommand):
         return tools
 
     def _agents(self, user, voices, tools) -> list[Agent]:
+        """Create demo agents and attach their tools."""
         specs = [
+
             {
                 "agent_name": "Front Desk Maya",
                 "status": "live",
@@ -292,6 +308,7 @@ class Command(BaseCommand):
         return agents
 
     def _calls(self, agents: list[Agent]) -> list[CallLog]:
+        """Generate sample inbound/outbound call logs."""
         live = [a for a in agents if a.status == "live"]
         if not live:
             return []
@@ -349,6 +366,7 @@ class Command(BaseCommand):
         return calls
 
     def _transcripts(self, calls: list[CallLog]) -> None:
+        """Attach a short sample transcript to recent calls."""
         sample = [c for c in calls if c.status == "completed"][:10]
         for call in sample:
             base = call.started_at or timezone.now()
@@ -362,6 +380,7 @@ class Command(BaseCommand):
                 )
 
     def _bookings(self, agents: list[Agent], calls: list[CallLog]) -> int:
+        """Seed room and table bookings for the dashboard."""
         Booking.objects.filter(agent__in=agents).delete()
         live = [a for a in agents if a.status == "live"]
         today = date.today()
