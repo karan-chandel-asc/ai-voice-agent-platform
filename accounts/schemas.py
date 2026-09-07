@@ -1,64 +1,20 @@
 import re
-from pydantic import BaseModel, field_validator, model_validator
-
-
-# schema for sighnup
-class SignupViewSchema(BaseModel):
-    first_name: str
-    last_name: str
-    business_name: str
-    work_email: str
-    password: str
-
-    @field_validator('first_name')
-    @classmethod
-    def validate_name(cls, v):
-        if not v.strip():
-            raise ValueError('First Name is required')
-        if len(v) > 50:
-            raise ValueError('Max length is 50 characters')
-        return v
-    
-    @field_validator('last_name')
-    @classmethod
-    def validate_last_name(cls, v):
-        if not v.strip():
-            raise ValueError('Last Name is required')
-        if len(v) > 50:
-            raise ValueError('Max length is 50 characters')
-        return v
-
-    @field_validator('business_name')
-    @classmethod
-    def validate_business_name(cls, v):
-        if not v.strip():
-            raise ValueError('This field is required')
-        if len(v) > 255:
-            raise ValueError('Max length is 255 characters')
-        return v
-
-    @field_validator('work_email')
-    @classmethod
-    def validate_email(cls, v):
-        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(pattern, v):
-            raise ValueError('Invalid email address')
-        return v
-
-    @field_validator('password')
-    @classmethod
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        return v
+from pydantic import BaseModel, field_validator
 
 
 class ForgotPasswordSchema(BaseModel):
+    """Validate forgot-password request body.
+
+    Requires a well-formed email address.
+    Used by ForgotPasswordView before token creation.
+    """
+
     email: str
 
     @field_validator('email')
     @classmethod
     def validate_email(cls, v):
+        """Reject strings that are not valid emails."""
         pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(pattern, v):
             raise ValueError('Invalid email address')
@@ -66,6 +22,12 @@ class ForgotPasswordSchema(BaseModel):
 
 
 class ResetPasswordSchema(BaseModel):
+    """Validate reset-password request body.
+
+    Requires uid, token, and a new password.
+    Enforces a minimum password length of 8.
+    """
+
     uid: str
     token: str
     password: str
@@ -73,18 +35,26 @@ class ResetPasswordSchema(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
+        """Ensure password meets the minimum length."""
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters')
         return v
 
 
 class LoginViewSchema(BaseModel):
+    """Validate login request body.
+
+    Requires email and a non-empty password.
+    Used by LoginAPIView before authentication.
+    """
+
     email: str
     password: str
 
     @field_validator('email')
     @classmethod
     def validate_email(cls, v):
+        """Reject strings that are not valid emails."""
         pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(pattern, v):
             raise ValueError('Invalid email address')
@@ -93,6 +63,7 @@ class LoginViewSchema(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
+        """Reject blank or whitespace-only passwords."""
         if not v.strip():
             raise ValueError('Password is required')
         return v

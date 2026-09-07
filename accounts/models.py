@@ -4,7 +4,11 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
-    """Single-operator account for the hotel/restaurant desk."""
+    """Single-operator account for the hotel/restaurant desk.
+
+    Email is the login username field.
+    Stores business profile and subscription plan.
+    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
@@ -27,4 +31,5 @@ class CustomUser(AbstractUser):
         ordering = ["-created_at"]
 
     def __str__(self):
+        """Return email as the admin display label."""
         return self.email

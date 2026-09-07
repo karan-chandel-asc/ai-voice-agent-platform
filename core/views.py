@@ -7,9 +7,6 @@ def home(request):
 def login_page(request):
     return render(request, 'voice_login.html')
 
-def register_page(request):
-    return render(request, 'voice_register.html')
-
 def dashboard(request):
     return render(request, 'voice_dashboard.html')
 

@@ -4,77 +4,49 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from pydantic import ValidationError
 
-from .schemas import SignupViewSchema, LoginViewSchema, ForgotPasswordSchema, ResetPasswordSchema
+from .schemas import LoginViewSchema, ForgotPasswordSchema, ResetPasswordSchema
 from .service import UserService
 from .tasks import send_password_reset_email
 from core.logger import logger
 from core.response_schemas import success_response, error_response
 from django.shortcuts import render
-from django.conf import settings
 
 
 service = UserService()
 
-class SighnUpRender(APIView):
-    authentication_classes = []
-    permission_classes     = []
-    def get(self, request):
-        logger.info("Request received for signup Render Html")
-        return render(request, 'voice_register.html', {'GOOGLE_CLIENT_ID': settings.GOOGLE_CLIENT_ID})
-
-
-
-class SignupAPIView(APIView):
-    authentication_classes = []
-    permission_classes     = []
-
-    def post(self, request):
-        try:
-
-            logger.info("Request received for signup Post Method")
-            data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
-
-            try:
-                validated_data = SignupViewSchema(**data)
-            except ValidationError as e:
-                err = e.errors()[0]
-                message = err['msg'].replace('Value error, ', '')
-                return Response(error_response(message=message), status=status.HTTP_400_BAD_REQUEST)
-
-            email_exists , message = service.check_email_exists(validated_data.work_email)
-            if  email_exists is None:
-                return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            if email_exists:
-                return Response(error_response(message=message), status=status.HTTP_400_BAD_REQUEST)
-
-            user, err = service.create_user(validated_data)
-            if not user:
-                return Response(error_response(message=err), status=status.HTTP_400_BAD_REQUEST)
-
-            return Response(success_response(
-                message="Signup successful ! you can Login Now"
-            ), status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            logger.error(f"Signup error: {e}")
-            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class LoginRender(APIView):
+    """Serve the email/password login page.
+
+    Public GET endpoint with no auth required.
+    Renders voice_login.html for the console.
+    """
+
     authentication_classes = []
     permission_classes     = []
+
     def get(self, request):
+        """Return the login HTML page."""
         logger.info("Request received for login Get Method")
-        return render(request, 'voice_login.html', {'GOOGLE_CLIENT_ID': settings.GOOGLE_CLIENT_ID})
+        return render(request, 'voice_login.html')
+
 
 class LoginAPIView(APIView):
+    """Authenticate a user and issue JWT tokens.
+
+    Accepts email and password in the request body.
+    Sets an access_token cookie on success.
+    """
+
     authentication_classes = []
     permission_classes     = []
 
     def post(self, request):
+        """Validate credentials and return access/refresh tokens."""
         try:
             logger.info("Request received for login Post Method")
             data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
+            next_url = request.data.get('next', None)
 
             try:
                 validated_data = LoginViewSchema(**data)
@@ -103,11 +75,19 @@ class LoginAPIView(APIView):
             logger.error(f"Login error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class LogoutView(APIView):
+    """Blacklist the refresh token and clear session cookie.
+
+    Expects a refresh token in the POST body.
+    Always deletes the access_token cookie on success.
+    """
+
     authentication_classes = []
     permission_classes     = []
 
     def post(self, request):
+        """Invalidate refresh token and clear auth cookie."""
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response(error_response(message="Refresh token is required."), status=status.HTTP_400_BAD_REQUEST)
@@ -125,17 +105,33 @@ class LogoutView(APIView):
 
 
 class ForgotPasswordRender(APIView):
+    """Serve the forgot-password request page.
+
+    Public GET endpoint with no auth required.
+    Renders voice_forgot_password.html.
+    """
+
     authentication_classes = []
     permission_classes     = []
+
     def get(self, request):
+        """Return the forgot-password HTML page."""
         logger.info("Request received for forgot password Render Html")
         return render(request, 'voice_forgot_password.html')
 
+
 class ForgotPasswordView(APIView):
+    """Start a password reset for a registered email.
+
+    Always returns a generic success message.
+    Sends a reset link via Celery when the user exists.
+    """
+
     authentication_classes = []
     permission_classes     = []
 
     def post(self, request):
+        """Validate email and queue a password-reset email."""
         try:
             logger.info("Request comes for forgot password")
             data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
@@ -162,20 +158,33 @@ class ForgotPasswordView(APIView):
 
 
 class ResetPasswordRender(APIView):
+    """Serve the reset-password form page.
+
+    Public GET endpoint with no auth required.
+    Renders ase_reset_password.html.
+    """
+
     authentication_classes = []
     permission_classes     = []
 
     def get(self, request):
+        """Return the reset-password HTML page."""
         logger.info("GET Request received for reset password page")
         return render(request, 'ase_reset_password.html')
 
 
-
 class ResetPasswordAPIView(APIView):
+    """Set a new password using a valid reset token.
+
+    Requires uid, token, and new password in the body.
+    Rejects invalid or expired reset links.
+    """
+
     authentication_classes = []
     permission_classes     = []
 
     def post(self, request):
+        """Validate reset payload and update the user password."""
         try:
             logger.info("Request comes for reset password")
             data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
@@ -199,59 +208,22 @@ class ResetPasswordAPIView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class GoogleRedirectView(APIView):
-    authentication_classes = []
-    permission_classes     = []
-
-    def get(self, request):
-        try:
-            from django.shortcuts import redirect
-            redirect_uri = settings.GOOGLE_REDIRECT_URI
-            auth_url, err = service.get_google_redirect_url(redirect_uri)
-            if not auth_url:
-                return redirect('/api/auth/login/?error=google_config')
-            return redirect(auth_url)
-        except Exception as e:
-            logger.error(f"Google redirect error: {e}")
-            return redirect('/api/auth/login/?error=google_failed')
-
-
-class GoogleCallbackView(APIView):
-    authentication_classes = []
-    permission_classes     = []
-
-    def get(self, request):
-        try:
-            from django.shortcuts import redirect
-            code  = request.GET.get('code')
-            error = request.GET.get('error')
-
-            if error or not code:
-                return redirect('/api/auth/login/?error=google_denied')
-
-            redirect_uri = settings.GOOGLE_REDIRECT_URI
-            user, err    = service.exchange_google_code(code, redirect_uri)
-            if not user:
-                logger.error(f"Google callback error: {err}")
-                return redirect('/api/auth/login/?error=google_failed')
-
-            refresh = RefreshToken.for_user(user)
-            access  = str(refresh.access_token)
-            ref     = str(refresh)
-            return redirect(f'/api/dashboard/voice-dashboard/?access={access}&refresh={ref}')
-        except Exception as e:
-            logger.error(f"Google callback error: {e}")
-            return redirect('/api/auth/login/?error=google_failed')
-
-
 PLAN_LABELS = {
     "free":       "Free",
     "pro":        "Pro — $79/mo",
     "enterprise": "Enterprise — $199/mo",
 }
 
+
 class UserProfileApiView(APIView):
+    """Read or update the authenticated user's profile.
+
+    GET returns name, contact, and plan details.
+    PUT updates first/last name, business, and phone.
+    """
+
     def get(self, request):
+        """Return the current user's profile payload."""
         try:
             user = request.user
             full_name = f"{user.first_name} {user.last_name}".strip() or user.username or user.email.split("@")[0]
@@ -274,6 +246,7 @@ class UserProfileApiView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def put(self, request):
+        """Update profile fields and return the saved profile."""
         try:
             user         = request.user
             first_name   = request.data.get("first_name", "").strip()
@@ -317,9 +290,15 @@ class UserProfileApiView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class DeleteAccountView(APIView):
+    """Permanently delete the authenticated user account.
+
+    Cascades related data owned by the user.
+    Requires a valid JWT; no request body needed.
+    """
+
     def delete(self, request):
+        """Delete the current user and return a success message."""
         try:
             email = request.user.email
             request.user.delete()

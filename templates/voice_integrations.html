@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -22,26 +22,27 @@ function logout() {
     });
   }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <style>
-  :root{--bg:#F4F7F6;--sidebar:#fff;--card:#fff;--border:#e8edf2;--border-soft:#f1f5f9;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--accent:#0F766E;--accent-l:#D8F3EF;}
+  :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
-  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
-  .sidebar{background:var(--sidebar);border-right:1px solid var(--border);}
-  .nav-item{padding:7px 10px;border-radius:7px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:450;transition:all 0.15s;text-decoration:none;}
-  .nav-item:hover{background:var(--bg);color:var(--t1);}
-  .nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
-  .nav-sec{font-size:10.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;padding:0 10px;margin:14px 0 5px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  .sidebar{background:var(--sidebar);border-right:none;}
+  .nav-item{padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;transition:all 0.15s;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
+  .nav-item.active{background:rgba(201,164,110,0.14);color:#C9A46E;font-weight:600;}
+  .nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.1em;padding:0 10px;margin:16px 0 6px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
   .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
   .b-green{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
   .b-gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
   .b-red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;}
-  .btn-primary{background:linear-gradient(135deg,#0F766E,#0D9488);color:white;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(15,118,110,0.35);}
-  .btn-primary-sm{background:linear-gradient(135deg,#0F766E,#0D9488);color:white;font-size:11.5px;font-weight:500;padding:5px 11px;border-radius:6px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:4px;}
+  .btn-primary{background:#A9814A;color:#1B1408;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 14px rgba(169,129,74,0.25);}
+  .btn-primary:hover{opacity:0.9;box-shadow:0 4px 12px rgba(169,129,74,0.35);}
+  .btn-primary-sm{background:#A9814A;color:#1B1408;font-size:11.5px;font-weight:500;padding:5px 11px;border-radius:6px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:4px;}
   .btn-primary-sm:hover{opacity:0.9;}
-  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
   .btn-ghost:hover{background:var(--bg);color:var(--t1);}
   .btn-ghost-sm{background:transparent;color:var(--t2);font-size:11.5px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:4px;}
   .btn-ghost-sm:hover{background:var(--bg);color:var(--t1);}
@@ -51,8 +52,8 @@ function logout() {
   .btn-red-ghost-sm:hover{background:#fff1f2;}
   .scrollbar::-webkit-scrollbar{width:5px;}
   .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
-  .input-field{width:100%;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:var(--t1);padding:8px 12px;outline:none;font-family:'Manrope',system-ui,sans-serif;transition:border-color 0.15s,box-shadow 0.15s;}
-  .input-field:focus{border-color:#14B8A6;box-shadow:0 0 0 3px rgba(20,184,166,0.12);}
+  .input-field{width:100%;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:var(--t1);padding:8px 12px;outline:none;font-family:'Inter',system-ui,sans-serif;transition:border-color 0.15s,box-shadow 0.15s;}
+  .input-field:focus{border-color:#A9814A;box-shadow:0 0 0 3px rgba(169,129,74,0.12);}
   .input-field::placeholder{color:var(--t3);}
   .label{font-size:12px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block;}
   .int-card{background:white;border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:18px;}
@@ -94,12 +95,12 @@ function logout() {
 
 <!-- Sidebar -->
 <aside class="sidebar w-56 flex flex-col flex-shrink-0">
-  <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-    <a href="{% url 'home' %}" class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">
-        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+  <div class="px-5 py-4 sidebar-brand">
+    <a href="{% url 'home' %}" class="flex items-center gap-2.5 no-underline">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#A9814A;">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#1B1408" stroke-width="1.7"><path d="M3 10.5L12 4l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.2c1-1.4 4-1.4 5 0" stroke-linecap="round"/></svg>
       </div>
-      <span class="font-semibold text-sm text-slate-800" style="font-family:'Cormorant Garamond',serif;letter-spacing:0.02em;">Deskline</span>
+      <span class="display text-sm text-white tracking-wide">Deskline</span>
     </a>
   </div>
   <nav class="flex-1 px-3 py-2 overflow-y-auto scrollbar">
@@ -153,15 +154,15 @@ function logout() {
   <!-- Header -->
   <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid #f1f5f9;">
     <div>
-      <h1 class="text-sm font-semibold text-slate-800">Settings &amp; Integrations</h1>
+      <h1 class="display text-xl text-slate-800" style="letter-spacing:-0.02em;">Settings &amp; Integrations</h1>
       <p class="text-xs text-slate-400 mt-0.5">Connect external services and manage your account</p>
     </div>
     <div class="flex items-center gap-3">
       <!-- Profile avatar -->
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
-          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
-          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
+          <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading—</span>
           <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <!-- Dropdown -->
@@ -169,14 +170,14 @@ function logout() {
           <!-- User info header -->
           <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
             <div class="flex items-center gap-2.5">
-              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">U</div>
+              <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
               <div class="min-w-0">
                 <div id="dd-name" class="text-xs font-semibold text-slate-800 truncate">—</div>
                 <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
               </div>
             </div>
             <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#CCFBF1;color:#0F766E;">Free</span>
+              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
               <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
             </div>
           </div>
@@ -302,8 +303,8 @@ function logout() {
   <div class="modal-box">
     <div class="flex items-center justify-between mb-5">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#CCFBF1;">
-          <svg class="w-4.5 h-4.5" style="color:#0F766E;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#F0E6D4;">
+          <svg class="w-4.5 h-4.5" style="color:#16332B;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         </div>
         <div>
           <h3 class="text-sm font-semibold text-slate-800">Edit Profile</h3>
@@ -442,16 +443,16 @@ function logout() {
 
   function toggleReveal() {
     const el = document.getElementById('el-key');
-    if (el.textContent.includes('•')) {
+    if (el.textContent.includes('—')) {
       el.textContent = 'el_sk_prod_abc123xyz789';
       event.target.textContent = 'Hide';
     } else {
-      el.textContent = 'el_•••••••••••••••';
+      el.textContent = 'el_———————————————';
       event.target.textContent = 'Reveal';
     }
   }
 
-  // ── Toast ───────────────────────────────────────────────────────────────────
+  // -- Toast -------------------------------------------------------------------
   function showToast(message, type = 'success', duration = 4000) {
     const container = document.getElementById('toast-container');
     const icons = {
@@ -469,8 +470,8 @@ function logout() {
     }, duration);
   }
 
-  // ── Integration connect/disconnect ──────────────────────────────────────────
-  const INTEGRATION_STATE = {};   // type → is_connected
+  // -- Integration connect/disconnect ------------------------------------------
+  const INTEGRATION_STATE = {};   // type ? is_connected
 
   async function loadIntegrationStatus() {
     const res  = await fetch('/api/integrations/integrations-status/', { headers: { 'Authorization': 'Bearer ' + getToken() } });
@@ -525,7 +526,7 @@ function logout() {
     }
   }
 
-  // ── Google Sheets connect/disconnect ────────────────────────────────────────
+  // -- Google Sheets connect/disconnect ----------------------------------------
   function handleSheetsClick() {
     if (INTEGRATION_STATE['google_sheets']) {
       document.getElementById('disconnect-sheets-modal').classList.remove('hidden');
@@ -544,7 +545,7 @@ function logout() {
     return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
   }
 
-  // ── Profile ──────────────────────────────────────────────────────────────────
+  // -- Profile ------------------------------------------------------------------
   async function loadProfile() {
     try {
       const res  = await fetch('/api/auth/profile/', { headers: { 'Authorization': 'Bearer ' + getToken() } });
@@ -585,10 +586,10 @@ function logout() {
     }
   }
 
-  // ── Delete All Agents ────────────────────────────────────────────────────────
+  // -- Delete All Agents --------------------------------------------------------
   async function confirmDeleteAllAgents() {
     const btn = document.getElementById('confirm-delete-agents-btn');
-    btn.textContent = 'Deleting…';
+    btn.textContent = 'Deleting—';
     btn.disabled = true;
     try {
       const res  = await fetch('/api/agents/delete-all-agents/', {
@@ -610,10 +611,10 @@ function logout() {
     }
   }
 
-  // ── Delete Account ───────────────────────────────────────────────────────────
+  // -- Delete Account -----------------------------------------------------------
   async function confirmDeleteAccount() {
     const btn = document.getElementById('delete-account-btn');
-    btn.innerHTML = 'Deleting…';
+    btn.innerHTML = 'Deleting—';
     btn.disabled = true;
     try {
       const res  = await fetch('/api/auth/delete-account/', {
@@ -638,7 +639,7 @@ function logout() {
     }
   }
 
-  // ── Edit Profile ─────────────────────────────────────────────────────────────
+  // -- Edit Profile -------------------------------------------------------------
   function openEditProfileModal() {
     // pre-fill from current displayed values
     document.getElementById('edit-first-name').value   = '';
@@ -699,7 +700,7 @@ function logout() {
       return;
     }
 
-    btn.textContent = 'Saving…';
+    btn.textContent = 'Saving—';
     btn.disabled    = true;
 
     try {
@@ -741,7 +742,7 @@ function logout() {
     }
   }
 
-  // ── Profile dropdown ─────────────────────────────────────────────────────────
+  // -- Profile dropdown ---------------------------------------------------------
   function toggleProfileDropdown() {
     document.getElementById('profile-dropdown').classList.toggle('hidden');
   }
