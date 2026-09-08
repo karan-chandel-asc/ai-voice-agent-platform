@@ -264,10 +264,21 @@ class AgentMechanism:
 
     def get_all_agents(self, user, search=None):
         try:
+            from django.db.models import Avg, Count, FloatField, Value
+            from django.db.models.functions import Coalesce
+
             agents = (
                 Agent.objects
                 .filter(owner=user)
                 .select_related("owner", "elevenlabs_voice")
+                .annotate(
+                    total_calls=Count("calls", distinct=True),
+                    avg_duration_seconds=Coalesce(
+                        Avg("calls__duration_seconds"),
+                        Value(0.0),
+                        output_field=FloatField(),
+                    ),
+                )
                 .order_by("-created_at")
             )
             if search:

@@ -487,8 +487,22 @@ function logout() {
     return 'linear-gradient(135deg,#16332B,#A9814A)';
   }
 
-  function getBadgeHTML() {
-    return `<span class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>`;
+  function getBadgeHTML(status) {
+    const s = String(status || '').toLowerCase();
+    if (s === 'live') {
+      return `<span class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>`;
+    }
+    if (s === 'paused') {
+      return `<span class="badge b-paused">PAUSED</span>`;
+    }
+    return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">${escapeHtml((status || 'DRAFT').toUpperCase())}</span>`;
+  }
+
+  function fmtAvgDuration(sec) {
+    sec = Math.round(Number(sec) || 0);
+    if (!sec) return '—';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
   }
 
   // -- Card renderer ------------------------------------------
@@ -496,6 +510,8 @@ function logout() {
     const initials    = getInitials(agent.agent_name);
     const grad        = getAvatarGradient();
     const createdDate = agent.created_at ? new Date(agent.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const calls       = agent.total_calls ?? 0;
+    const avg         = fmtAvgDuration(agent.avg_duration_seconds);
 
     return `
 <div class="agent-card p-5 flex flex-col gap-4">
@@ -505,7 +521,7 @@ function logout() {
       <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white avatar-ring flex-shrink-0" style="background:${grad};">${initials}</div>
       <div>
         <div class="text-sm font-semibold text-slate-800 leading-snug">${escapeHtml(agent.agent_name)}</div>
-        <div class="flex items-center gap-1.5 mt-1">${getBadgeHTML()}</div>
+        <div class="flex items-center gap-1.5 mt-1">${getBadgeHTML(agent.status)}</div>
       </div>
     </div>
     <a href="${AGENT_CREATE_URL}?edit=${agent.id}" title="Edit agent" class="w-7 h-7 flex items-center justify-center rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all text-slate-400 hover:text-slate-600 flex-shrink-0">
@@ -545,12 +561,12 @@ function logout() {
   <!-- Stats row -->
   <div class="flex items-center gap-0" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:10px 12px;">
     <div class="flex-1 text-center">
-      <div class="stat-val">0</div>
+      <div class="stat-val">${calls}</div>
       <div class="stat-lbl">calls</div>
     </div>
     <div class="stat-divider"></div>
     <div class="flex-1 text-center">
-      <div class="stat-val">—</div>
+      <div class="stat-val">${avg}</div>
       <div class="stat-lbl">avg</div>
     </div>
   </div>

@@ -1054,7 +1054,13 @@ function logout() {
       const method = isEdit ? 'PUT' : 'POST';
 
       const res  = await authFetch(url, { method, body: JSON.stringify(payload) });
-      const json = await res.json();
+      if (!res) {
+        loading.classList.add('hidden');
+        document.getElementById('deploy-error-msg').textContent = 'Please log in again.';
+        errState.classList.remove('hidden');
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
 
       if (res.ok) {
         setTimeout(() => {

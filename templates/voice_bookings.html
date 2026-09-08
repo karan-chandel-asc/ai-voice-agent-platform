@@ -217,7 +217,16 @@
         <!-- Filters -->
         <div class="relative">
           <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="search-input" class="search pl-8 w-52" type="text" placeholder="Search guest, phone—" oninput="debounceLoad()">
+          <input id="search-input" class="search pl-8 w-52" type="text" placeholder="Search guest, email, phone—" oninput="debounceLoad()">
+        </div>
+        <div class="relative">
+          <select id="agent-filter" onchange="load(1)">
+            <option value="">All Agents</option>
+            {% for a in agents %}
+            <option value="{{ a.id }}">{{ a.agent_name }}</option>
+            {% endfor %}
+          </select>
+          <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
         </div>
         <div class="relative">
           <select id="status-filter" onchange="load(1)">
@@ -272,9 +281,20 @@
 
   async function fetchJSON(url) {
     const res = await fetch(url, { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() } });
-    if (res.status === 401) { window.location.href = '/api/auth/login/'; return; }
-    if (!res.ok) throw new Error('API error');
-    return res.json();
+    if (res.status === 401 || res.status === 403) {
+      window.location.href = '/api/auth/login/';
+      throw new Error('Please log in again');
+    }
+    let json = {};
+    try {
+      json = await res.json();
+    } catch (_) {
+      throw new Error('Invalid server response');
+    }
+    if (!res.ok || json.success === false) {
+      throw new Error(json.message || 'Request failed');
+    }
+    return json;
   }
 
   function setTab(tab) {
@@ -282,7 +302,9 @@
     ['all','room','table'].forEach(t => {
       const btn = document.getElementById('tab-'+t);
       btn.className = 'tab-btn';
-      if (t === tab) btn.className += (tab === 'room' ? ' active-room' : ' active-table');
+      if (t === tab) {
+        btn.className += (tab === 'room' ? ' active-room' : ' active-table');
+      }
     });
     renderHead();
     load(1);
@@ -392,30 +414,32 @@
   }
 
   async function load(page) {
-    if (page !== undefined) currentPage = page;
+    if (page !== undefined) currentPage = Math.max(1, Number(page) || 1);
     const search = document.getElementById('search-input').value.trim();
     const status = document.getElementById('status-filter').value;
+    const agent  = document.getElementById('agent-filter')?.value || '';
     const from   = document.getElementById('date-from').value;
     const to     = document.getElementById('date-to').value;
 
-    const params = new URLSearchParams({ page: currentPage });
+    const params = new URLSearchParams({ page: currentPage, page_size: 20 });
     if (search) params.set('search', search);
     if (status) params.set('confirmed', status);
+    if (agent)  params.set('agent', agent);
     if (from)   params.set('from', from);
     if (to)     params.set('to', to);
     if (activeTab !== 'all') params.set('booking_type', activeTab);
 
     const tbody = document.getElementById('bookings-body');
-    tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-10 text-center text-sm text-slate-400">Loading—</td></tr>';
+    const colSpan = activeTab === 'table' ? 7 : 8;
+    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-5 py-10 text-center text-sm text-slate-400">Loading—</td></tr>`;
 
     try {
       const json = await fetchJSON(API + '?' + params.toString());
-      if (!json.success) throw new Error(json.message);
-      const d = json.data;
+      const d = json.data || {};
       const s = d.stats || {};
       const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-      set('stat-total',  s.total  ?? '—');
-      set('stat-rooms',  s.rooms  ?? '—');
+      set('stat-total',  s.total_booking  ?? s.total  ?? '—');
+      set('stat-rooms',  s.rooms_booking  ?? s.rooms  ?? '—');
       set('stat-tables', s.tables ?? '—');
       set('stat-month',  s.this_month ?? '—');
 
@@ -426,7 +450,7 @@
       document.getElementById('result-count').textContent = total + ' booking' + (total !== 1 ? 's' : '');
 
       if (!results.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="px-5 py-12 text-center"><div class="flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="text-sm text-slate-400">No bookings found</span></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-5 py-12 text-center"><div class="flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="text-sm text-slate-400">No bookings found</span></div></td></tr>`;
         document.getElementById('page-info').textContent = '';
         document.getElementById('page-btns').innerHTML   = '';
         return;
@@ -434,7 +458,7 @@
       tbody.innerHTML = results.map((b,i) => renderRow(b, i, offset)).join('');
       renderPagination(total, currentPage, 20);
     } catch(e) {
-      tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-10 text-center text-sm text-red-400">Failed to load bookings.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-5 py-10 text-center text-sm text-red-400">${escHtml(e.message || 'Failed to load bookings.')}</td></tr>`;
     }
   }
 
@@ -443,32 +467,41 @@
     const from = (page - 1) * perPage + 1;
     const to   = Math.min(page * perPage, total);
     document.getElementById('page-info').textContent = total ? `Showing ${from}—${to} of ${total}` : '';
-    let html = `<button class="pg-btn" onclick="load(${page-1})" ${page<=1?'disabled':''}>— Prev</button>`;
+    let html = `<button class="pg-btn" onclick="load(${page-1})" ${page<=1?'disabled':''}>Prev</button>`;
     const start = Math.max(1, page-2), end = Math.min(totalPages, page+2);
     for (let p = start; p <= end; p++) {
       html += `<button class="pg-btn ${p===page?'active':''}" onclick="load(${p})">${p}</button>`;
     }
-    html += `<button class="pg-btn" onclick="load(${page+1})" ${page>=totalPages?'disabled':''}>Next —</button>`;
+    html += `<button class="pg-btn" onclick="load(${page+1})" ${page>=totalPages?'disabled':''}>Next</button>`;
     document.getElementById('page-btns').innerHTML = totalPages > 1 ? html : '';
   }
 
   async function updateConfirmStatus(bookingId, selectEl) {
     const confirmed = selectEl.value === '1';
+    const prevValue = confirmed ? '0' : '1';
     try {
       const res  = await fetch(`/api/dashboard/bookings/${bookingId}/confirm/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
         body: JSON.stringify({ confirmed }),
       });
-      const json = await res.json();
-      if (!json.success) { showToast(json.message || 'Failed to update.', 'error'); return; }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.success === false) {
+        selectEl.value = prevValue;
+        showToast(json.message || 'Failed to update.', 'error');
+        return;
+      }
       if (confirmed) {
         selectEl.style.background  = '#ecfdf5'; selectEl.style.color = '#059669'; selectEl.style.borderColor = '#a7f3d0';
         showToast('Booking confirmed!', 'success');
       } else {
         selectEl.style.background  = '#fffbeb'; selectEl.style.color = '#d97706'; selectEl.style.borderColor = '#fde68a';
+        showToast('Booking set to pending.', 'info');
       }
-    } catch(e) { showToast('Network error.', 'error'); }
+    } catch(e) {
+      selectEl.value = prevValue;
+      showToast('Network error.', 'error');
+    }
   }
 
   function debounceLoad() { clearTimeout(debTimer); debTimer = setTimeout(() => load(1), 350); }
@@ -476,6 +509,8 @@
   function clearFilters() {
     document.getElementById('search-input').value = '';
     document.getElementById('status-filter').value = '';
+    const agent = document.getElementById('agent-filter');
+    if (agent) agent.value = '';
     document.getElementById('date-from').value = '';
     document.getElementById('date-to').value = '';
     load(1);

@@ -256,7 +256,7 @@
             <tr style="border-bottom:1px solid #f1f5f9;">
               <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Caller</th>
               <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Agent</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Outcome</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Status</th>
               <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Duration</th>
               <th class="px-4 py-3"></th>
             </tr>
@@ -307,15 +307,15 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:false});
 }
 
-function outcomeHtml(outcome) {
-  const o = String(outcome||'').toLowerCase();
-  if (o === 'booked' || o.includes('room') || o.includes('table'))
-    return `<span class="badge b-room">BOOKED</span>`;
-  if (o === 'faq_resolved')
-    return `<span class="badge b-faq">RESOLVED</span>`;
-  if (o.includes('handoff') || o.includes('transfer'))
-    return `<span class="badge b-handoff">HANDOFF</span>`;
-  return `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;">${escHtml(outcome||'—').toUpperCase()}</span>`;
+function statusHtml(status) {
+  const o = String(status||'').toLowerCase();
+  if (o === 'completed')
+    return `<span class="badge b-room">COMPLETED</span>`;
+  if (o === 'failed')
+    return `<span class="badge b-handoff">FAILED</span>`;
+  if (o === 'transferred')
+    return `<span class="badge b-faq">TRANSFERRED</span>`;
+  return `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;">${escHtml(status||'—').toUpperCase()}</span>`;
 }
 
 function getInitials(name) {
@@ -323,8 +323,15 @@ function getInitials(name) {
   return w.length >= 2 ? (w[0][0]+w[1][0]).toUpperCase() : (name||'AG').slice(0,2).toUpperCase();
 }
 
-function statusBadge() {
-  return `<span class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>`;
+function statusBadge(status) {
+  const s = String(status || '').toLowerCase();
+  if (s === 'live') {
+    return `<span class="badge b-live flex items-center gap-1"><span class="live-dot" style="width:5px;height:5px;"></span>LIVE</span>`;
+  }
+  if (s === 'paused') {
+    return `<span class="badge b-paused">PAUSED</span>`;
+  }
+  return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">${escHtml((status || 'DRAFT').toUpperCase())}</span>`;
 }
 
 
@@ -332,7 +339,7 @@ async function loadDashboardStats() {
   try {
     const res  = await fetch('/api/dashboard/stats/', { headers: { 'Authorization': 'Bearer ' + token() } });
     const json = await res.json();
-    if (!json.success) return;
+    if (!json.success || !json.data) return;
     const d = json.data;
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     set('kpi-total-calls',    d.total_calls ?? '0');
@@ -361,7 +368,7 @@ async function loadAgents() {
           <div class="text-xs font-semibold text-slate-800 truncate">${escHtml(a.agent_name)}</div>
           <div class="text-xs text-slate-400 truncate">${escHtml(a.phone_number||'No number')}</div>
         </div>
-        ${statusBadge()}
+        ${statusBadge(a.status)}
       </div>`;
     }).join('');
   } catch(e) {}
@@ -421,7 +428,7 @@ async function loadRecentCalls() {
       return `<tr class="trow" onclick="window.location.href='${detailUrl}'" style="cursor:pointer;">
         <td class="px-5 py-3 text-xs font-medium text-slate-800">${escHtml(c.caller_phone||'—')}</td>
         <td class="px-4 py-3 text-xs text-slate-500">${escHtml(c.agent_name||'—')}</td>
-        <td class="px-4 py-3">${outcomeHtml(c.outcome)}</td>
+        <td class="px-4 py-3">${statusHtml(c.status)}</td>
         <td class="px-4 py-3 text-xs font-mono text-slate-600">${escHtml(c.duration||'0:00')}</td>
         <td class="px-4 py-3 text-right"><a href="${detailUrl}" class="text-xs font-medium" style="color:#16332B;" onclick="event.stopPropagation()">View ?</a></td>
       </tr>`;

@@ -10,8 +10,8 @@ class CallTranscriptInline(admin.TabularInline):
 
 @admin.register(CallLog)
 class CallLogAdmin(admin.ModelAdmin):
-    list_display = ["caller_phone", "agent", "direction", "status", "outcome", "duration_seconds", "created_at"]
-    list_filter = ["direction", "status", "outcome", "was_transferred"]
+    list_display = ["caller_phone", "agent", "direction", "status", "duration_seconds", "created_at"]
+    list_filter = ["direction", "status", "was_transferred"]
     search_fields = ["caller_phone", "twilio_call_sid"]
     inlines = [CallTranscriptInline]
     readonly_fields = ["created_at"]

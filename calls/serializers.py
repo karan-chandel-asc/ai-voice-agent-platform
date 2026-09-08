@@ -9,8 +9,7 @@ class CallTranscriptSerializer(serializers.ModelSerializer):
 
 
 class CallLogSerializer(serializers.ModelSerializer):
-    agent_name = serializers.CharField(source="agent.agent_name", read_only=True)
-    outcome_label = serializers.CharField(source="get_outcome_display", read_only=True)
+    agent_name = serializers.SerializerMethodField()
     sentiment = serializers.SerializerMethodField()
     duration = serializers.SerializerMethodField()
 
@@ -18,20 +17,31 @@ class CallLogSerializer(serializers.ModelSerializer):
         model = CallLog
         fields = [
             "id", "agent", "agent_name", "twilio_call_sid",
-            "caller_phone", "direction", "status", "outcome", "outcome_label",
+            "caller_phone", "direction", "status",
             "reason", "duration_seconds", "duration", "sentiment_score",
             "sentiment", "was_transferred", "started_at", "ended_at", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
 
+    def get_agent_name(self, obj):
+        return obj.agent.agent_name if obj.agent_id else "—"
+
     def get_sentiment(self, obj):
-        if obj.sentiment_score is None:
+        val = (obj.sentiment_score or "").strip().lower()
+        if not val:
+            return None
+        if val in ("positive", "negative", "neutral"):
+            return val
+        # Legacy float strings from before CharField migration
+        try:
+            num = float(val)
+            if num > 0.05:
+                return "positive"
+            if num < -0.05:
+                return "negative"
             return "neutral"
-        if obj.sentiment_score > 0.05:
-            return "positive"
-        if obj.sentiment_score < -0.05:
-            return "negative"
-        return "neutral"
+        except (TypeError, ValueError):
+            return None
 
     def get_duration(self, obj):
         minutes, seconds = divmod(obj.duration_seconds or 0, 60)

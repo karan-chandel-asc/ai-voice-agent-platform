@@ -304,7 +304,7 @@ function logout() {
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <th class="text-left pb-2.5 font-medium text-slate-400">Caller</th>
                 <th class="text-left pb-2.5 font-medium text-slate-400">Duration</th>
-                <th class="text-left pb-2.5 font-medium text-slate-400">Outcome</th>
+                <th class="text-left pb-2.5 font-medium text-slate-400">Status</th>
                 <th class="text-left pb-2.5 font-medium text-slate-400">Sentiment</th>
                 <th class="text-left pb-2.5 font-medium text-slate-400">Time</th>
                 <th class="text-left pb-2.5 font-medium text-slate-400"></th>
@@ -325,12 +325,6 @@ function logout() {
         <div class="flex items-center gap-3 mb-4">
           <input id="calls-search" type="text" placeholder="Search caller—" oninput="debounceCallSearch()"
             class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-teal-400 flex-1 max-w-xs" style="font-family:inherit;">
-          <select id="calls-outcome" onchange="loadCallsTab(1)" class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-teal-400" style="font-family:inherit;">
-            <option value="">All Outcomes</option>
-            <option value="booked">Booked</option>
-            <option value="faq_resolved">FAQ Resolved</option>
-            <option value="no_outcome">No Outcome</option>
-          </select>
           <select id="calls-sentiment" onchange="loadCallsTab(1)" class="text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-teal-400" style="font-family:inherit;">
             <option value="">All Sentiments</option>
             <option value="positive">Positive</option>
@@ -344,7 +338,7 @@ function logout() {
             <tr style="border-bottom:1px solid #f1f5f9;">
               <th class="text-left pb-2.5 font-medium text-slate-400">Caller</th>
               <th class="text-left pb-2.5 font-medium text-slate-400">Duration</th>
-              <th class="text-left pb-2.5 font-medium text-slate-400">Outcome</th>
+              <th class="text-left pb-2.5 font-medium text-slate-400">Status</th>
               <th class="text-left pb-2.5 font-medium text-slate-400">Sentiment</th>
               <th class="text-left pb-2.5 font-medium text-slate-400">Date</th>
               <th class="text-left pb-2.5 font-medium text-slate-400"></th>
@@ -415,27 +409,36 @@ function logout() {
     return `${m}:${s.toString().padStart(2,'0')}`;
   }
 
-  function outcomeBadge(outcome) {
+  function statusBadge(status) {
     const map = {
-      booked:       `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">BOOKED</span>`,
-      faq_resolved: `<span class="badge" style="background:#F0E6D4;color:#4f46e5;border:1px solid #C9A46E;font-size:10px;">RESOLVED</span>`,
-      no_outcome:   `<span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">NO OUTCOME</span>`,
+      completed:   `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">COMPLETED</span>`,
+      failed:      `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">FAILED</span>`,
+      'no-answer': `<span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">NO ANSWER</span>`,
+      transferred: `<span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:10px;">TRANSFERRED</span>`,
+      'in-progress': `<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:10px;">IN PROGRESS</span>`,
     };
-    return map[outcome] || map.no_outcome;
+    return map[status] || `<span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">${(status||'—').toUpperCase()}</span>`;
   }
 
   function sentimentBadge(s) {
-    if (s === 'positive') return `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">?? POS</span>`;
-    if (s === 'negative') return `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">?? NEG</span>`;
-    return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:10px;">?? NEU</span>`;
+    if (s === 'positive') return `<span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">POS</span>`;
+    if (s === 'negative') return `<span class="badge" style="background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;font-size:10px;">NEG</span>`;
+    if (s === 'neutral') return `<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:10px;">NEU</span>`;
+    return `<span class="badge" style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;font-size:10px;">—</span>`;
   }
 
   // -- Agent Detail -----------------------------------------------------------
   function getBadgeHTML(status) {
-    return `<span class="live-dot" style="width:5px;height:5px;"></span>LIVE`;
+    const s = String(status || '').toLowerCase();
+    if (s === 'live') return `<span class="live-dot" style="width:5px;height:5px;"></span>LIVE`;
+    if (s === 'paused') return `PAUSED`;
+    return String(status || 'DRAFT').toUpperCase();
   }
   function getBadgeClass(status) {
-    return 'badge b-live flex items-center gap-1.5';
+    const s = String(status || '').toLowerCase();
+    if (s === 'live') return 'badge b-live flex items-center gap-1.5';
+    if (s === 'paused') return 'badge b-paused flex items-center gap-1.5';
+    return 'badge flex items-center gap-1.5';
   }
 
   function populateAgent(agent) {
@@ -451,6 +454,11 @@ function logout() {
       const el = document.getElementById(id);
       if (!el) return;
       el.className = getBadgeClass(agent.status);
+      if (String(agent.status || '').toLowerCase() !== 'live') {
+        el.style.background = String(agent.status || '').toLowerCase() === 'paused' ? '' : '#f1f5f9';
+        el.style.color = String(agent.status || '').toLowerCase() === 'paused' ? '' : '#64748b';
+        el.style.border = String(agent.status || '').toLowerCase() === 'paused' ? '' : '1px solid #e2e8f0';
+      }
       el.innerHTML = getBadgeHTML(agent.status);
     });
 
@@ -492,7 +500,14 @@ function logout() {
       const d = json.data;
       set('kpi-total-calls',   d.total_calls);
       set('kpi-avg-duration',  fmtDuration(d.avg_duration_seconds));
-      set('kpi-avg-sentiment', d.avg_sentiment !== null ? d.avg_sentiment : '—');
+      const sent = d.avg_sentiment;
+      let sentLabel = '—';
+      if (sent != null) {
+        if (sent >= 0.25) sentLabel = 'Positive';
+        else if (sent <= -0.25) sentLabel = 'Negative';
+        else sentLabel = 'Neutral';
+      }
+      set('kpi-avg-sentiment', sentLabel);
     } catch(e) {}
   }
 
@@ -519,7 +534,7 @@ function logout() {
         <tr class="tbl-row">
           <td class="py-2.5 font-medium text-slate-700">${c.caller_phone || '—'}</td>
           <td class="py-2.5 text-slate-500">${c.duration || fmtDuration(c.duration_seconds)}</td>
-          <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
+          <td class="py-2.5">${statusBadge(c.status)}</td>
           <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
           <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
           <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#16332B;">View ?</a></td>
@@ -545,12 +560,10 @@ function logout() {
     tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Loading—</td></tr>`;
 
     const search    = document.getElementById('calls-search')?.value.trim() || '';
-    const outcome   = document.getElementById('calls-outcome')?.value        || '';
     const sentiment = document.getElementById('calls-sentiment')?.value      || '';
 
     const params = new URLSearchParams({ agent_id: AGENT_ID, page, page_size: 15 });
     if (search)    params.set('search',    search);
-    if (outcome)   params.set('outcome',   outcome);
     if (sentiment) params.set('sentiment', sentiment);
 
     try {
@@ -568,7 +581,7 @@ function logout() {
         <tr class="tbl-row">
           <td class="py-2.5 font-medium text-slate-700">${c.caller_phone || '—'}</td>
           <td class="py-2.5 text-slate-500">${c.duration || fmtDuration(c.duration_seconds)}</td>
-          <td class="py-2.5">${outcomeBadge(c.outcome)}</td>
+          <td class="py-2.5">${statusBadge(c.status)}</td>
           <td class="py-2.5">${sentimentBadge(c.sentiment)}</td>
           <td class="py-2.5 text-slate-400">${fmtTime(c.created_at)}</td>
           <td class="py-2.5"><a href="/api/calls/voice-call-detail/?pk=${c.id}" class="font-medium" style="color:#16332B;">View ?</a></td>

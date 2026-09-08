@@ -14,8 +14,18 @@ from .views import (
     VoiceCreateAgentRender,
     VoiceAgentDetailRender,
 )
+from .tool_views import (
+    CheckRoomAvailabilityApiView,
+    CalculateBookingPriceApiView,
+    CreateRoomReservationApiView,
+)
 
 urlpatterns = [
+    # Retell custom-function / tool webhooks
+    path("tools/check-room-availability/", CheckRoomAvailabilityApiView.as_view(), name="tool-check-room-availability"),
+    path("tools/calculate-booking-price/", CalculateBookingPriceApiView.as_view(), name="tool-calculate-booking-price"),
+    path("tools/create-room-reservation/", CreateRoomReservationApiView.as_view(), name="tool-create-room-reservation"),
+
     path("voice-agents/", VoiceAgentsRender.as_view(), name="voice-agents"),
     path("voice-create-agent/", VoiceCreateAgentRender.as_view(), name="voice-create-agent"),
     path("voice-agent-detail/", VoiceAgentDetailRender.as_view(), name="voice-agent-detail"),

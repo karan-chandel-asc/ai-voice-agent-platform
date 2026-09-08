@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Agent, ElevenLabsVoices, Booking, RetellLanguage, RetellPhoneNumber
+from .models import (
+    Agent, ElevenLabsVoices, Booking, GuestLead, Escalation,
+    RetellLanguage, RetellPhoneNumber,
+)
 
 
 @admin.register(Agent)
@@ -37,4 +40,24 @@ class RetellPhoneNumberAdmin(admin.ModelAdmin):
     search_fields = ["phone_number", "nickname"]
 
 
-admin.site.register(Booking)
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = [
+        "guest_name", "booking_type", "room_type", "check_in", "check_out",
+        "guests", "total_price", "is_confirmed", "created_at",
+    ]
+    list_filter = ["booking_type", "room_type", "is_confirmed"]
+    search_fields = ["guest_name", "guest_email", "guest_phone", "call_sid"]
+
+
+@admin.register(GuestLead)
+class GuestLeadAdmin(admin.ModelAdmin):
+    list_display = ["guest_name", "phone_number", "room_type", "check_in", "created_at"]
+    search_fields = ["guest_name", "phone_number", "email"]
+
+
+@admin.register(Escalation)
+class EscalationAdmin(admin.ModelAdmin):
+    list_display = ["priority", "caller_name", "phone_number", "is_resolved", "created_at"]
+    list_filter = ["priority", "is_resolved"]
+    search_fields = ["caller_name", "phone_number", "reason"]

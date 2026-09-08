@@ -17,6 +17,39 @@ from rest_framework import status
 from .services import CallLogService
 from core.pagination import Pagination
 
+_SENTIMENT_NUMERIC = {"positive": 1.0, "neutral": 0.0, "negative": -1.0}
+
+
+def _avg_sentiment_label(qs):
+    """Map CharField sentiments to a simple avg score for KPI display."""
+    labels = list(
+        qs.exclude(sentiment_score="")
+        .values_list("sentiment_score", flat=True)
+    )
+    nums = [
+        _SENTIMENT_NUMERIC[str(v).strip().lower()]
+        for v in labels
+        if str(v).strip().lower() in _SENTIMENT_NUMERIC
+    ]
+    if not nums:
+        return None
+    return round(sum(nums) / len(nums), 2)
+
+
+def _booked_call_count(call_qs):
+    """Count calls that have at least one linked Booking via call_sid."""
+    from agents.models import Booking
+    sids = list(call_qs.exclude(twilio_call_sid="").values_list("twilio_call_sid", flat=True))
+    if not sids:
+        return 0
+    return (
+        Booking.objects.filter(call_sid__in=sids)
+        .values("call_sid")
+        .distinct()
+        .count()
+    )
+
+
 class VoiceCallHistoryRender(RenderAPIView):
     def get(self, request):
         return render(request, 'voice_call_history.html')
@@ -45,10 +78,6 @@ class DropDownsoptionsForCallHistory(APIView):
                     {"value": "negative", "label": "Negative"},
                     {"value": "neutral", "label": "Neutral"},
                 ],
-                "outcomes": [
-                    {"value": value, "label": label}
-                    for value, label in CallLog.OUTCOME_CHOICES
-                ],
             }
 
             return Response(
@@ -68,18 +97,18 @@ class CallLogListView(APIView):
             logger.info("Request received for CallLogListView")
             search = request.query_params.get("search", "").strip()
             agent_id = request.query_params.get("agent_id", "").strip()
-            outcome = request.query_params.get("outcome", "").strip()
             sentiment = request.query_params.get("sentiment", "").strip()
             intent = request.query_params.get("intent", "").strip()
+            days = request.query_params.get("days", "").strip()
 
             calllog_class = CallLogService()
             calllogs, message = calllog_class.get_call_logs(
                 request.user,
                 search=search or None,
                 agent_id=agent_id or None,
-                outcome=outcome or None,
                 sentiment=sentiment or None,
                 intent=intent or None,
+                days=days or None,
             )
             if calllogs is None:
                 return Response(error_response(message=message), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -152,10 +181,10 @@ class AgentCallStatsView(APIView):
             calls = CallLog.objects.filter(agent=agent)
             total_calls     = calls.count()
             completed_calls = calls.filter(status="completed").count()
-            booked_calls    = calls.filter(outcome="booked").count()
+            booked_calls    = _booked_call_count(calls)
             booking_rate    = round((booked_calls / total_calls * 100), 1) if total_calls else 0
             avg_duration    = calls.aggregate(avg=Avg("duration_seconds"))["avg"] or 0
-            avg_sentiment   = calls.exclude(sentiment_score=None).aggregate(avg=Avg("sentiment_score"))["avg"]
+            avg_sentiment   = _avg_sentiment_label(calls)
             total_bookings  = Booking.objects.filter(agent=agent).count()
 
             data = {
@@ -164,7 +193,7 @@ class AgentCallStatsView(APIView):
                 "booked_calls":   booked_calls,
                 "booking_rate":   booking_rate,
                 "avg_duration_seconds": round(avg_duration),
-                "avg_sentiment":  round(avg_sentiment, 2) if avg_sentiment is not None else None,
+                "avg_sentiment":  avg_sentiment,
                 "total_bookings": total_bookings,
             }
             return Response(success_response(message="Agent stats fetched", data=data))
@@ -195,45 +224,57 @@ class AnalyticsView(APIView):
 
             total_calls     = qs.count()
             completed_calls = qs.filter(status="completed").count()
-            booked_calls    = qs.filter(outcome="booked").count()
+            booked_calls    = _booked_call_count(qs)
             booking_rate    = round(booked_calls / total_calls * 100, 1) if total_calls else 0.0
             avg_duration    = qs.aggregate(avg=Avg("duration_seconds"))["avg"] or 0
 
-            # --- call volume by day ---
+            # --- call volume by day (fill missing days for continuous chart) ---
             volume_qs = (
                 qs.annotate(day=TruncDate("created_at"))
                 .values("day")
                 .annotate(count=Count("id"))
                 .order_by("day")
             )
-            call_volume = [{"date": str(r["day"]), "count": r["count"]} for r in volume_qs]
+            volume_map = {str(r["day"]): r["count"] for r in volume_qs}
+            call_volume = []
+            for i in range(range_days - 1, -1, -1):
+                day = (timezone.now() - timedelta(days=i)).date()
+                call_volume.append({"date": str(day), "count": volume_map.get(str(day), 0)})
 
-            # --- outcome breakdown ---
-            outcome_qs = qs.values("outcome").annotate(count=Count("id")).order_by("-count")
-            outcome_breakdown = [{"outcome": r["outcome"], "count": r["count"]} for r in outcome_qs]
+            # --- status breakdown (replaces outcome) ---
+            status_qs = qs.values("status").annotate(count=Count("id")).order_by("-count")
+            outcome_breakdown = [{"outcome": r["status"], "count": r["count"]} for r in status_qs]
 
             # --- booking rate trend (weekly buckets inside the range) ---
             from django.db.models.functions import TruncWeek
             trend_qs = (
                 qs.annotate(week=TruncWeek("created_at"))
                 .values("week")
-                .annotate(
-                    total=Count("id"),
-                    booked=Count("id", filter=Q(outcome="booked")),
-                )
+                .annotate(total=Count("id"))
                 .order_by("week")
             )
-            booking_trend = [
-                {
-                    "week": str(r["week"].date()),
-                    "rate": round(r["booked"] / r["total"] * 100, 1) if r["total"] else 0.0,
-                }
-                for r in trend_qs
-            ]
+            booking_trend = []
+            for r in trend_qs:
+                week_start = r["week"]
+                week_qs = qs.filter(
+                    created_at__gte=week_start,
+                    created_at__lt=week_start + timedelta(days=7),
+                )
+                booked = _booked_call_count(week_qs)
+                total = r["total"] or 0
+                booking_trend.append({
+                    "week": str(week_start.date()) if hasattr(week_start, "date") else str(week_start),
+                    "rate": round(booked / total * 100, 1) if total else 0.0,
+                })
 
-            # --- top call intents (outcome as proxy) ---
-            intent_qs = qs.values("outcome").annotate(count=Count("id")).order_by("-count")
-            top_intents = [{"intent": r["outcome"], "count": r["count"]} for r in intent_qs]
+            # --- top call intents from reason ---
+            intent_qs = (
+                qs.exclude(reason="")
+                .values("reason")
+                .annotate(count=Count("id"))
+                .order_by("-count")[:10]
+            )
+            top_intents = [{"intent": r["reason"], "count": r["count"]} for r in intent_qs]
 
             # --- hourly heatmap ---
             hour_qs = (
@@ -246,18 +287,19 @@ class AnalyticsView(APIView):
             hourly_heatmap = [{"hour": h, "count": hour_map.get(h, 0)} for h in range(24)]
 
             # --- agent performance table (paginated) ---
-            agents_qs = Agent.objects.filter(owner=request.user).order_by("-created_at")[:3]
+            agents_qs = Agent.objects.filter(owner=request.user).order_by("agent_name")
             agent_total = agents_qs.count()
-            agents_page = agents_qs[(page - 1) * page_size : page * page_size]
+            start = max(0, (page - 1) * page_size)
+            agents_page = list(agents_qs[start : start + page_size])
 
             agent_rows = []
             for agent in agents_page:
                 agent_calls = qs.filter(agent=agent)
                 a_total    = agent_calls.count()
-                a_booked   = agent_calls.filter(outcome="booked").count()
+                a_booked   = _booked_call_count(agent_calls)
                 a_handoff  = agent_calls.filter(was_transferred=True).count()
                 a_dur      = agent_calls.aggregate(avg=Avg("duration_seconds"))["avg"] or 0
-                a_sent     = agent_calls.exclude(sentiment_score=None).aggregate(avg=Avg("sentiment_score"))["avg"]
+                a_sent     = _avg_sentiment_label(agent_calls)
                 agent_rows.append({
                     "id":           str(agent.id),
                     "agent_name":   agent.agent_name,
@@ -265,7 +307,7 @@ class AnalyticsView(APIView):
                     "total_calls":  a_total,
                     "booking_rate": round(a_booked / a_total * 100, 1) if a_total else 0.0,
                     "avg_duration": round(a_dur),
-                    "avg_sentiment": round(a_sent, 2) if a_sent is not None else None,
+                    "avg_sentiment": a_sent,
                     "handoff_rate": round(a_handoff / a_total * 100, 1) if a_total else 0.0,
                 })
 
@@ -273,8 +315,14 @@ class AnalyticsView(APIView):
                 "total": agent_total,
                 "page": page,
                 "page_size": page_size,
-                "total_pages": math.ceil(agent_total / page_size) if page_size else 1,
+                "total_pages": max(1, math.ceil(agent_total / page_size)) if page_size else 1,
             }
+
+            agents_list = list(
+                Agent.objects.filter(owner=request.user)
+                .order_by("agent_name")
+                .values("id", "agent_name")
+            )
 
             data = {
                 "kpis": {
@@ -283,12 +331,14 @@ class AnalyticsView(APIView):
                     "booked_calls":      booked_calls,
                     "booking_rate":      booking_rate,
                     "avg_duration_seconds": round(avg_duration),
+                    "completion_rate":   round(completed_calls / total_calls * 100, 1) if total_calls else 0.0,
                 },
                 "call_volume":     call_volume,
                 "outcome_breakdown": outcome_breakdown,
                 "booking_trend":   booking_trend,
                 "top_intents":     top_intents,
                 "hourly_heatmap":  hourly_heatmap,
+                "agents":          [{"id": str(a["id"]), "agent_name": a["agent_name"]} for a in agents_list],
                 "agent_performance": {
                     "pagination": agent_pagination,
                     "results":    agent_rows,

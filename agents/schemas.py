@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class UpdateAgentSchema(BaseModel):
@@ -74,4 +74,61 @@ class CreateAgentSchema(BaseModel):
         v = v.strip()
         if len(v) > 20:
             raise ValueError("Phone number must be 20 characters or less")
+        return v
+
+
+# ── Retell / voice tool schemas ───────────────────────────────────────────────
+
+class CheckRoomAvailabilitySchema(BaseModel):
+    check_in_date: str
+    check_out_date: str
+    number_of_guests: int = Field(..., ge=1)
+
+    @field_validator("check_in_date", "check_out_date")
+    @classmethod
+    def strip_dates(cls, v):
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("Date is required")
+        return v
+
+
+class CalculateBookingPriceSchema(BaseModel):
+    room_type: str
+    check_in_date: str
+    check_out_date: str
+    number_of_guests: int = Field(..., ge=1)
+
+    @field_validator("room_type", "check_in_date", "check_out_date")
+    @classmethod
+    def strip_required(cls, v):
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("This field is required")
+        return v
+
+
+class CreateRoomReservationSchema(BaseModel):
+    guest_name: str
+    phone_number: str
+    email: str
+    check_in_date: str
+    check_out_date: str
+    number_of_guests: int = Field(..., ge=1)
+    room_type: str
+    special_requests: Optional[str] = ""
+
+    @field_validator("guest_name", "phone_number", "email", "check_in_date", "check_out_date", "room_type")
+    @classmethod
+    def strip_required(cls, v):
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("This field is required")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v):
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("A valid email address is required")
         return v

@@ -210,12 +210,11 @@
         <!-- Date Range -->
         <div class="flex flex-col gap-0.5">
           <span class="text-xs text-slate-400 font-medium px-0.5">Date range</span>
-          <select class="filter-select">
-            <option selected>Last 30 days</option>
-            <option>Last 7 days</option>
-            <option>Last 90 days</option>
-            <option>This month</option>
-            <option>Custom range</option>
+          <select id="days-filter" class="filter-select">
+            <option value="30" selected>Last 30 days</option>
+            <option value="7">Last 7 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="">All time</option>
           </select>
         </div>
 
@@ -223,18 +222,7 @@
         <div class="flex flex-col gap-0.5">
           <span class="text-xs text-slate-400 font-medium px-0.5">Agent</span>
           <select id="agent-filter" class="filter-select">
-            <option selected>All agents</option>
-          </select>
-        </div>
-
-        <!-- Outcome -->
-        <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-slate-400 font-medium px-0.5">Outcome</span>
-          <select id="outcome-filter" class="filter-select">
-            <option value="" selected>All outcomes</option>
-            <option value="booked">Booked (any)</option>
-            <option value="faq_resolved">FAQ Resolved</option>
-            <option value="no_outcome">No Outcome</option>
+            <option value="" selected>All agents</option>
           </select>
         </div>
 
@@ -272,22 +260,6 @@
         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm0 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1V8zm0 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2z"/></svg>
         <span id="chip-total-txt">0 total</span>
       </span>
-      <span class="chip" style="background:#eff6ff;color:#2563eb;">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        <span id="chip-rooms-txt">0 room bookings</span>
-      </span>
-      <span class="chip chip-booked">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3V3zm0 8h6v10H3V11zm10 0h8v10h-8V11z"/></svg>
-        <span id="chip-tables-txt">0 table bookings</span>
-      </span>
-      <span class="chip chip-faq">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span id="chip-faq-txt">0 FAQ resolved</span>
-      </span>
-      <span class="chip chip-handoff">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
-        <span id="chip-handoff-txt">0 transferred</span>
-      </span>
     </div>
 
     <!-- Calls Table Card -->
@@ -312,15 +284,14 @@
             <th class="th text-left" style="min-width:140px;">Caller</th>
             <th class="th text-left" style="min-width:150px;">Agent</th>
             <th class="th text-left">Duration</th>
-            <th class="th text-left">Outcome</th>
-            <th class="th text-left">Booking Type</th>
+            <th class="th text-left">Status</th>
             <th class="th text-left" style="min-width:110px;">Sentiment</th>
             <th class="th text-left" style="min-width:110px;">Date / Time</th>
             <th class="th text-left">Actions</th>
           </tr>
         </thead>
         <tbody id="calls-table-body">
-          <tr class="trow"><td class="td text-center text-slate-400" colspan="9">Loading calls...</td></tr>
+          <tr class="trow"><td class="td text-center text-slate-400" colspan="8">Loading calls...</td></tr>
         </tbody>
       </table>
 
@@ -369,8 +340,8 @@
         <p id="drawer-duration" class="text-sm font-semibold text-slate-700">—</p>
       </div>
       <div class="rounded-lg p-2.5 text-center" style="background:#f8fafc;border:1px solid #f1f5f9;">
-        <p class="text-xs text-slate-400 mb-1">Outcome</p>
-        <span id="drawer-outcome" class="badge b-noanswer">—</span>
+        <p class="text-xs text-slate-400 mb-1">Status</p>
+        <span id="drawer-status" class="badge b-noanswer">—</span>
       </div>
       <div class="rounded-lg p-2.5 text-center" style="background:#f8fafc;border:1px solid #f1f5f9;">
         <p class="text-xs text-slate-400 mb-1">Sentiment</p>
@@ -382,18 +353,18 @@
   </div>
 
   <!-- Agent & Date -->
-  <div class="drawer-section">
-    <div class="flex items-center justify-between text-xs">
-      <span class="text-slate-400">Agent</span>
-      <span id="drawer-agent" class="font-medium text-slate-700">—</span>
+  <div class="drawer-section space-y-3">
+    <div>
+      <p class="text-xs text-slate-400 mb-1">Agent</p>
+      <p id="drawer-agent" class="text-xs font-medium text-slate-700 leading-snug break-words">—</p>
     </div>
-    <div class="flex items-center justify-between text-xs mt-2">
-      <span class="text-slate-400">Date &amp; Time</span>
-      <span id="drawer-date" class="font-medium text-slate-700">—</span>
+    <div>
+      <p class="text-xs text-slate-400 mb-1">Date &amp; Time</p>
+      <p id="drawer-date" class="text-xs font-medium text-slate-700">—</p>
     </div>
-    <div class="flex items-center justify-between text-xs mt-2">
-      <span class="text-slate-400">Intent</span>
-      <span id="drawer-intent" class="font-medium text-slate-700">—</span>
+    <div>
+      <p class="text-xs text-slate-400 mb-1">Intent</p>
+      <p id="drawer-intent" class="text-xs font-medium text-slate-700 break-words">—</p>
     </div>
   </div>
 
@@ -403,15 +374,6 @@
     <div id="drawer-transcript" class="space-y-0">
       <!-- Filled by JS -->
     </div>
-  </div>
-
-  <!-- Tools Used -->
-  <div class="drawer-section">
-    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Tools Used</p>
-    <div id="drawer-tools" class="flex flex-wrap gap-2">
-      <!-- Filled by JS -->
-    </div>
-    <div id="drawer-no-tools" class="hidden text-xs text-slate-400 italic">No tools invoked</div>
   </div>
 
   <!-- CTA -->
@@ -469,19 +431,27 @@
       month: 'short',
       day: 'numeric',
       ...(includeYear ? {year: 'numeric'} : {}),
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: false,
-    }).replace(',', '');
+      hour12: true,
+    });
   }
 
-  function outcomeClass(outcome) {
-    const key = String(outcome || '').toLowerCase();
-    if (key === 'booked') return 'b-booked';
-    if (key === 'faq_resolved') return 'b-resolved';
-    if (key.includes('handoff') || key.includes('transfer')) return 'b-handoff';
-    if (key.includes('cancel')) return 'b-cancelled';
-    if (key.includes('no')) return 'b-noanswer';
+  function callerInitial(phone) {
+    const raw = String(phone || '').trim();
+    if (!raw || raw.toLowerCase() === 'unknown') return '?';
+    const digit = raw.replace(/\D/g, '');
+    if (digit) return digit.slice(-1);
+    const letter = raw.replace(/[^a-zA-Z]/g, '');
+    return (letter[0] || '?').toUpperCase();
+  }
+
+  function statusClass(status) {
+    const key = String(status || '').toLowerCase();
+    if (key === 'completed') return 'b-booked';
+    if (key === 'transferred') return 'b-handoff';
+    if (key === 'failed') return 'b-cancelled';
+    if (key === 'no-answer') return 'b-noanswer';
     return 'b-noanswer';
   }
 
@@ -493,37 +463,49 @@
     return 'b-booking';
   }
 
+  function sentimentKey(score) {
+    const s = String(score || '').toLowerCase().trim();
+    if (s === 'positive' || s === 'negative' || s === 'neutral') return s;
+    // Legacy float strings from before CharField migration
+    const num = Number(s);
+    if (!Number.isNaN(num) && s !== '') {
+      if (num > 0.05) return 'positive';
+      if (num < -0.05) return 'negative';
+      return 'neutral';
+    }
+    return '';
+  }
+
   function sentimentLabel(score) {
-    if (score === null || score === undefined) return '—';
-    if (score > 0.05) return 'Positive';
-    if (score < -0.05) return 'Negative';
-    return 'Neutral';
+    const s = sentimentKey(score);
+    if (s === 'positive') return 'Positive';
+    if (s === 'negative') return 'Negative';
+    if (s === 'neutral') return 'Neutral';
+    return '—';
   }
 
   function sentimentColor(score) {
-    if (score === null || score === undefined) return '#64748b';
-    if (score > 0.05) return '#059669';
-    if (score < -0.05) return '#e11d48';
-    return '#2563eb';
+    const s = sentimentKey(score);
+    if (s === 'positive') return '#059669';
+    if (s === 'negative') return '#e11d48';
+    if (s === 'neutral') return '#2563eb';
+    return '#64748b';
   }
 
   function sentimentBg(score) {
-    if (score === null || score === undefined) return '#f8fafc';
-    if (score > 0.05) return '#ecfdf5';
-    if (score < -0.05) return '#fff1f2';
-    return '#eff6ff';
+    const s = sentimentKey(score);
+    if (s === 'positive') return '#ecfdf5';
+    if (s === 'negative') return '#fff1f2';
+    if (s === 'neutral') return '#eff6ff';
+    return '#f8fafc';
   }
 
   function sentimentBorder(score) {
-    if (score === null || score === undefined) return '#e2e8f0';
-    if (score > 0.05) return '#a7f3d0';
-    if (score < -0.05) return '#fecdd3';
-    return '#bfdbfe';
-  }
-
-  function sentimentPercent(score) {
-    if (score === null || score === undefined) return 0;
-    return Math.max(0, Math.min(100, Math.round(Math.abs(score) * 100)));
+    const s = sentimentKey(score);
+    if (s === 'positive') return '#a7f3d0';
+    if (s === 'negative') return '#fecdd3';
+    if (s === 'neutral') return '#bfdbfe';
+    return '#e2e8f0';
   }
 
   function buildDetailUrl(id) {
@@ -532,7 +514,16 @@
 
   async function fetchJson(url) {
     const response = await fetch(url, {headers: apiHeaders()});
-    const payload = await response.json();
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (_) {
+      throw new Error('Invalid server response');
+    }
+    if (response.status === 401 || response.status === 403) {
+      window.location.href = '/api/auth/login/';
+      throw new Error('Please log in again to view call history');
+    }
     if (!response.ok || payload.success === false) {
       throw new Error(payload.message || 'Request failed');
     }
@@ -543,12 +534,12 @@
     const payload = await fetchJson('/api/calls/call-history/dropdowns/');
     const data = payload.data || {};
     populateSelect('agent-filter', data.agents || [], 'All agents', item => item.id, item => item.agent_name);
-    populateSelect('outcome-filter', data.outcomes || [], 'All outcomes', item => item.value, item => item.label);
-    populateSelect('sentiment-filter', data.sentiments || [], 'All sentiments', item => item.value, item => item.label);
+    // Keep static sentiment options; only refresh agent list from API
   }
 
   function populateSelect(id, items, defaultLabel, getValue, getLabel) {
     const select = document.getElementById(id);
+    if (!select) return;
     select.innerHTML = `<option value="">${defaultLabel}</option>`;
     items.forEach(item => {
       const option = document.createElement('option');
@@ -560,44 +551,49 @@
 
   async function loadCalls(page = 1) {
     currentPage = page;
-    const params = new URLSearchParams({page});
+    const params = new URLSearchParams({ page, page_size: 10 });
     const search = document.getElementById('call-search').value.trim();
     const agent = document.getElementById('agent-filter').value;
-    const outcome = document.getElementById('outcome-filter').value;
     const sentiment = document.getElementById('sentiment-filter').value;
+    const days = document.getElementById('days-filter')?.value ?? '';
     if (search) params.set('search', search);
     if (agent) params.set('agent_id', agent);
-    if (outcome) params.set('outcome', outcome);
     if (sentiment) params.set('sentiment', sentiment);
+    if (days) params.set('days', days);
 
-    const payload = await fetchJson(`/api/calls/call-history/?${params.toString()}`);
-    const rows = payload.results?.data || payload.data || [];
-    const count = payload.count ?? rows.length;
-    currentCalls = rows;
-    totalPages = Math.max(1, Math.ceil(count / 10));
-    renderRows(rows);
-    updatePagination(count, rows.length);
-    updateSummary(rows, count);
+    try {
+      const payload = await fetchJson(`/api/calls/call-history/?${params.toString()}`);
+      const rows = payload.results?.data || payload.data || [];
+      const count = payload.count ?? rows.length;
+      currentCalls = rows;
+      totalPages = Math.max(1, Math.ceil(count / 10));
+      renderRows(rows);
+      updatePagination(count, rows.length);
+      updateSummary(rows, count);
+    } catch (error) {
+      currentCalls = [];
+      totalPages = 1;
+      document.getElementById('calls-table-body').innerHTML =
+        `<tr class="trow"><td class="td text-center text-slate-400" colspan="8">${escapeHtml(error.message)}</td></tr>`;
+      document.getElementById('total-calls-label').textContent = 'Unable to load calls';
+      const chip = document.getElementById('chip-total-txt');
+      if (chip) chip.textContent = '0 total';
+      updatePagination(0, 0);
+    }
   }
 
   function renderRows(rows) {
     const tbody = document.getElementById('calls-table-body');
     tbody.innerHTML = '';
     if (!rows.length) {
-      tbody.innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="10">No calls found</td></tr>`;
+      tbody.innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="8">No calls found</td></tr>`;
       clearSelection();
       return;
     }
 
     rows.forEach(call => {
-      const score = call.sentiment_score;
-      const label = (call.outcome_label || call.outcome || '—').toUpperCase();
-      const bkType = call.booking_type || (call.booking || {}).booking_type || '';
-      const bkTypeBadge = bkType === 'room'
-        ? `<span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">Room</span>`
-        : bkType === 'table'
-        ? `<span class="badge" style="background:#F0E6D4;color:#4f46e5;border:1px solid #C9A46E;">Table</span>`
-        : `<span class="td-sub text-xs">—</span>`;
+      const score = call.sentiment || call.sentiment_score;
+      const statusLabel = (call.status || '—').toUpperCase();
       const row = document.createElement('tr');
       row.className = 'trow';
       row.dataset.id = call.id;
@@ -605,14 +601,13 @@
         <td class="td text-center"><input type="checkbox" class="row-check" onchange="handleRowCheck(this)" /></td>
         <td class="td">
           <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">${escapeHtml((call.caller_phone || 'C')[1] || '?').toUpperCase()}</div>
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">${escapeHtml(callerInitial(call.caller_phone))}</div>
             <span class="font-medium text-slate-800" style="font-size:12.5px;">${escapeHtml(call.caller_phone || '—')}</span>
           </div>
         </td>
         <td class="td td-sub">${escapeHtml(call.agent_name || '—')}</td>
         <td class="td td-sub font-medium">${escapeHtml(call.duration || '0:00')}</td>
-        <td class="td"><span class="badge ${outcomeClass(call.outcome)}">${escapeHtml(label)}</span></td>
-        <td class="td">${bkTypeBadge}</td>
+        <td class="td"><span class="badge ${statusClass(call.status)}">${escapeHtml(statusLabel)}</span></td>
         <td class="td">
           <span class="badge" style="background:${sentimentBg(score)};color:${sentimentColor(score)};border:1px solid ${sentimentBorder(score)};">${sentimentLabel(score)}</span>
         </td>
@@ -625,21 +620,29 @@
   }
 
   async function openDrawerById(id) {
-    const payload = await fetchJson(`/api/calls/call-history/${id}/`);
-    openDrawer(payload.data);
+    try {
+      const payload = await fetchJson(`/api/calls/call-history/${id}/`);
+      openDrawer(payload.data);
+    } catch (error) {
+      if (typeof desklineToast === 'function') {
+        desklineToast(error.message || 'Unable to open call', 'error');
+      } else {
+        alert(error.message || 'Unable to open call');
+      }
+    }
   }
 
   function openDrawer(call) {
-    const score = call.sentiment_score;
+    const score = call.sentiment || call.sentiment_score;
     document.getElementById('drawer-phone').textContent = call.caller_phone || '—';
     document.getElementById('drawer-duration').textContent = call.duration || '0:00';
     document.getElementById('drawer-agent').textContent = call.agent_name || '—';
     document.getElementById('drawer-date').textContent = formatDate(call.started_at || call.created_at, true);
     document.getElementById('drawer-intent').textContent = call.reason || '—';
 
-    const outcomeBadge = document.getElementById('drawer-outcome');
-    outcomeBadge.textContent = (call.outcome_label || call.outcome || '—').toUpperCase();
-    outcomeBadge.className = 'badge ' + outcomeClass(call.outcome);
+    const statusBadge = document.getElementById('drawer-status');
+    statusBadge.textContent = (call.status || '—').toUpperCase();
+    statusBadge.className = 'badge ' + statusClass(call.status);
 
     const sentBadge = document.getElementById('drawer-sentiment-badge');
     sentBadge.textContent = sentimentLabel(score);
@@ -660,14 +663,6 @@
     if (!transcriptDiv.children.length) {
       transcriptDiv.innerHTML = '<div class="transcript-line text-slate-400">No transcript available</div>';
     }
-
-    const toolsDiv = document.getElementById('drawer-tools');
-    const noTools = document.getElementById('drawer-no-tools');
-    if (toolsDiv) {
-      toolsDiv.innerHTML = '';
-      toolsDiv.classList.add('hidden');
-    }
-    if (noTools) noTools.classList.remove('hidden');
 
     document.getElementById('drawer-detail-link').href = buildDetailUrl(call.id);
     document.getElementById('call-drawer').classList.add('open');
@@ -756,7 +751,7 @@
         body: JSON.stringify({ ids: _pendingDeleteIds }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok && json.success !== true) throw new Error(json.message || 'Delete failed');
+      if (!res.ok || json.success === false) throw new Error(json.message || 'Delete failed');
       closeDeleteModal();
       await loadCalls(currentPage);
     } catch (err) {
@@ -768,8 +763,14 @@
 
   // ---- Reset Filters ----
   function resetFilters() {
-    document.querySelectorAll('.filter-select').forEach(s => s.selectedIndex = 0);
-    document.querySelector('.search-input').value = '';
+    const days = document.getElementById('days-filter');
+    const agent = document.getElementById('agent-filter');
+    const sentiment = document.getElementById('sentiment-filter');
+    const search = document.getElementById('call-search');
+    if (days) days.value = '30';
+    if (agent) agent.value = '';
+    if (sentiment) sentiment.value = '';
+    if (search) search.value = '';
     loadCalls(1);
   }
 
@@ -789,17 +790,14 @@
 
   function updateSummary(rows, total) {
     document.getElementById('total-calls-label').textContent = `${total.toLocaleString()} total calls`;
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('chip-total-txt',   `${total.toLocaleString()} total`);
-    set('chip-rooms-txt',   `${rows.filter(c => (c.booking_type||(c.booking||{}).booking_type) === 'room').length} room bookings`);
-    set('chip-tables-txt',  `${rows.filter(c => (c.booking_type||(c.booking||{}).booking_type) === 'table').length} table bookings`);
-    set('chip-faq-txt',     `${rows.filter(c => c.outcome === 'faq_resolved').length} FAQ resolved`);
-    set('chip-handoff-txt', `${rows.filter(c => c.was_transferred).length} transferred`);
+    const el = document.getElementById('chip-total-txt');
+    if (el) el.textContent = `${total.toLocaleString()} total`;
   }
 
   function wireFilters() {
-    ['agent-filter', 'outcome-filter', 'sentiment-filter'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => loadCalls(1));
+    ['days-filter', 'agent-filter', 'sentiment-filter'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => loadCalls(1));
     });
     document.getElementById('call-search').addEventListener('input', () => {
       clearTimeout(searchTimer);
@@ -814,7 +812,7 @@
       await loadDropdowns();
       await loadCalls(1);
     } catch (error) {
-      document.getElementById('calls-table-body').innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="10">${escapeHtml(error.message)}</td></tr>`;
+      document.getElementById('calls-table-body').innerHTML = `<tr class="trow"><td class="td text-center text-slate-400" colspan="8">${escapeHtml(error.message)}</td></tr>`;
       document.getElementById('total-calls-label').textContent = 'Unable to load calls';
     }
   });

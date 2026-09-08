@@ -11,8 +11,10 @@ from .views import (
     AgentCallStatsView,
     AnalyticsView,
 )
+from .webhook_views import RetellCallWebhookView
 
 urlpatterns = [
+    path("retell-webhook/", RetellCallWebhookView.as_view(), name="retell-call-webhook"),
     path("voice-call-history/", VoiceCallHistoryRender.as_view(),  name="voice-call-history"),
     path("voice-call-detail/",  VoiceCallDetailRender.as_view(),   name="voice-call-detail"),
     path("call-history/dropdowns/", DropDownsoptionsForCallHistory.as_view(), name="call-history-dropdowns"),

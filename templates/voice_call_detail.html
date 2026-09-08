@@ -142,20 +142,16 @@ function logout() {
       </div>
       <div class="flex items-center gap-3 flex-wrap">
         <h1 id="detail-phone" class="text-lg font-semibold text-slate-800">Loading...</h1>
-        <span id="detail-outcome-badge" class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">—</span>
+        <span id="detail-status-badge" class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">—</span>
         <span id="detail-sentiment-badge" class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">
           <span style="font-size:13px;">&#x1F610;</span> —
         </span>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <button class="btn-ghost">
+      <button class="btn-ghost" onclick="downloadTranscript()">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         Download Transcript
-      </button>
-      <button class="btn-ghost-red">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21l1.9-5.7a8.5 8.5 0 113.8 3.8z"/></svg>
-        Flag Call
       </button>
       <!-- Profile avatar -->
       <div class="relative" id="profile-btn-wrap">
@@ -227,7 +223,7 @@ function logout() {
         <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#ecfdf5;">
           <svg class="w-3.5 h-3.5" style="color:#059669;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <div><div class="text-xs text-slate-400 mb-0.5">Outcome</div><span id="detail-outcome-small" class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">—</span></div>
+        <div><div class="text-xs text-slate-400 mb-0.5">Status</div><span id="detail-status-small" class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;">—</span></div>
       </div>
     </div>
   </div>
@@ -283,8 +279,8 @@ function logout() {
               <span id="metadata-caller" class="text-xs font-medium text-slate-700">—</span>
             </div>
             <div class="flex items-center justify-between" style="border-top:1px solid #f8fafc;padding-top:8px;">
-              <span class="text-xs text-slate-400">Twilio SID</span>
-              <span id="metadata-twilio" class="text-xs font-medium text-slate-700" style="font-family:'Courier New',monospace;">—</span>
+              <span class="text-xs text-slate-400">Call ID</span>
+              <span id="metadata-call-id" class="text-xs font-medium text-slate-700" style="font-family:'Courier New',monospace;">—</span>
             </div>
             <div class="flex items-center justify-between" style="border-top:1px solid #f8fafc;padding-top:8px;">
               <span class="text-xs text-slate-400">Status</span>
@@ -312,6 +308,7 @@ function logout() {
   let timer;
   let totalDurationSeconds = 0;
   let currentTranscriptRows = [];
+  let currentCallStartedAt = null;
 
   const apiHeaders = () => {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
@@ -335,42 +332,80 @@ function logout() {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: false,
-    }).replace(',', '');
+      hour12: true,
+    });
   }
 
   function formatSeconds(seconds) {
-    const total = Math.max(0, Number(seconds || 0));
+    const total = Math.max(0, Math.floor(Number(seconds || 0)));
     const minutes = Math.floor(total / 60);
     return minutes + ':' + String(total % 60).padStart(2, '0');
   }
 
+  function transcriptOffsetLabel(rows, index, callStartedAt) {
+    const row = rows[index] || {};
+    const startMs = callStartedAt ? new Date(callStartedAt).getTime() : NaN;
+    const rowMs = row.timestamp ? new Date(row.timestamp).getTime() : NaN;
+
+    // Prefer real offset from call start when timestamps differ
+    if (!Number.isNaN(startMs) && !Number.isNaN(rowMs) && rowMs >= startMs) {
+      const allSame = rows.every(r => {
+        const t = r.timestamp ? new Date(r.timestamp).getTime() : NaN;
+        return t === rowMs;
+      });
+      if (!allSame) {
+        return formatSeconds((rowMs - startMs) / 1000);
+      }
+    }
+
+    // Fallback when all turns share one timestamp: stagger ~3s per turn
+    return formatSeconds(index * 3);
+  }
+
+  function sentimentKey(score) {
+    const s = String(score || '').toLowerCase().trim();
+    if (!s) return '';
+    if (s === 'positive' || s === 'negative' || s === 'neutral') return s;
+    const num = Number(s);
+    if (!Number.isNaN(num)) {
+      if (num > 0.05) return 'positive';
+      if (num < -0.05) return 'negative';
+      return 'neutral';
+    }
+    return '';
+  }
+
   function sentimentLabel(score) {
-    if (score === null || score === undefined) return 'Neutral';
-    if (score > 0.05) return 'Positive';
-    if (score < -0.05) return 'Negative';
-    return 'Neutral';
+    const s = sentimentKey(score);
+    if (s === 'positive') return 'Positive';
+    if (s === 'negative') return 'Negative';
+    if (s === 'neutral') return 'Neutral';
+    return '—';
   }
 
   function sentimentStyle(score) {
-    if (score !== null && score !== undefined && score < -0.05) {
+    const s = sentimentKey(score);
+    if (s === 'negative') {
       return {emoji: '&#x1F61F;', bg: '#fff1f2', color: '#e11d48', border: '#fecdd3'};
     }
-    if (score !== null && score !== undefined && score > 0.05) {
+    if (s === 'positive') {
       return {emoji: '&#x1F60A;', bg: '#ecfdf5', color: '#059669', border: '#a7f3d0'};
     }
-    return {emoji: '&#x1F610;', bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe'};
+    if (s === 'neutral') {
+      return {emoji: '&#x1F610;', bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe'};
+    }
+    return {emoji: '', bg: '#f8fafc', color: '#94a3b8', border: '#e2e8f0'};
   }
 
-  function outcomeStyle(outcome) {
-    const key = String(outcome || '').toLowerCase();
-    if (key === 'booked') return {bg: '#ecfdf5', color: '#059669', border: '#a7f3d0'};
-    if (key === 'faq_resolved') return {bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe'};
-    if (key.includes('cancel')) return {bg: '#fff7ed', color: '#c2410c', border: '#fed7aa'};
+  function statusStyle(status) {
+    const key = String(status || '').toLowerCase();
+    if (key === 'completed') return {bg: '#ecfdf5', color: '#059669', border: '#a7f3d0'};
+    if (key === 'failed') return {bg: '#fff1f2', color: '#e11d48', border: '#fecdd3'};
+    if (key === 'transferred') return {bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe'};
     if (key.includes('no')) return {bg: '#f8fafc', color: '#64748b', border: '#e2e8f0'};
-    return {bg: '#fff1f2', color: '#e11d48', border: '#fecdd3'};
+    return {bg: '#fff7ed', color: '#c2410c', border: '#fed7aa'};
   }
 
   function applyBadgeStyle(el, style) {
@@ -389,9 +424,8 @@ function logout() {
   }
 
   function renderCall(call) {
-    const outcomeText = (call.outcome_label || call.outcome || '—').toUpperCase();
-    const score = call.sentiment_score;
-    const scoreText = score === null || score === undefined ? '—' : Number(score).toFixed(2);
+    const statusText = (call.status || '—').toUpperCase();
+    const score = call.sentiment || call.sentiment_score;
 
     document.title = `${call.caller_phone || 'Call Detail'} — Deskline`;
     document.getElementById('breadcrumb-call-id').textContent = `Call #${String(call.id).slice(0, 8)}`;
@@ -400,27 +434,28 @@ function logout() {
     document.getElementById('detail-date').textContent = formatDate(call.started_at || call.created_at);
     document.getElementById('detail-duration').textContent = call.duration || formatSeconds(call.duration_seconds);
     document.getElementById('detail-intent').textContent = call.reason || '—';
-    document.getElementById('detail-outcome-badge').textContent = outcomeText;
-    document.getElementById('detail-outcome-small').textContent = outcomeText;
+    document.getElementById('detail-status-badge').textContent = statusText;
+    document.getElementById('detail-status-small').textContent = statusText;
 
-    const outcome = outcomeStyle(call.outcome);
-    applyBadgeStyle(document.getElementById('detail-outcome-badge'), outcome);
-    applyBadgeStyle(document.getElementById('detail-outcome-small'), outcome);
+    const status = statusStyle(call.status);
+    applyBadgeStyle(document.getElementById('detail-status-badge'), status);
+    applyBadgeStyle(document.getElementById('detail-status-small'), status);
 
     const sentiment = sentimentStyle(score);
     const sentimentBadge = document.getElementById('detail-sentiment-badge');
-    sentimentBadge.innerHTML = `<span style="font-size:13px;">${sentiment.emoji}</span> ${scoreText} ${sentimentLabel(score)}`;
+    sentimentBadge.innerHTML = `<span style="font-size:13px;">${sentiment.emoji}</span> ${sentimentLabel(score)}`;
     applyBadgeStyle(sentimentBadge, sentiment);
 
     totalDurationSeconds = Number(call.duration_seconds || 0);
     document.getElementById('timeDisplay').textContent = `0:00 / ${formatSeconds(totalDurationSeconds)}`;
 
     document.getElementById('metadata-caller').textContent = call.caller_phone || '—';
-    document.getElementById('metadata-twilio').textContent = call.twilio_call_sid ? `${call.twilio_call_sid.slice(0, 10)}...` : '—';
+    document.getElementById('metadata-call-id').textContent = call.twilio_call_sid || '—';
     document.getElementById('metadata-status').textContent = call.status || '—';
     document.getElementById('metadata-direction').textContent = call.direction || '—';
     document.getElementById('metadata-transferred').textContent = call.was_transferred ? 'Yes' : 'No';
 
+    currentCallStartedAt = call.started_at || call.created_at || null;
     currentTranscriptRows = call.transcripts || [];
     renderTranscript(currentTranscriptRows);
     document.getElementById('langgraph-card').classList.add('hidden');
@@ -433,7 +468,7 @@ function logout() {
       list.innerHTML = '<div class="text-xs text-slate-400">No transcript available for this call.</div>';
       return;
     }
-    rows.forEach(row => {
+    rows.forEach((row, index) => {
       const isCaller = row.speaker === 'caller';
       const wrapper = document.createElement('div');
       wrapper.className = `flex flex-col ${isCaller ? 'items-end' : 'items-start'}`;
@@ -442,13 +477,14 @@ function logout() {
       const textColor = isCaller ? '' : 'style="color:#3730a3;"';
       const speakerStyle = isCaller ? 'text-slate-400' : '';
       const speakerColor = isCaller ? '' : 'style="color:#16332B;"';
+      const timeLabel = transcriptOffsetLabel(rows, index, currentCallStartedAt);
       wrapper.innerHTML = `
         <div class="${bubbleClass}">
           <div class="text-xs ${textStyle} leading-relaxed" ${textColor}>${escapeHtml(row.text)}</div>
         </div>
         <div class="bubble-ts flex items-center gap-2">
           <span class="text-xs font-medium ${speakerStyle}" ${speakerColor}>${isCaller ? 'CALLER' : 'AGENT'}</span>
-          <span>${formatDate(row.timestamp)}</span>
+          <span>${timeLabel}</span>
         </div>
       `;
       list.appendChild(wrapper);

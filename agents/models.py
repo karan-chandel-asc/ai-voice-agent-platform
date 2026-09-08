@@ -129,6 +129,11 @@ class Booking(models.Model):
         ("room", "Room Booking"),
         ("table", "Table Booking"),
     ]
+    ROOM_TYPE_CHOICES = [
+        ("Deluxe Room", "Deluxe Room"),
+        ("Superior Room", "Superior Room"),
+        ("Family Room", "Family Room"),
+    ]
 
     id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     agent        = models.ForeignKey(
@@ -138,7 +143,12 @@ class Booking(models.Model):
     booking_type = models.CharField(max_length=10, choices=BOOKING_TYPE_CHOICES, default="table")
     guest_name   = models.CharField(max_length=100)
     guest_email  = models.EmailField(blank=True)
+    guest_phone  = models.CharField(max_length=30, blank=True, default="")
     guests       = models.PositiveSmallIntegerField(default=1)
+    room_type    = models.CharField(max_length=40, blank=True, default="")
+    special_requests = models.TextField(blank=True, default="")
+    nights       = models.PositiveSmallIntegerField(null=True, blank=True)
+    total_price  = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     reservation_date_time = models.DateTimeField(null=True, blank=True)
     check_in     = models.DateField(null=True, blank=True)
     check_out    = models.DateField(null=True, blank=True)
@@ -158,3 +168,66 @@ class Booking(models.Model):
     def __str__(self):
         when = self.check_in.isoformat() if self.check_in else "no-date"
         return f"[{self.booking_type}] {self.guest_name} — {when}"
+
+
+class GuestLead(models.Model):
+    """Sales lead when a caller is interested but does not complete a reservation."""
+
+    id              = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    agent           = models.ForeignKey(
+        Agent, on_delete=models.SET_NULL, null=True, blank=True, related_name="guest_leads"
+    )
+    call_sid        = models.CharField(max_length=64, blank=True, default="")
+    guest_name      = models.CharField(max_length=100)
+    phone_number    = models.CharField(max_length=30)
+    email           = models.EmailField(blank=True, default="")
+    check_in        = models.DateField(null=True, blank=True)
+    check_out       = models.DateField(null=True, blank=True)
+    number_of_guests = models.PositiveSmallIntegerField(null=True, blank=True)
+    room_type       = models.CharField(max_length=40, blank=True, default="")
+    notes           = models.TextField(blank=True, default="")
+    created_at      = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["agent"], name="guest_lead_agent_idx"),
+            models.Index(fields=["created_at"], name="guest_lead_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Lead: {self.guest_name} ({self.phone_number})"
+
+
+class Escalation(models.Model):
+    """Staff escalation when the AI receptionist cannot handle the call."""
+
+    PRIORITY_CHOICES = [
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("high", "High"),
+        ("urgent", "Urgent"),
+    ]
+
+    id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    agent        = models.ForeignKey(
+        Agent, on_delete=models.SET_NULL, null=True, blank=True, related_name="escalations"
+    )
+    call_sid     = models.CharField(max_length=64, blank=True, default="")
+    caller_name  = models.CharField(max_length=100, blank=True, default="")
+    phone_number = models.CharField(max_length=30, blank=True, default="")
+    reason       = models.TextField()
+    priority     = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="medium")
+    is_resolved  = models.BooleanField(default=False)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["agent"], name="escalation_agent_idx"),
+            models.Index(fields=["priority"], name="escalation_priority_idx"),
+            models.Index(fields=["is_resolved"], name="escalation_resolved_idx"),
+        ]
+
+    def __str__(self):
+        return f"[{self.priority}] {self.reason[:60]}"

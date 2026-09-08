@@ -243,31 +243,19 @@ class Command(BaseCommand):
             duration = random.randint(45, 420)
             ended = started + timedelta(seconds=duration)
 
-            roll = random.random()
-            if roll < 0.42:
-                outcome = "booked"
-            elif roll < 0.72:
-                outcome = "faq_resolved"
-            else:
-                outcome = "no_outcome"
-
-            status = "completed" if random.random() > 0.08 else random.choice(["no-answer", "failed", "busy"])
+            status = "completed" if random.random() > 0.08 else random.choice(["no-answer", "failed"])
             if status != "completed":
-                outcome = "no_outcome"
                 duration = random.randint(5, 40)
 
-            sentiment = round(random.uniform(-0.2, 0.85), 2)
-            if outcome == "booked":
-                sentiment = round(random.uniform(0.25, 0.9), 2)
+            sentiment = random.choice(["positive", "neutral", "negative", "neutral"])
 
             guest_name, _ = GUEST_NAMES[i % len(GUEST_NAMES)]
             call = CallLog.objects.create(
                 agent=agent,
                 twilio_call_sid=f"CA{uuid.uuid4().hex}",
                 caller_phone=PHONES[i % len(PHONES)],
-                direction=random.choice(["inbound", "inbound", "inbound", "outbound"]),
+                direction=random.choice(["inbound", "inbound", "inbound", "web_call"]),
                 status=status,
-                outcome=outcome,
                 reason=random.choice(INTENTS),
                 duration_seconds=duration,
                 sentiment_score=sentiment,
@@ -300,7 +288,7 @@ class Command(BaseCommand):
         Booking.objects.filter(agent__in=agents).delete()
         live = [a for a in agents if a.status == "live"]
         today = date.today()
-        booked_calls = [c for c in calls if c.outcome == "booked"]
+        booked_calls = [c for c in calls if c.status == "completed"][:12]
         count = 0
 
         # Today’s reservations for dashboard panel

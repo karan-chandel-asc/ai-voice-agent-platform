@@ -36,6 +36,8 @@ class RetellPhoneNumberSerializer(serializers.ModelSerializer):
 class AgentListSerializer(serializers.ModelSerializer):
     owner_email  = serializers.EmailField(source="owner.email", read_only=True)
     voice_name   = serializers.SerializerMethodField()
+    total_calls  = serializers.IntegerField(read_only=True, default=0)
+    avg_duration_seconds = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Agent
@@ -44,6 +46,7 @@ class AgentListSerializer(serializers.ModelSerializer):
             "status", "language", "phone_number", "retell_agent_id",
             "retell_voice_id", "retell_voice_name", "tools_count", "tools_data",
             "is_published", "channel", "last_synced_at",
+            "total_calls", "avg_duration_seconds",
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "status", "created_at", "updated_at"]
@@ -52,6 +55,19 @@ class AgentListSerializer(serializers.ModelSerializer):
         if obj.elevenlabs_voice:
             return obj.elevenlabs_voice.name
         return obj.retell_voice_name or None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Safe defaults when queryset was not annotated
+        if data.get("total_calls") is None:
+            data["total_calls"] = getattr(instance, "total_calls", None)
+            if data["total_calls"] is None:
+                data["total_calls"] = instance.calls.count() if hasattr(instance, "calls") else 0
+        if data.get("avg_duration_seconds") is None:
+            data["avg_duration_seconds"] = int(getattr(instance, "avg_duration_seconds", 0) or 0)
+        else:
+            data["avg_duration_seconds"] = int(data["avg_duration_seconds"] or 0)
+        return data
 
 
 class AgentDetailSerializer(serializers.ModelSerializer):

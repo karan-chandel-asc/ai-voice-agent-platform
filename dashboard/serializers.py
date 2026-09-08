@@ -4,7 +4,7 @@ from agents.models import Booking
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    agent_name = serializers.CharField(source="agent.agent_name", read_only=True, default="")
+    agent_name = serializers.SerializerMethodField()
     nights     = serializers.SerializerMethodField()
 
     class Meta:
@@ -15,6 +15,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "check_in", "check_out", "nights",
             "is_confirmed", "confirmed_at", "created_at",
         ]
+
+    def get_agent_name(self, obj):
+        return obj.agent.agent_name if obj.agent_id else "—"
 
     def get_nights(self, obj):
         if obj.check_in and obj.check_out:
@@ -40,7 +43,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
 
 
 class BookingCallSerializer(serializers.ModelSerializer):
-    agent_name   = serializers.CharField(source="agent.agent_name", read_only=True)
+    agent_name   = serializers.SerializerMethodField()
     duration     = serializers.SerializerMethodField()
     booking      = serializers.SerializerMethodField()
     booking_type = serializers.SerializerMethodField()
@@ -53,6 +56,9 @@ class BookingCallSerializer(serializers.ModelSerializer):
             "status", "created_at", "started_at", "ended_at",
             "booking", "booking_type",
         ]
+
+    def get_agent_name(self, obj):
+        return obj.agent.agent_name if obj.agent_id else "—"
 
     def get_duration(self, obj):
         minutes, seconds = divmod(obj.duration_seconds or 0, 60)
