@@ -208,17 +208,10 @@ class ResetPasswordAPIView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-PLAN_LABELS = {
-    "free":       "Free",
-    "pro":        "Pro — $79/mo",
-    "enterprise": "Enterprise — $199/mo",
-}
-
-
 class UserProfileApiView(APIView):
     """Read or update the authenticated user's profile.
 
-    GET returns name, contact, and plan details.
+    GET returns name and contact details.
     PUT updates first/last name, business, and phone.
     """
 
@@ -236,8 +229,6 @@ class UserProfileApiView(APIView):
                     "email":         user.email,
                     "business_name": user.business_name or "",
                     "phone":         user.phone or "",
-                    "plan":          user.plan,
-                    "plan_label":    PLAN_LABELS.get(user.plan, user.plan.capitalize()),
                     "initials":      (full_name[0] if full_name else "U").upper(),
                 }
             ), status=status.HTTP_200_OK)
@@ -280,8 +271,6 @@ class UserProfileApiView(APIView):
                     "email":         user.email,
                     "business_name": user.business_name or "",
                     "phone":         user.phone or "",
-                    "plan":          user.plan,
-                    "plan_label":    PLAN_LABELS.get(user.plan, user.plan.capitalize()),
                     "initials":      (full_name[0] if full_name else "U").upper(),
                 }
             ), status=status.HTTP_200_OK)

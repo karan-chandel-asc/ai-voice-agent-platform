@@ -132,7 +132,7 @@ erDiagram
   Agent ||--o{ CallLog : receives
   Agent ||--o{ Booking : creates
   CallLog ||--o{ CallTranscript : has
-  Agent }o--|| ElevenLabsVoice : optional
+  Agent }o--|| ElevenLabsVoices : optional
 
   CustomUser {
     uuid id

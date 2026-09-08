@@ -159,6 +159,7 @@ CACHES = {
 TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID", default="")
 TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN", default="")
 TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER", default="")
+TWILIO_PHONE_NUMBER_2 = env("twilio_number", default="")
 TWILIO_APP_SID = env("TWILIO_APP_SID", default="")
 TWILIO_API_KEY_SID = env("TWILIO_API_KEY_SID", default="")
 TWILIO_API_KEY_SECRET = env("TWILIO_API_KEY_SECRET", default="")

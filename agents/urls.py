@@ -1,15 +1,18 @@
 from django.urls import path
 from .views import (
     ElevenlabsVoiceListView,
+    SyncRetellVoicesApiView,
+    SyncRetellLanguagesApiView,
+    RetellLanguageListApiView,
+    SyncRetellPhonesApiView,
+    SyncRetellAgentsApiView,
+    RetellPhoneListApiView,
     AgentListApiView,
     AgentCRUDApiView,
     DeleteAllAgentsView,
     VoiceAgentsRender,
     VoiceCreateAgentRender,
     VoiceAgentDetailRender,
-    ManageToolsRender,
-    UserToolListApiView,
-    UserToolDetailApiView,
 )
 
 urlpatterns = [
@@ -17,13 +20,16 @@ urlpatterns = [
     path("voice-create-agent/", VoiceCreateAgentRender.as_view(), name="voice-create-agent"),
     path("voice-agent-detail/", VoiceAgentDetailRender.as_view(), name="voice-agent-detail"),
     path("voices-list-api/", ElevenlabsVoiceListView.as_view(), name="elevenlabs-voices"),
+    path("sync-retell-voices/", SyncRetellVoicesApiView.as_view(), name="sync-retell-voices"),
+    path("languages-list-api/", RetellLanguageListApiView.as_view(), name="retell-languages"),
+    path("sync-retell-languages/", SyncRetellLanguagesApiView.as_view(), name="sync-retell-languages"),
+    path("phones-list-api/", RetellPhoneListApiView.as_view(), name="retell-phones"),
+    path("sync-retell-phones/", SyncRetellPhonesApiView.as_view(), name="sync-retell-phones"),
+    path("sync-retell-agents/", SyncRetellAgentsApiView.as_view(), name="sync-retell-agents"),
     path("create-agent-api/", AgentCRUDApiView.as_view(), name="agent-create"),
     path("agent-list-api/", AgentListApiView.as_view(), name="agent-list"),
     path("get-agent-detail/<str:pk>/", AgentCRUDApiView.as_view(), name="agent-crud"),
     path("delete-agent/<str:pk>/", AgentCRUDApiView.as_view(), name="agent-delete"),
     path("update-agent/<str:pk>/", AgentCRUDApiView.as_view(), name="agent-update"),
     path("delete-all-agents/", DeleteAllAgentsView.as_view(), name="delete-all-agents"),
-    path("user-tools/", UserToolListApiView.as_view(), name="user-tool-list"),
-    path("user-tools/<str:pk>/", UserToolDetailApiView.as_view(), name="user-tool-detail"),
-    path("manage-tools/", ManageToolsRender.as_view(), name="manage-tools"),
 ]

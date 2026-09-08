@@ -312,15 +312,9 @@ class DemoTokenView(APIView):
 
             agent_info = None
             if agent:
-                tools = list(
-                    agent.user_tools.select_related("user_tool")
-                    .filter(is_active=True, user_tool__is_active=True)
-                    .values_list("user_tool__name", flat=True)
-                )
                 agent_info = {
                     "name": agent.agent_name,
                     "description": agent.system_prompt[:200] if agent.system_prompt else "",
-                    "tools": list(tools),
                 }
 
             return Response({

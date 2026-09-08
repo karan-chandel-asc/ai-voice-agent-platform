@@ -7,18 +7,14 @@ class CustomUser(AbstractUser):
     """Single-operator account for the hotel/restaurant desk.
 
     Email is the login username field.
-    Stores business profile and subscription plan.
+    Stores business profile details.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     business_name = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=20, blank=True)
-    plan = models.CharField(
-        max_length=20,
-        choices=[("free", "Free"), ("pro", "Pro"), ("enterprise", "Enterprise")],
-        default="free",
-    )
+    plan = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

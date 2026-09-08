@@ -6,13 +6,13 @@ from .models import CustomUser
 class UserSerializer(serializers.ModelSerializer):
     """Serialize public CustomUser profile fields.
 
-    Exposes id, email, business, phone, and plan.
+    Exposes id, email, business, and phone.
     id and created_at are read-only.
     """
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "username", "business_name", "phone", "plan", "created_at"]
+        fields = ["id", "email", "username", "business_name", "phone", "created_at"]
         read_only_fields = ["id", "created_at"]
 
 

@@ -2,13 +2,17 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from pydantic import ValidationError
-from .models import Agent, ElevenLabsVoice
+from .models import Agent, ElevenLabsVoices
 from .serializers import (
-    AgentListSerializer, AgentDetailSerializer, ElevenLabsVoiceSerializer,
-    UserToolSerializer,
+    AgentListSerializer, AgentDetailSerializer, ElevenLabsVoicesSerializer,
+    RetellLanguageSerializer, RetellPhoneNumberSerializer,
 )
-from .services import ElevenLabsVoiceMechanism, AgentMechanism, UserToolMechanism
-from .schemas import CreateAgentSchema, UpdateAgentSchema, CreateUserToolSchema, UpdateUserToolSchema
+from .services import (
+    ElevenLabsVoicesMechanism, AgentMechanism,
+    RetellLanguageMechanism, RetellPhoneMechanism,
+)
+from .retell_services import retell_services
+from .schemas import CreateAgentSchema, UpdateAgentSchema
 from core.response_schemas import success_response, error_response
 from core.pagination import Pagination
 from core.logger import logger
@@ -35,19 +39,13 @@ class VoiceAgentDetailRender(RenderAPIView):
         return render(request, 'voice_agent_detail.html', {'pk': pk})
 
 
-class ManageToolsRender(RenderAPIView):
-    def get(self, request):
-        logger.info("Request received for ManageToolsRender Html")
-        return render(request, 'voice_manage_tools.html')
-
-
 class ElevenlabsVoiceListView(APIView):
     pagination_class = Pagination
 
     def get(self, request):
         try:
             logger.info("Request received for ElevenlabsVoiceView")
-            voice_class = ElevenLabsVoiceMechanism()
+            voice_class = ElevenLabsVoicesMechanism()
 
             voices, message = voice_class.get_all_ElevenLabs_voices()
             if voices is None:
@@ -55,12 +53,30 @@ class ElevenlabsVoiceListView(APIView):
 
             paginator  = self.pagination_class()
             paginated  = paginator.paginate_queryset(voices, request)
-            serializer = ElevenLabsVoiceSerializer(paginated, many=True)
+            serializer = ElevenLabsVoicesSerializer(paginated, many=True)
             return paginator.get_paginated_response(
                 success_response(message=message, data=serializer.data)
             )
         except Exception as e:
             logger.error(f"ElevenlabsVoiceView error: {e}")
+            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SyncRetellVoicesApiView(APIView):
+    """Pull all voices from Retell and save into ElevenLabsVoices."""
+
+    def post(self, request):
+        try:
+            logger.info("Request received for SyncRetellVoicesApiView")
+            data, message = retell_services.sync_voices_to_db()
+            if data is None:
+                return Response(error_response(message=message), status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                success_response(message=message, data=data),
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.error(f"SyncRetellVoicesApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -103,14 +119,7 @@ class AgentCRUDApiView(APIView):
     def post(self, request):
         try:
             logger.info("Request received for AgentCRUDApiView POST")
-            import json as _json
             data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
-
-            if 'user_tools' in data and isinstance(data['user_tools'], str):
-                try:
-                    data['user_tools'] = _json.loads(data['user_tools'])
-                except Exception:
-                    data['user_tools'] = []
 
             try:
                 validated_data = CreateAgentSchema(**data)
@@ -147,14 +156,7 @@ class AgentCRUDApiView(APIView):
     def put(self, request, pk):
         try:
             logger.info(f"Request received for AgentCRUDApiView PUT pk={pk}")
-            import json as _json
             data = request.data.dict() if hasattr(request.data, 'dict') else dict(request.data)
-
-            if 'user_tools' in data and isinstance(data['user_tools'], str):
-                try:
-                    data['user_tools'] = _json.loads(data['user_tools'])
-                except Exception:
-                    data['user_tools'] = None
 
             try:
                 validated_data = UpdateAgentSchema(**data)
@@ -196,114 +198,87 @@ class DeleteAllAgentsView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-class UserToolListApiView(APIView):
+
+class SyncRetellLanguagesApiView(APIView):
+    """Upsert Retell language catalog into RetellLanguage."""
+
+    def post(self, request):
+        try:
+            logger.info("Request received for SyncRetellLanguagesApiView")
+            data, message = retell_services.sync_languages_to_db()
+            if data is None:
+                return Response(error_response(message=message), status=status.HTTP_502_BAD_GATEWAY)
+            return Response(success_response(message=message, data=data), status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"SyncRetellLanguagesApiView error: {e}")
+            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class RetellLanguageListApiView(APIView):
     pagination_class = Pagination
 
     def get(self, request):
         try:
-            logger.info("Request received for UserToolListApiView GET")
             search = request.query_params.get("search", "").strip()
-            service = UserToolMechanism()
-            tools, message = service.get_all_user_tools(request.user, search=search or None)
-            if tools is None:
+            langs, message = RetellLanguageMechanism().get_all(search=search or None)
+            if langs is None:
                 return Response(error_response(message=message), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            paginator  = self.pagination_class()
-            paginated  = paginator.paginate_queryset(tools, request)
-            serializer = UserToolSerializer(paginated, many=True)
-            return paginator.get_paginated_response(
-                success_response(message=message, data=serializer.data)
-            )
+            paginator = self.pagination_class()
+            paginated = paginator.paginate_queryset(langs, request)
+            serializer = RetellLanguageSerializer(paginated, many=True)
+            return paginator.get_paginated_response(success_response(message=message, data=serializer.data))
         except Exception as e:
-            logger.error(f"UserToolListApiView GET error: {e}")
+            logger.error(f"RetellLanguageListApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SyncRetellPhonesApiView(APIView):
+    """Sync Retell phone numbers + seed Twilio env numbers."""
 
     def post(self, request):
         try:
-            logger.info("Request received for UserToolListApiView POST")
-            import json as _json
-            data = request.data.dict() if hasattr(request.data, "dict") else dict(request.data)
-
-            if "parameters" in data and isinstance(data["parameters"], str):
-                try:
-                    data["parameters"] = _json.loads(data["parameters"])
-                except Exception:
-                    data["parameters"] = {}
-
-            try:
-                validated = CreateUserToolSchema(**data)
-            except ValidationError as e:
-                err = e.errors()[0]
-                message = err["msg"].replace("Value error, ", "")
-                return Response(error_response(message=message), status=status.HTTP_400_BAD_REQUEST)
-
-            service = UserToolMechanism()
-            tool, message = service.create_tool(request.user, validated)
-            if tool is None:
-                return Response(error_response(message=message), status=status.HTTP_400_BAD_REQUEST)
-
-            serializer = UserToolSerializer(tool)
-            return Response(success_response(message=message, data=serializer.data), status=status.HTTP_201_CREATED)
+            logger.info("Request received for SyncRetellPhonesApiView")
+            data, message = retell_services.sync_phone_numbers_to_db()
+            if data is None:
+                return Response(error_response(message=message), status=status.HTTP_502_BAD_GATEWAY)
+            return Response(success_response(message=message, data=data), status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"UserToolListApiView POST error: {e}")
+            logger.error(f"SyncRetellPhonesApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class UserToolDetailApiView(APIView):
+class SyncRetellAgentsApiView(APIView):
+    """Delete local agents missing on Retell. Local deletes already remove Retell agents."""
 
-    def get(self, request, pk):
+    def post(self, request):
         try:
-            logger.info(f"Request received for UserToolDetailApiView GET pk={pk}")
-            service = UserToolMechanism()
-            tool, message = service.get_tool_by_id(pk, request.user)
-            if tool is None:
-                return Response(error_response(message=message), status=status.HTTP_404_NOT_FOUND)
-
-            serializer = UserToolSerializer(tool)
-            return Response(success_response(message=message, data=serializer.data), status=status.HTTP_200_OK)
+            logger.info("Request received for SyncRetellAgentsApiView")
+            data, message = AgentMechanism().sync_agents_with_retell(request.user)
+            if data is None:
+                return Response(error_response(message=message), status=status.HTTP_502_BAD_GATEWAY)
+            return Response(success_response(message=message, data=data), status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"UserToolDetailApiView GET error: {e}")
+            logger.error(f"SyncRetellAgentsApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def put(self, request, pk):
+
+class RetellPhoneListApiView(APIView):
+    pagination_class = Pagination
+
+    def get(self, request):
         try:
-            logger.info(f"Request received for UserToolDetailApiView PUT pk={pk}")
-            import json as _json
-            data = request.data.dict() if hasattr(request.data, "dict") else dict(request.data)
-
-            if "parameters" in data and isinstance(data["parameters"], str):
-                try:
-                    data["parameters"] = _json.loads(data["parameters"])
-                except Exception:
-                    data["parameters"] = None
-
-            try:
-                validated = UpdateUserToolSchema(**data)
-            except ValidationError as e:
-                err = e.errors()[0]
-                message = err["msg"].replace("Value error, ", "")
-                return Response(error_response(message=message), status=status.HTTP_400_BAD_REQUEST)
-
-            service = UserToolMechanism()
-            tool, message = service.update_tool(pk, request.user, validated)
-            if tool is None:
-                return Response(error_response(message=message), status=status.HTTP_404_NOT_FOUND)
-
-            serializer = UserToolSerializer(tool)
-            return Response(success_response(message=message, data=serializer.data), status=status.HTTP_200_OK)
+            search = request.query_params.get("search", "").strip()
+            available = request.query_params.get("available", "").lower() in ("1", "true", "yes")
+            phones, message = RetellPhoneMechanism().get_all(
+                available_only=available,
+                search=search or None,
+            )
+            if phones is None:
+                return Response(error_response(message=message), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            paginator = self.pagination_class()
+            paginated = paginator.paginate_queryset(phones, request)
+            serializer = RetellPhoneNumberSerializer(paginated, many=True)
+            return paginator.get_paginated_response(success_response(message=message, data=serializer.data))
         except Exception as e:
-            logger.error(f"UserToolDetailApiView PUT error: {e}")
-            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def delete(self, request, pk):
-        try:
-            logger.info(f"Request received for UserToolDetailApiView DELETE pk={pk}")
-            service = UserToolMechanism()
-            result, message = service.delete_tool(pk, request.user)
-            if result is None:
-                return Response(error_response(message=message), status=status.HTTP_404_NOT_FOUND)
-
-            return Response(success_response(message=message), status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"UserToolDetailApiView DELETE error: {e}")
+            logger.error(f"RetellPhoneListApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)

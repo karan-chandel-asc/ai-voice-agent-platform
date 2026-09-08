@@ -40,19 +40,6 @@ class CallLogSerializer(serializers.ModelSerializer):
 
 class CallLogDetailSerializer(CallLogSerializer):
     transcripts = CallTranscriptSerializer(many=True, read_only=True)
-    agent_tools = serializers.SerializerMethodField()
 
     class Meta(CallLogSerializer.Meta):
-        fields = CallLogSerializer.Meta.fields + ["transcripts", "agent_tools"]
-
-    def get_agent_tools(self, obj):
-        if not obj.agent_id:
-            return []
-        return [
-            {
-                "id": str(aut.id),
-                "name": aut.user_tool.name,
-                "tool_type": aut.user_tool.tool_type,
-            }
-            for aut in obj.agent.user_tools.select_related("user_tool").filter(is_active=True)
-        ]
+        fields = CallLogSerializer.Meta.fields + ["transcripts"]

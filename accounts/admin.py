@@ -11,10 +11,10 @@ class CustomUserAdmin(UserAdmin):
     Supports search by email, username, and business.
     """
 
-    list_display = ["email", "username", "business_name", "plan", "is_staff"]
-    list_filter = ["plan", "is_staff", "is_active"]
+    list_display = ["email", "username", "business_name", "is_staff"]
+    list_filter = ["is_staff", "is_active"]
     search_fields = ["email", "username", "business_name"]
     ordering = ["-created_at"]
     fieldsets = UserAdmin.fieldsets + (
-        ("Profile", {"fields": ("business_name", "phone", "plan")}),
+        ("Profile", {"fields": ("business_name", "phone")}),
     )
