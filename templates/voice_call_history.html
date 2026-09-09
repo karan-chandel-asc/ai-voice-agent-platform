@@ -437,13 +437,33 @@
     });
   }
 
-  function callerInitial(phone) {
-    const raw = String(phone || '').trim();
-    if (!raw || raw.toLowerCase() === 'unknown') return '?';
+  function isWebCall(call) {
+    const direction = String(call?.direction || '').toLowerCase();
+    const phone = String(call?.caller_phone || '').trim();
+    if (direction === 'web_call') return true;
+    if (!phone || phone.toLowerCase() === 'unknown') return true;
+    return false;
+  }
+
+  function formatCallerLabel(call) {
+    const phone = String(call?.caller_phone || '').trim();
+    if (phone && phone.toLowerCase() !== 'unknown') return phone;
+    if (isWebCall(call)) return 'Web call';
+    return '—';
+  }
+
+  function callerInitial(callOrPhone) {
+    // Accept full call object or legacy phone string
+    const call = (callOrPhone && typeof callOrPhone === 'object')
+      ? callOrPhone
+      : { caller_phone: callOrPhone };
+    if (isWebCall(call) && !String(call.caller_phone || '').trim()) return 'W';
+    const raw = String(call.caller_phone || '').trim();
+    if (!raw || raw.toLowerCase() === 'unknown') return 'W';
     const digit = raw.replace(/\D/g, '');
     if (digit) return digit.slice(-1);
     const letter = raw.replace(/[^a-zA-Z]/g, '');
-    return (letter[0] || '?').toUpperCase();
+    return (letter[0] || 'W').toUpperCase();
   }
 
   function statusClass(status) {
@@ -601,8 +621,8 @@
         <td class="td text-center"><input type="checkbox" class="row-check" onchange="handleRowCheck(this)" /></td>
         <td class="td">
           <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">${escapeHtml(callerInitial(call.caller_phone))}</div>
-            <span class="font-medium text-slate-800" style="font-size:12.5px;">${escapeHtml(call.caller_phone || '—')}</span>
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">${escapeHtml(callerInitial(call))}</div>
+            <span class="font-medium text-slate-800" style="font-size:12.5px;">${escapeHtml(formatCallerLabel(call))}</span>
           </div>
         </td>
         <td class="td td-sub">${escapeHtml(call.agent_name || '—')}</td>
@@ -634,7 +654,7 @@
 
   function openDrawer(call) {
     const score = call.sentiment || call.sentiment_score;
-    document.getElementById('drawer-phone').textContent = call.caller_phone || '—';
+    document.getElementById('drawer-phone').textContent = formatCallerLabel(call);
     document.getElementById('drawer-duration').textContent = call.duration || '0:00';
     document.getElementById('drawer-agent').textContent = call.agent_name || '—';
     document.getElementById('drawer-date').textContent = formatDate(call.started_at || call.created_at, true);

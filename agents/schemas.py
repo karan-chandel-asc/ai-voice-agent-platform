@@ -132,3 +132,48 @@ class CreateRoomReservationSchema(BaseModel):
         if "@" not in v or "." not in v.split("@")[-1]:
             raise ValueError("A valid email address is required")
         return v
+
+
+class CheckTableAvailabilitySchema(BaseModel):
+    reservation_date: str
+    reservation_time: str
+    number_of_guests: int = Field(..., ge=1)
+
+    @field_validator("reservation_date", "reservation_time")
+    @classmethod
+    def strip_required(cls, v):
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("This field is required")
+        return v
+
+
+class CreateTableReservationSchema(BaseModel):
+    guest_name: str
+    phone_number: str
+    email: str
+    reservation_date: str
+    reservation_time: str
+    number_of_guests: int = Field(..., ge=1)
+    special_requests: Optional[str] = ""
+
+    @field_validator(
+        "guest_name",
+        "phone_number",
+        "email",
+        "reservation_date",
+        "reservation_time",
+    )
+    @classmethod
+    def strip_required(cls, v):
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("This field is required")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v):
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("A valid email address is required")
+        return v

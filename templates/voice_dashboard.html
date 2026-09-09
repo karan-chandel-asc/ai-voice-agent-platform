@@ -426,7 +426,7 @@ async function loadRecentCalls() {
     tbody.innerHTML = rows.map(c => {
       const detailUrl = `/api/calls/voice-call-detail/?pk=${c.id}`;
       return `<tr class="trow" onclick="window.location.href='${detailUrl}'" style="cursor:pointer;">
-        <td class="px-5 py-3 text-xs font-medium text-slate-800">${escHtml(c.caller_phone||'—')}</td>
+        <td class="px-5 py-3 text-xs font-medium text-slate-800">${escHtml((!c.caller_phone || c.direction === 'web_call') ? (c.caller_phone || 'Web call') : c.caller_phone)}</td>
         <td class="px-4 py-3 text-xs text-slate-500">${escHtml(c.agent_name||'—')}</td>
         <td class="px-4 py-3">${statusHtml(c.status)}</td>
         <td class="px-4 py-3 text-xs font-mono text-slate-600">${escHtml(c.duration||'0:00')}</td>

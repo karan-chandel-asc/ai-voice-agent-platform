@@ -506,5 +506,30 @@ class RetellServices:
             logger.warning(f"RetellServices: unbind_phone warning: {e}")
             return None, str(e)
 
+    def create_web_call(self, *, retell_agent_id: str, metadata=None):
+        """
+        Create a Retell browser (WebRTC) call and return access_token for the Web SDK.
+        Docs: https://docs.retellai.com/api-references/create-web-call
+        """
+        try:
+            rid = (retell_agent_id or "").strip()
+            if not rid:
+                return None, "Retell agent id is required"
+
+            kwargs = {"agent_id": rid}
+            if metadata:
+                kwargs["metadata"] = metadata
+
+            call = self.retell.call.create_web_call(**kwargs)
+            return {
+                "call_id": getattr(call, "call_id", None) or "",
+                "access_token": getattr(call, "access_token", None) or "",
+                "agent_id": getattr(call, "agent_id", None) or rid,
+                "call_status": getattr(call, "call_status", None) or "",
+            }, "Web call created"
+        except Exception as e:
+            logger.error(f"RetellServices: create_web_call failed: {e}", exc_info=True)
+            return None, f"Failed to create web call: {e}"
+
 
 retell_services = RetellServices()

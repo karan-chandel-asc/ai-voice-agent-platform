@@ -427,9 +427,9 @@ function logout() {
     const statusText = (call.status || '—').toUpperCase();
     const score = call.sentiment || call.sentiment_score;
 
-    document.title = `${call.caller_phone || 'Call Detail'} — Deskline`;
+    document.title = `${(call.caller_phone && String(call.caller_phone).toLowerCase() !== 'unknown') ? call.caller_phone : ((call.direction === 'web_call' || !call.caller_phone) ? 'Web call' : 'Call Detail')} — Deskline`;
     document.getElementById('breadcrumb-call-id').textContent = `Call #${String(call.id).slice(0, 8)}`;
-    document.getElementById('detail-phone').textContent = call.caller_phone || '—';
+    document.getElementById('detail-phone').textContent = (call.caller_phone && String(call.caller_phone).toLowerCase() !== 'unknown') ? call.caller_phone : ((call.direction === 'web_call' || !call.caller_phone) ? 'Web call' : '—');
     document.getElementById('detail-agent').textContent = call.agent_name || '—';
     document.getElementById('detail-date').textContent = formatDate(call.started_at || call.created_at);
     document.getElementById('detail-duration').textContent = call.duration || formatSeconds(call.duration_seconds);
@@ -449,10 +449,10 @@ function logout() {
     totalDurationSeconds = Number(call.duration_seconds || 0);
     document.getElementById('timeDisplay').textContent = `0:00 / ${formatSeconds(totalDurationSeconds)}`;
 
-    document.getElementById('metadata-caller').textContent = call.caller_phone || '—';
+    document.getElementById('metadata-caller').textContent = (call.caller_phone && String(call.caller_phone).toLowerCase() !== 'unknown') ? call.caller_phone : ((call.direction === 'web_call' || !call.caller_phone) ? 'Web call' : '—');
     document.getElementById('metadata-call-id').textContent = call.twilio_call_sid || '—';
     document.getElementById('metadata-status').textContent = call.status || '—';
-    document.getElementById('metadata-direction').textContent = call.direction || '—';
+    document.getElementById('metadata-direction').textContent = (call.direction === 'web_call') ? 'Web call' : (call.direction || '—');
     document.getElementById('metadata-transferred').textContent = call.was_transferred ? 'Yes' : 'No';
 
     currentCallStartedAt = call.started_at || call.created_at || null;

@@ -246,17 +246,14 @@ class AgentMechanism:
             return None, f"Error fetching agent: {e}"
 
     def delete_agent(self, agent_id, user):
+        """Delete agent from Deskline only — never delete the Retell agent/LLM."""
         try:
             agent = Agent.objects.get(id=agent_id, owner=user)
             if agent.phone_number:
-                self._release_phone(agent, unbind_retell=True)
-            if agent.retell_agent_id or agent.retell_llm_id:
-                retell_services.delete_retell_agent(
-                    retell_agent_id=agent.retell_agent_id,
-                    retell_llm_id=agent.retell_llm_id,
-                )
+                # Free local phone inventory; leave Retell agent (and its number) intact
+                self._release_phone(agent, unbind_retell=False)
             agent.delete()
-            return True, "Agent deleted successfully"
+            return True, "Agent deleted from Deskline (Retell agent kept)"
         except Agent.DoesNotExist:
             return None, "Agent not found"
         except Exception as e:
@@ -290,18 +287,14 @@ class AgentMechanism:
             return None, f"Error fetching agents: {e}"
 
     def delete_all_agents(self, user):
+        """Delete all Deskline agents for user — never delete Retell agents/LLMs."""
         try:
             agents = list(Agent.objects.filter(owner=user))
             for agent in agents:
                 if agent.phone_number:
-                    self._release_phone(agent, unbind_retell=True)
-                if agent.retell_agent_id or agent.retell_llm_id:
-                    retell_services.delete_retell_agent(
-                        retell_agent_id=agent.retell_agent_id,
-                        retell_llm_id=agent.retell_llm_id,
-                    )
+                    self._release_phone(agent, unbind_retell=False)
             deleted, _ = Agent.objects.filter(owner=user).delete()
-            return deleted, "All agents deleted successfully"
+            return deleted, "All Deskline agents deleted (Retell agents kept)"
         except Exception as e:
             return None, f"Error deleting agents: {e}"
 
@@ -309,8 +302,8 @@ class AgentMechanism:
         """
         Full sync with Retell:
         - Upsert every Retell agent into local DB (prompt, voice, tools, snapshot)
-        - Delete local linked agents missing on Retell
-        Local deletes already remove the Retell agent.
+        - Delete local linked agents that were removed on Retell
+        Deskline deletes never remove Retell agents; only sync does local cleanup.
         """
         from django.utils import timezone
 

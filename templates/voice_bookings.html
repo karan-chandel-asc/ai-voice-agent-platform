@@ -328,6 +328,7 @@
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">#</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Guest</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Date</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Time</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Guests</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Email</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Agent</th>
@@ -338,8 +339,8 @@
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">#</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Guest</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Type</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Check-in</th>
-        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Check-out</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Date / Check-in</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Time / Check-out</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Guests</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Agent</th>
         <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500">Status</th>
@@ -361,6 +362,18 @@
     return `<div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">${escHtml(initial)}</div>`;
   }
 
+  function formatReservationTime(b) {
+    if (b.reservation_time) return b.reservation_time;
+    if (!b.reservation_date_time) return '—';
+    try {
+      const d = new Date(b.reservation_date_time);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    } catch (_) {
+      return '—';
+    }
+  }
+
   function renderRow(b, i, offset) {
     const bookingId = b.id || null;
     const name      = b.guest_name  || '—';
@@ -374,6 +387,7 @@
     const nights   = b.nights != null ? b.nights : '—';
     const guests   = b.guests || '—';
     const agent    = b.agent_name || '—';
+    const resTime  = formatReservationTime(b);
 
     if (activeTab === 'room') {
       return `<tr class="trow">
@@ -391,6 +405,7 @@
         <td class="px-5 py-3 text-xs text-slate-400">${rowNum}</td>
         <td class="px-5 py-3"><div class="flex items-center gap-2">${guestAvatar(name)}<div><div class="text-xs font-semibold text-slate-800">${escHtml(name)}</div></div></div></td>
         <td class="px-5 py-3 text-xs text-slate-700 font-medium">${escHtml(checkIn)}</td>
+        <td class="px-5 py-3 text-xs text-slate-700 font-semibold">${escHtml(resTime)}</td>
         <td class="px-5 py-3 text-xs text-slate-600">${escHtml(guests)} guest${guests!==1&&guests!=='—'?'s':''}</td>
         <td class="px-5 py-3 text-xs text-slate-500">${escHtml(email||'—')}</td>
         <td class="px-5 py-3 text-xs text-slate-500">${escHtml(agent)}</td>
@@ -400,12 +415,14 @@
       const typeBadge = type === 'room'
         ? `<span class="badge b-room">Room</span>`
         : `<span class="badge b-table">Table</span>`;
+      const dateCol = checkIn;
+      const timeOrOut = type === 'table' ? resTime : checkOut;
       return `<tr class="trow">
         <td class="px-5 py-3 text-xs text-slate-400">${rowNum}</td>
         <td class="px-5 py-3"><div class="flex items-center gap-2">${guestAvatar(name)}<div><div class="text-xs font-semibold text-slate-800">${escHtml(name)}</div>${email?`<div class="text-xs text-slate-400">${escHtml(email)}</div>`:''}</div></div></td>
         <td class="px-5 py-3">${typeBadge}</td>
-        <td class="px-5 py-3 text-xs text-slate-700 font-medium">${escHtml(checkIn)}</td>
-        <td class="px-5 py-3 text-xs text-slate-700">${escHtml(checkOut)}</td>
+        <td class="px-5 py-3 text-xs text-slate-700 font-medium">${escHtml(dateCol)}</td>
+        <td class="px-5 py-3 text-xs text-slate-700">${escHtml(timeOrOut)}</td>
         <td class="px-5 py-3 text-xs text-slate-600">${escHtml(guests)}</td>
         <td class="px-5 py-3 text-xs text-slate-500">${escHtml(agent)}</td>
         <td class="px-5 py-3">${confirmSel}</td>
@@ -430,7 +447,7 @@
     if (activeTab !== 'all') params.set('booking_type', activeTab);
 
     const tbody = document.getElementById('bookings-body');
-    const colSpan = activeTab === 'table' ? 7 : 8;
+    const colSpan = 8;
     tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-5 py-10 text-center text-sm text-slate-400">Loading—</td></tr>`;
 
     try {

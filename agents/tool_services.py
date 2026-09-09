@@ -19,6 +19,12 @@ ROOM_RATES = {
 }
 TAX_RATE = Decimal("0.12")
 
+# Demo restaurant: concurrent covers (seats) per time slot
+TABLE_TOTAL_COVERS = 40
+TABLE_MAX_PARTY = 12
+# Slot windows that block each other (minutes around the requested time)
+TABLE_SLOT_MINUTES = 90
+
 
 def parse_date(raw) -> date_cls:
     raw = str(raw).strip().lower()
@@ -32,6 +38,16 @@ def parse_date(raw) -> date_cls:
         except ValueError:
             continue
     raise ValueError("Invalid date format. Use YYYY-MM-DD.")
+
+
+def parse_time(raw):
+    raw = str(raw or "").strip().lower()
+    for fmt in ("%H:%M", "%H:%M:%S", "%I:%M %p", "%I:%M%p"):
+        try:
+            return datetime.strptime(raw, fmt).time()
+        except ValueError:
+            continue
+    raise ValueError("Invalid time format. Use HH:MM.")
 
 
 def normalize_room_type(room_type: str) -> str:
@@ -52,19 +68,25 @@ def _int(val, default=1) -> int:
 
 
 def resolve_agent(agent_id=None, phone_number=None, call_sid=None):
+    from django.core.exceptions import ValidationError as DjangoValidationError
     from agents.models import Agent, RetellPhoneNumber
     from calls.models import CallLog
 
     if agent_id:
         rid = str(agent_id).strip()
-        try:
-            return Agent.objects.get(id=rid)
-        except (Agent.DoesNotExist, ValueError, TypeError):
-            pass
-        # Retell tools often send retell agent id, not our UUID
-        hit = Agent.objects.filter(retell_agent_id=rid).first()
-        if hit:
-            return hit
+        # Retell ids look like "agent_…"; resolve those first to avoid UUID ValidationError
+        if rid.startswith("agent_"):
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
+        else:
+            try:
+                return Agent.objects.get(id=rid)
+            except (Agent.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+                pass
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
 
     sid = (call_sid or "").strip()
     if sid:
@@ -286,6 +308,182 @@ def create_room_reservation(data: dict) -> dict:
             "number_of_guests": guests,
             "nights": nights,
             "total_price": float(booking.total_price or 0),
+            "special_requests": booking.special_requests,
+            "is_confirmed": booking.is_confirmed,
+            "status": "pending",
+        },
+    }
+
+
+def _table_slot_bounds(reservation_dt: datetime):
+    half = TABLE_SLOT_MINUTES // 2
+    return (
+        reservation_dt - timedelta(minutes=half),
+        reservation_dt + timedelta(minutes=half),
+    )
+
+
+def _overlapping_table_covers(reservation_dt: datetime, agent=None) -> int:
+    from agents.models import Booking
+    from django.db.models import Sum
+
+    start, end = _table_slot_bounds(reservation_dt)
+    qs = Booking.objects.filter(booking_type="table")
+    if agent:
+        qs = qs.filter(agent=agent)
+
+    # Prefer reservation_date_time; fall back to check_in date + ignore time when missing
+    timed = qs.filter(
+        reservation_date_time__isnull=False,
+        reservation_date_time__gte=start,
+        reservation_date_time__lt=end,
+    )
+    covers = timed.aggregate(total=Sum("guests"))["total"] or 0
+
+    # Legacy rows with only check_in on the same calendar day (count conservatively)
+    day = reservation_dt.date()
+    legacy = qs.filter(
+        reservation_date_time__isnull=True,
+        check_in=day,
+    ).aggregate(total=Sum("guests"))["total"] or 0
+    return int(covers) + int(legacy)
+
+
+def check_table_availability(
+    *,
+    reservation_date: str,
+    reservation_time: str,
+    number_of_guests: int,
+    agent_id=None,
+    agent_phone=None,
+) -> dict:
+    try:
+        day = parse_date(reservation_date)
+        time_obj = parse_time(reservation_time)
+    except ValueError as e:
+        return {"success": False, "message": str(e), "data": None}
+
+    guests = _int(number_of_guests, 1)
+    if guests > TABLE_MAX_PARTY:
+        return {
+            "success": False,
+            "message": f"Party size cannot exceed {TABLE_MAX_PARTY} guests. Please call the restaurant for large groups.",
+            "data": {
+                "reservation_date": day.isoformat(),
+                "reservation_time": time_obj.strftime("%H:%M"),
+                "number_of_guests": guests,
+                "is_available": False,
+                "max_party_size": TABLE_MAX_PARTY,
+            },
+        }
+
+    reservation_dt = datetime.combine(day, time_obj)
+    agent = resolve_agent(agent_id, agent_phone)
+    booked_covers = _overlapping_table_covers(reservation_dt, agent)
+    remaining = max(0, TABLE_TOTAL_COVERS - booked_covers)
+    is_available = remaining >= guests
+
+    return {
+        "success": True,
+        "message": (
+            f"Table availability for {day.isoformat()} at {time_obj.strftime('%H:%M')} "
+            f"({guests} guest(s)): {'available' if is_available else 'not available'}."
+        ),
+        "data": {
+            "reservation_date": day.isoformat(),
+            "reservation_time": time_obj.strftime("%H:%M"),
+            "number_of_guests": guests,
+            "is_available": is_available,
+            "remaining_covers": remaining,
+            "total_covers": TABLE_TOTAL_COVERS,
+            "slot_minutes": TABLE_SLOT_MINUTES,
+        },
+    }
+
+
+def create_table_reservation(data: dict) -> dict:
+    from agents.models import Booking
+
+    required = [
+        "guest_name",
+        "phone_number",
+        "email",
+        "reservation_date",
+        "reservation_time",
+        "number_of_guests",
+    ]
+    missing = [f for f in required if data.get(f) in (None, "")]
+    if missing:
+        return {"success": False, "message": f"Missing fields: {', '.join(missing)}", "data": None}
+
+    email = str(data.get("email") or "").strip()
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return {"success": False, "message": "A valid email address is required.", "data": None}
+
+    try:
+        day = parse_date(data["reservation_date"])
+        time_obj = parse_time(data["reservation_time"])
+    except ValueError as e:
+        return {"success": False, "message": str(e), "data": None}
+
+    guests = _int(data.get("number_of_guests"), 1)
+    call_sid = data.get("call_sid") or data.get("call_id") or ""
+    agent = resolve_agent(
+        data.get("agent_id"),
+        data.get("agent_phone") or data.get("to_number"),
+        call_sid=call_sid,
+    )
+
+    avail = check_table_availability(
+        reservation_date=day.isoformat(),
+        reservation_time=time_obj.strftime("%H:%M"),
+        number_of_guests=guests,
+        agent_id=getattr(agent, "id", None),
+        agent_phone=data.get("agent_phone") or data.get("to_number"),
+    )
+    if not avail.get("success"):
+        return avail
+    if not (avail.get("data") or {}).get("is_available"):
+        return {
+            "success": False,
+            "message": (
+                f"No table availability for {guests} guest(s) on "
+                f"{day.isoformat()} at {time_obj.strftime('%H:%M')}."
+            ),
+            "data": avail.get("data"),
+        }
+
+    reservation_dt = datetime.combine(day, time_obj)
+    booking = Booking.objects.create(
+        agent=agent,
+        call_sid=call_sid,
+        booking_type="table",
+        guest_name=str(data["guest_name"]).strip(),
+        guest_email=email,
+        guest_phone=str(data["phone_number"]).strip(),
+        guests=guests,
+        special_requests=(data.get("special_requests") or "").strip(),
+        reservation_date_time=reservation_dt,
+        check_in=day,
+        check_out=None,
+        is_confirmed=False,
+    )
+
+    return {
+        "success": True,
+        "message": (
+            f"Table reservation request saved for {booking.guest_name}, "
+            f"party of {guests} on {day.isoformat()} at {time_obj.strftime('%H:%M')}. "
+            f"Status is pending until the restaurant confirms it."
+        ),
+        "data": {
+            "booking_id": str(booking.id),
+            "guest_name": booking.guest_name,
+            "phone_number": booking.guest_phone,
+            "email": booking.guest_email,
+            "reservation_date": day.isoformat(),
+            "reservation_time": time_obj.strftime("%H:%M"),
+            "number_of_guests": guests,
             "special_requests": booking.special_requests,
             "is_confirmed": booking.is_confirmed,
             "status": "pending",

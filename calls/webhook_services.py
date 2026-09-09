@@ -205,24 +205,43 @@ def _save_transcripts(call_log: CallLog, call: dict) -> int:
 
 @transaction.atomic
 def handle_call_started(call: dict) -> dict:
-    """Only persist Retell call_id; full details come on call_ended."""
+    """Persist Retell call_id and link agent early so mid-call tools can resolve ownership."""
     call_id = (call.get("call_id") or "").strip()
-    logger.info(f"{LOG} ▶ call_started begin call_id={call_id or '(missing)'}")
+    retell_agent_id = call.get("agent_id") or ""
+    logger.info(
+        f"{LOG} ▶ call_started begin call_id={call_id or '(missing)'} "
+        f"retell_agent_id={retell_agent_id or '(none)'}"
+    )
 
     if not call_id:
         logger.warning(f"{LOG} ✖ call_started failed — call_id missing in payload")
         return {"ok": False, "message": "call_id missing"}
 
+    agent = _resolve_agent(retell_agent_id)
+    defaults = {"status": "in-progress"}
+    if agent:
+        defaults["agent"] = agent
+
     log, created = CallLog.objects.get_or_create(
         twilio_call_sid=call_id,
-        defaults={"status": "in-progress"},
+        defaults=defaults,
     )
+    update_fields = []
     if created:
-        logger.info(f"{LOG} ✓ call_started NEW CallLog created id={log.id} status=in-progress")
+        logger.info(
+            f"{LOG} ✓ call_started NEW CallLog created id={log.id} "
+            f"status=in-progress agent={getattr(agent, 'agent_name', None) or '(none)'}"
+        )
     else:
+        if agent and log.agent_id != agent.id:
+            log.agent = agent
+            update_fields.append("agent")
+            logger.info(
+                f"{LOG} call_started linked agent={agent.agent_name} onto CallLog id={log.id}"
+            )
         if log.status != "completed":
             log.status = "in-progress"
-            log.save(update_fields=["status"])
+            update_fields.append("status")
             logger.info(
                 f"{LOG} ✓ call_started existing CallLog id={log.id} "
                 f"— already had this call_id, set status=in-progress"
@@ -232,6 +251,8 @@ def handle_call_started(call: dict) -> dict:
                 f"{LOG} ✓ call_started existing CallLog id={log.id} "
                 f"— already completed, left status unchanged"
             )
+        if update_fields:
+            log.save(update_fields=update_fields)
 
     return {
         "ok": True,

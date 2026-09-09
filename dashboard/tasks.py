@@ -15,6 +15,11 @@ def send_booking_confirmation_email(booking):
         guests = booking.guests
         check_in = booking.check_in.strftime("%A, %B %d, %Y") if booking.check_in else "—"
         check_out = booking.check_out.strftime("%A, %B %d, %Y") if booking.check_out else "—"
+        res_time = (
+            booking.reservation_date_time.strftime("%H:%M")
+            if booking.reservation_date_time
+            else None
+        )
         btype = "Room" if booking.booking_type == "room" else "Table"
         room_type = booking.room_type or "—"
         phone = booking.guest_phone or "—"
@@ -34,7 +39,9 @@ def send_booking_confirmation_email(booking):
             ("Email", to_email),
             ("Phone", phone),
             ("Room type", room_type) if booking.booking_type == "room" else None,
-            ("Check-in", check_in),
+            ("Check-in", check_in) if booking.booking_type == "room" else None,
+            ("Reservation date", check_in) if booking.booking_type == "table" else None,
+            ("Reservation time", res_time) if booking.booking_type == "table" and res_time else None,
             ("Check-out", check_out) if booking.booking_type == "room" else None,
             ("Nights", str(nights)) if booking.booking_type == "room" else None,
             ("Guests", str(guests)),

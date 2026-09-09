@@ -11,6 +11,8 @@ from .schemas import (
     CheckRoomAvailabilitySchema,
     CalculateBookingPriceSchema,
     CreateRoomReservationSchema,
+    CheckTableAvailabilitySchema,
+    CreateTableReservationSchema,
 )
 from . import tool_services
 
@@ -41,7 +43,12 @@ def _extract_tool_payload(request) -> dict:
     if to_number and not payload.get("agent_phone"):
         payload["agent_phone"] = to_number
 
-    agent_id = body.get("agent_id") or request.query_params.get("agent_id")
+    # Retell usually puts agent_id on call{}, not the top-level body
+    agent_id = (
+        body.get("agent_id")
+        or call.get("agent_id")
+        or request.query_params.get("agent_id")
+    )
     if agent_id and not payload.get("agent_id"):
         payload["agent_id"] = agent_id
 
@@ -61,7 +68,10 @@ class _BaseToolApiView(APIView):
         try:
             payload = _extract_tool_payload(request)
             logger.info(f"[TOOL] {self.tool_name} payload keys={list(payload.keys())}")
-            validated = self.schema_class(**payload)
+            # Only pass declared schema fields into Pydantic (ignore call_id/agent_id wrappers)
+            schema_fields = getattr(self.schema_class, "model_fields", {}) or {}
+            schema_payload = {k: v for k, v in payload.items() if k in schema_fields}
+            validated = self.schema_class(**schema_payload)
             result = self.run_tool(validated.model_dump(), payload)
             http = status.HTTP_200_OK if result.get("success") else status.HTTP_400_BAD_REQUEST
             if result.get("success"):
@@ -80,7 +90,7 @@ class _BaseToolApiView(APIView):
             )
             return Response(error_response(message=msg), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"[TOOL] {self.tool_name} error: {e}")
+            logger.exception(f"[TOOL] {self.tool_name} error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def run_tool(self, validated: dict, raw: dict) -> dict:
@@ -119,3 +129,29 @@ class CreateRoomReservationApiView(_BaseToolApiView):
         data["agent_phone"] = raw.get("agent_phone")
         data["call_sid"] = raw.get("call_sid") or raw.get("call_id")
         return tool_services.create_room_reservation(data)
+
+
+class CheckTableAvailabilityApiView(_BaseToolApiView):
+    schema_class = CheckTableAvailabilitySchema
+    tool_name = "check_table_availability"
+
+    def run_tool(self, validated, raw):
+        return tool_services.check_table_availability(
+            reservation_date=validated["reservation_date"],
+            reservation_time=validated["reservation_time"],
+            number_of_guests=validated["number_of_guests"],
+            agent_id=raw.get("agent_id"),
+            agent_phone=raw.get("agent_phone"),
+        )
+
+
+class CreateTableReservationApiView(_BaseToolApiView):
+    schema_class = CreateTableReservationSchema
+    tool_name = "create_table_reservation"
+
+    def run_tool(self, validated, raw):
+        data = {**validated}
+        data["agent_id"] = raw.get("agent_id")
+        data["agent_phone"] = raw.get("agent_phone")
+        data["call_sid"] = raw.get("call_sid") or raw.get("call_id")
+        return tool_services.create_table_reservation(data)

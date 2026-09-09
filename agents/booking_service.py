@@ -22,18 +22,24 @@ def _int(val, default=1):
 def _resolve_agent(agent_id=None, call_sid=None):
     if not agent_id and not call_sid:
         return None
+    from django.core.exceptions import ValidationError as DjangoValidationError
     from agents.models import Agent
     from calls.models import CallLog
 
     if agent_id:
         rid = str(agent_id).strip()
-        try:
-            return Agent.objects.get(id=rid)
-        except (Agent.DoesNotExist, ValueError, TypeError):
-            pass
-        hit = Agent.objects.filter(retell_agent_id=rid).first()
-        if hit:
-            return hit
+        if rid.startswith("agent_"):
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
+        else:
+            try:
+                return Agent.objects.get(id=rid)
+            except (Agent.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+                pass
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
 
     sid = (call_sid or "").strip()
     if sid:

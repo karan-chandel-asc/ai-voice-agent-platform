@@ -248,7 +248,7 @@ class SyncRetellPhonesApiView(APIView):
 
 
 class SyncRetellAgentsApiView(APIView):
-    """Delete local agents missing on Retell. Local deletes already remove Retell agents."""
+    """Upsert Retell agents locally; delete Deskline agents removed on Retell (never deletes on Retell)."""
 
     def post(self, request):
         try:
@@ -259,6 +259,55 @@ class SyncRetellAgentsApiView(APIView):
             return Response(success_response(message=message, data=data), status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"SyncRetellAgentsApiView error: {e}")
+            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CreateWebCallApiView(APIView):
+    """Create a Retell web call access token for in-browser agent testing."""
+
+    def post(self, request, pk):
+        try:
+            logger.info(f"Request received for CreateWebCallApiView pk={pk}")
+            agent, message = AgentMechanism().get_agent_by_id(pk, request.user)
+            if agent is None:
+                return Response(error_response(message=message), status=status.HTTP_404_NOT_FOUND)
+
+            if not agent.retell_agent_id:
+                return Response(
+                    error_response(message="Agent is not synced to Retell. Sync or create it on Retell first."),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data, msg = retell_services.create_web_call(
+                retell_agent_id=agent.retell_agent_id,
+                metadata={
+                    "deskline_agent_id": str(agent.id),
+                    "deskline_user_id": str(request.user.id),
+                    "source": "deskline_test",
+                },
+            )
+            if data is None:
+                return Response(error_response(message=msg), status=status.HTTP_502_BAD_GATEWAY)
+
+            if not data.get("access_token"):
+                return Response(
+                    error_response(message="Retell did not return an access token"),
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+            return Response(
+                success_response(
+                    message=msg,
+                    data={
+                        **data,
+                        "agent_name": agent.agent_name,
+                        "deskline_agent_id": str(agent.id),
+                    },
+                ),
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            logger.error(f"CreateWebCallApiView error: {e}")
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

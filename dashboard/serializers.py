@@ -6,13 +6,15 @@ from agents.models import Booking
 class BookingSerializer(serializers.ModelSerializer):
     agent_name = serializers.SerializerMethodField()
     nights     = serializers.SerializerMethodField()
+    reservation_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
             "id", "booking_type", "agent_name",
-            "guest_name", "guest_email", "guests",
+            "guest_name", "guest_email", "guest_phone", "guests",
             "check_in", "check_out", "nights",
+            "reservation_date_time", "reservation_time",
             "is_confirmed", "confirmed_at", "created_at",
         ]
 
@@ -24,15 +26,23 @@ class BookingSerializer(serializers.ModelSerializer):
             return (obj.check_out - obj.check_in).days
         return None
 
+    def get_reservation_time(self, obj):
+        if not obj.reservation_date_time:
+            return None
+        # Local clock time for table covers (HH:MM)
+        return obj.reservation_date_time.strftime("%H:%M")
+
 
 class BookingDetailSerializer(serializers.ModelSerializer):
     nights = serializers.SerializerMethodField()
+    reservation_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
-            "id", "booking_type", "guest_name", "guest_email", "guests",
+            "id", "booking_type", "guest_name", "guest_email", "guest_phone", "guests",
             "check_in", "check_out", "nights",
+            "reservation_date_time", "reservation_time",
             "is_confirmed", "confirmed_at",
         ]
 
@@ -40,6 +50,11 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         if obj.check_in and obj.check_out:
             return (obj.check_out - obj.check_in).days
         return None
+
+    def get_reservation_time(self, obj):
+        if not obj.reservation_date_time:
+            return None
+        return obj.reservation_date_time.strftime("%H:%M")
 
 
 class BookingCallSerializer(serializers.ModelSerializer):
