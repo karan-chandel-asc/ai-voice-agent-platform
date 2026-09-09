@@ -34,7 +34,11 @@ def send_daily_call_report():
         total     = calls.count()
         completed = calls.filter(status="completed").count()
         failed    = calls.filter(status="failed").count()
-        booked    = calls.filter(outcome="booked").count()
+        from agents.models import Booking
+        booked    = Booking.objects.filter(
+            agent__owner=user,
+            created_at__gte=yesterday_start,
+        ).count()
 
         durations    = list(calls.filter(duration_seconds__gt=0).values_list("duration_seconds", flat=True))
         avg_dur_sec  = int(sum(durations) / len(durations)) if durations else 0
@@ -218,7 +222,7 @@ def _build_excel(calls, since):
     ws.title = "Call Report"
 
     # header row
-    headers = ["#", "Date", "Caller", "Agent", "Duration", "Status", "Outcome", "Sentiment"]
+    headers = ["#", "Date", "Caller", "Agent", "Duration", "Status", "Sentiment"]
     header_fill = PatternFill("solid", fgColor="4F6EF7")
     header_font = Font(bold=True, color="FFFFFF", size=11)
     for col, h in enumerate(headers, 1):
@@ -237,8 +241,7 @@ def _build_excel(calls, since):
             call.agent.agent_name if call.agent else "—",
             dur,
             call.status,
-            call.outcome,
-            round(call.sentiment_score, 2) if call.sentiment_score is not None else "—",
+            call.sentiment_score or "—",
         ])
 
     # auto column width

@@ -19,21 +19,34 @@ def _int(val, default=1):
         return default
 
 
-def _resolve_agent(agent_id):
-    if not agent_id:
+def _resolve_agent(agent_id=None, call_sid=None):
+    if not agent_id and not call_sid:
         return None
+    from django.core.exceptions import ValidationError as DjangoValidationError
     from agents.models import Agent
-    try:
-        return Agent.objects.get(id=agent_id)
-    except (Agent.DoesNotExist, ValueError, TypeError):
-        return None
-
-
-def _mark_call_booked(call_sid: str):
-    if not call_sid:
-        return
     from calls.models import CallLog
-    CallLog.objects.filter(twilio_call_sid=call_sid).update(outcome="booked")
+
+    if agent_id:
+        rid = str(agent_id).strip()
+        if rid.startswith("agent_"):
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
+        else:
+            try:
+                return Agent.objects.get(id=rid)
+            except (Agent.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+                pass
+            hit = Agent.objects.filter(retell_agent_id=rid).first()
+            if hit:
+                return hit
+
+    sid = (call_sid or "").strip()
+    if sid:
+        log = CallLog.objects.select_related("agent").filter(twilio_call_sid=sid).first()
+        if log and log.agent_id:
+            return log.agent
+    return None
 
 
 def _parse_date(raw: str):
@@ -72,7 +85,7 @@ def save_room_booking(data: dict) -> dict:
     call_sid = data.get("call_sid", "") or ""
 
     booking = Booking.objects.create(
-        agent=_resolve_agent(data.get("agent_id")),
+        agent=_resolve_agent(data.get("agent_id"), call_sid),
         call_sid=call_sid,
         booking_type="room",
         guest_name=data["guest_name"],
@@ -80,16 +93,16 @@ def save_room_booking(data: dict) -> dict:
         guests=_int(data.get("guests", 1), 1),
         check_in=check_in_obj,
         check_out=check_out_obj,
+        is_confirmed=False,
     )
-    _mark_call_booked(call_sid)
 
     return {
         "success": True,
         "message": (
-            f"Room booked for {booking.guest_name}, "
+            f"Room booking request saved for {booking.guest_name}, "
             f"check-in {check_in_obj.strftime('%B %d')}, check-out {check_out_obj.strftime('%B %d')}, "
             f"{nights} night{'s' if nights != 1 else ''}, {booking.guests} guest(s). "
-            f"Confirmation is saved in the system."
+            f"Status is pending until staff confirms it."
         ),
     }
 
@@ -117,7 +130,7 @@ def save_table_booking(data: dict) -> dict:
 
     call_sid = data.get("call_sid", "") or ""
     booking = Booking.objects.create(
-        agent=_resolve_agent(data.get("agent_id")),
+        agent=_resolve_agent(data.get("agent_id"), call_sid),
         call_sid=call_sid,
         booking_type="table",
         guest_name=data["guest_name"],
@@ -125,14 +138,14 @@ def save_table_booking(data: dict) -> dict:
         guests=_int(data.get("guests")),
         check_in=date_obj,
         check_out=None,
+        is_confirmed=False,
     )
-    _mark_call_booked(call_sid)
 
     return {
         "success": True,
         "message": (
-            f"Table booked for {booking.guest_name}, party of {booking.guests} "
+            f"Table booking request saved for {booking.guest_name}, party of {booking.guests} "
             f"on {date_obj.strftime('%A, %B %d')}. "
-            f"Confirmation is saved in the system."
+            f"Status is pending until staff confirms it."
         ),
     }

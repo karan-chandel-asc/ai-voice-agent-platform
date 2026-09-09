@@ -6,77 +6,79 @@
 <title>Analytics — Deskline</title>
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-<script>
-function logout() {
-    const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
-    fetch('/api/auth/logout/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh }),
-    }).finally(() => {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('refresh_token');
-      window.location.href = '/api/auth/login/';
-    });
-  }
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
+<script src="{% static 'js/deskline-toast.js' %}"></script>
 <style>
   :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
-  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);margin:0;-webkit-font-smoothing:antialiased;}
+  .display{font-family:'Fraunces',Georgia,serif;}
   .sidebar{background:var(--sidebar);border-right:none;}
   .nav-item{padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;transition:all 0.15s;text-decoration:none;}
   .nav-item:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);}
   .nav-item.active{background:rgba(201,164,110,0.14);color:#C9A46E;font-weight:600;}
   .nav-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.1em;padding:0 10px;margin:16px 0 6px;}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
-  .badge{font-size:10.5px;font-weight:500;padding:2.5px 9px;border-radius:20px;display:inline-block;}
-  .btn-primary{background:#A9814A;color:#1B1408;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s;box-shadow:0 4px 14px rgba(169,129,74,0.25);}
-  .btn-primary:hover{opacity:0.95;}
-  .btn-ghost{background:white;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
-  .btn-ghost:hover{background:var(--bg);color:var(--t1);}
   .shadow-card{box-shadow:0 1px 2px rgba(22,51,43,0.04),0 8px 24px rgba(22,51,43,0.04);}
+  .btn-ghost{background:transparent;color:var(--t2);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
+  .btn-ghost:hover{background:#fff;color:var(--t1);}
   .scrollbar::-webkit-scrollbar{width:5px;}
-  .scrollbar::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:3px;}
-  .tab-range{font-size:12px;padding:5px 12px;color:var(--t2);cursor:pointer;border-radius:6px;font-weight:450;transition:all 0.15s;}
-  .tab-range:hover{background:var(--bg);color:var(--t1);}
-  .tab-range.active{background:var(--accent-l);color:var(--accent);font-weight:500;}
-  select{appearance:none;cursor:pointer;background:white;border:1px solid var(--border);border-radius:7px;font-size:12.5px;color:var(--t1);padding:6px 28px 6px 10px;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:14px;}
-  .bar-chart-bar{background:linear-gradient(180deg,#1F4839,#16332B);border-radius:3px 3px 0 0;transition:opacity 0.15s;cursor:pointer;}
-  .bar-chart-bar:hover{opacity:0.8;}
-  .donut{width:140px;height:140px;border-radius:50%;background:conic-gradient(#16332B 0% 68%,#10b981 68% 84%,#e11d48 84% 92%,#94a3b8 92% 100%);position:relative;display:flex;align-items:center;justify-content:center;}
-  .donut-hole{width:88px;height:88px;background:white;border-radius:50%;position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;}
-  .trow{border-bottom:1px solid var(--border-soft);transition:background 0.1s;}
+  .scrollbar::-webkit-scrollbar-thumb{background:#ddd4c2;border-radius:3px;}
+  .kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(22,51,43,0.04),0 8px 24px rgba(22,51,43,0.04);position:relative;overflow:hidden;opacity:0;transform:translateY(6px);animation:rise .45s ease forwards;}
+  .kpi:nth-child(1){animation-delay:.02s}.kpi:nth-child(2){animation-delay:.06s}.kpi:nth-child(3){animation-delay:.1s}.kpi:nth-child(4){animation-delay:.14s}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#C9A46E,#16332B);}
+  .kpi-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .panel{opacity:0;transform:translateY(8px);animation:rise .5s ease forwards;animation-delay:.12s;}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .range-btn{font-size:12px;padding:6px 12px;color:var(--t2);cursor:pointer;border-radius:6px;font-weight:500;border:none;background:transparent;transition:all .15s;}
+  .range-btn:hover{color:var(--t1);background:rgba(255,255,255,.7);}
+  .range-btn.active{background:#fff;color:var(--t1);box-shadow:0 1px 3px rgba(22,51,43,.08);}
+  select.filter{appearance:none;cursor:pointer;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--t1);padding:7px 30px 7px 12px;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238A918A' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:14px;}
+  .bar{background:linear-gradient(180deg,#1F4839,#16332B);border-radius:4px 4px 0 0;min-width:3px;transition:height .35s ease,opacity .15s;cursor:default;}
+  .bar:hover{opacity:.82;}
+  .donut{width:132px;height:132px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .donut-hole{width:84px;height:84px;background:#fff;border-radius:50%;position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  .trow{border-bottom:1px solid var(--border-soft);transition:background .1s;}
   .trow:last-child{border-bottom:none;}
-  .trow:hover{background:#fafbfc;}
-  .prog{height:4px;background:#f1f5f9;border-radius:2px;}
-  .prog-fill{height:100%;border-radius:2px;}
-  .heat-cell{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--t3);cursor:pointer;transition:transform 0.1s;}
-  .heat-cell:hover{transform:scale(1.15);}
-  /* SVG line chart */
-  .chart-svg{overflow:visible;}
-  /* Profile dropdown */
-  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid #e8edf2;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:200;overflow:hidden;animation:fadeDown 0.15s ease;}
-  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background 0.12s;text-decoration:none;}
-  .pd-item:hover{background:#f8fafc;color:#0f172a;}
+  .trow:hover{background:#f7f3ea;}
+  .prog{height:5px;background:#efe9dc;border-radius:3px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:3px;transition:width .4s ease;}
+  .heat{width:100%;aspect-ratio:1;border-radius:5px;transition:transform .12s;}
+  .heat:hover{transform:scale(1.12);}
+  .pg-btn{font-size:12px;font-weight:500;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--t2);cursor:pointer;}
+  .pg-btn:hover{background:var(--bg);}
+  .pg-btn.active{background:var(--accent-l);color:var(--t1);border-color:#C9A46E;}
+  .pg-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .badge{font-size:10.5px;font-weight:600;padding:2.5px 8px;border-radius:20px;display:inline-block;}
+  .b-live{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;}
+  .b-paused{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
+  .b-draft{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+  .skel{background:linear-gradient(90deg,#efe9dc 25%,#f7f3ea 50%,#efe9dc 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;color:transparent!important;}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .insight{background:linear-gradient(135deg,#16332B 0%,#1F4839 55%,#2a5648 100%);color:#fff;border-radius:14px;padding:20px 24px;position:relative;overflow:hidden;}
+  .insight::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,164,110,.28),transparent 70%);}
+  .profile-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:220px;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(22,51,43,0.12);z-index:200;overflow:hidden;animation:fadeDown .15s ease;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  .pd-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:500;color:#475569;cursor:pointer;transition:background .12s;text-decoration:none;}
+  .pd-item:hover{background:#f7f3ea;color:#0f172a;}
   .pd-item svg{flex-shrink:0;color:#94a3b8;}
-  .pd-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+  .pd-divider{height:1px;background:#efe9dc;margin:4px 0;}
   .pd-item.danger{color:#e11d48;}
   .pd-item.danger svg{color:#e11d48;}
   .pd-item.danger:hover{background:#fff1f2;}
+  @media (max-width:1100px){
+    .grid-kpi{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+    .grid-main{grid-template-columns:1fr!important;}
+    .grid-mid{grid-template-columns:1fr!important;}
+  }
 </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 <script id="auth-guard">if(!localStorage.getItem("access_token")&&!sessionStorage.getItem("access_token")){window.location.replace("/api/auth/login/");}</script>
 
-<!-- Sidebar -->
 <aside class="sidebar w-56 flex flex-col flex-shrink-0">
-  <div class="px-5 py-4 sidebar-brand">
+  <div class="px-5 py-4" style="border-bottom:1px solid rgba(255,255,255,0.06);">
     <a href="{% url 'home' %}" class="flex items-center gap-2.5 no-underline">
       <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#A9814A;">
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#1B1408" stroke-width="1.7"><path d="M3 10.5L12 4l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.2c1-1.4 4-1.4 5 0" stroke-linecap="round"/></svg>
@@ -103,10 +105,6 @@ function logout() {
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
       New Agent
     </a>
-    <a href="/api/agents/manage-tools/" class="nav-item">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-      My Tools
-    </a>
     <p class="nav-sec">CALLS</p>
     <a href="{% url 'voice-call-history' %}" class="nav-item">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -126,38 +124,32 @@ function logout() {
       Integrations
     </a>
   </nav>
-
 </aside>
 
-<!-- Main -->
 <main class="flex-1 flex flex-col overflow-hidden">
-
-  <!-- Header -->
-  <header class="flex items-center justify-between px-6 py-4 bg-white" style="border-bottom:1px solid #f1f5f9;">
+  <header class="flex items-center justify-between px-6 py-3.5 bg-white" style="border-bottom:1px solid var(--border-soft);">
     <div>
-      <h1 class="display text-xl text-slate-800" style="letter-spacing:-0.02em;">Analytics</h1>
-      <p class="text-xs text-slate-400">Performance insights across all agents</p>
+      <h1 class="display text-xl" style="letter-spacing:-0.02em;color:var(--t1);">Analytics</h1>
+      <p class="text-xs" style="color:var(--t3);">Call performance, bookings, and agent comparison</p>
     </div>
     <div class="flex items-center gap-3">
-      <!-- Date range tabs -->
-      <div class="flex items-center gap-1 p-1 rounded-lg" style="background:#f1f5f9;">
-        <button class="tab-range active">7d</button>
-        <button class="tab-range">30d</button>
-        <button class="tab-range">90d</button>
+      <div class="flex items-center gap-0.5 p-1 rounded-lg" style="background:#efe9dc;">
+        <button type="button" class="range-btn" data-days="7">7d</button>
+        <button type="button" class="range-btn active" data-days="30">30d</button>
+        <button type="button" class="range-btn" data-days="90">90d</button>
       </div>
-      <div style="width:1px;height:18px;background:#e8edf2;"></div>
-      <div style="width:1px;height:18px;background:#e8edf2;"></div>
-      <!-- Profile avatar -->
+      <select id="agent-filter" class="filter" onchange="onAgentChange()">
+        <option value="">All agents</option>
+      </select>
+      <div style="width:1px;height:18px;background:#efe9dc;"></div>
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">
           <div id="header-avatar" class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
-          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading—</span>
+          <span id="header-username" class="text-xs font-medium text-slate-700 max-w-[90px] truncate">Loading…</span>
           <svg class="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <!-- Dropdown -->
         <div id="profile-dropdown" class="profile-dropdown hidden">
-          <!-- User info header -->
-          <div class="px-4 py-3" style="border-bottom:1px solid #f1f5f9;">
+          <div class="px-4 py-3" style="border-bottom:1px solid #efe9dc;">
             <div class="flex items-center gap-2.5">
               <div id="dd-avatar" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background:#A9814A;">U</div>
               <div class="min-w-0">
@@ -165,12 +157,8 @@ function logout() {
                 <div id="dd-email" class="text-xs text-slate-400 truncate">—</div>
               </div>
             </div>
-            <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
-              <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
-            </div>
+            <div class="mt-2.5"><span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span></div>
           </div>
-          <!-- Menu items -->
           <div class="py-1">
             <a href="{% url 'voice-integrations' %}" class="pd-item">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -187,115 +175,108 @@ function logout() {
     </div>
   </header>
 
-  <!-- Scrollable content -->
   <div class="flex-1 overflow-y-auto scrollbar px-6 py-5 space-y-5">
 
-    <!-- 1. KPI Row -->
-    <div class="grid grid-cols-4 gap-4">
-      <!-- Total Calls -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-start justify-between mb-3">
-          <p class="text-xs font-medium text-slate-500">Total Calls</p>
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#F0E6D4;">
-            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+    <div id="insight-banner" class="insight panel">
+      <div class="relative z-10 flex items-start justify-between gap-6 flex-wrap">
+        <div>
+          <p class="text-xs font-medium tracking-wide" style="color:rgba(201,164,110,.9);letter-spacing:0.08em;">PERIOD SUMMARY</p>
+          <p id="insight-text" class="display text-xl mt-1.5 leading-snug" style="max-width:520px;">Loading performance for the selected range…</p>
+          <p id="insight-sub" class="text-xs mt-2" style="color:rgba(255,255,255,.55);">—</p>
+        </div>
+        <div class="flex gap-6">
+          <div>
+            <div class="text-xs" style="color:rgba(255,255,255,.5);">Completion</div>
+            <div id="insight-completion" class="display text-2xl mt-0.5">—</div>
           </div>
-        </div>
-        <div id="kpi-total-calls" class="text-3xl font-bold text-slate-800 mb-2" style="letter-spacing:-0.5px;">—</div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-slate-400" id="kpi-range-label">last 30 days</span>
-        </div>
-      </div>
-      <!-- Booking Rate -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-start justify-between mb-3">
-          <p class="text-xs font-medium text-slate-500">Booking Rate</p>
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#ecfdf5;">
-            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <div>
+            <div class="text-xs" style="color:rgba(255,255,255,.5);">Bookings</div>
+            <div id="insight-bookings" class="display text-2xl mt-0.5">—</div>
           </div>
-        </div>
-        <div id="kpi-booking-rate" class="text-3xl font-bold mb-2" style="letter-spacing:-0.5px;color:#059669;">—</div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-slate-400">booking rate</span>
-        </div>
-      </div>
-      <!-- Avg Duration -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-start justify-between mb-3">
-          <p class="text-xs font-medium text-slate-500">Avg Duration</p>
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f5f3ff;">
-            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v6l4 2"/></svg>
-          </div>
-        </div>
-        <div id="kpi-avg-duration" class="text-3xl font-bold text-slate-800 mb-2" style="letter-spacing:-0.5px;">—</div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-slate-400">avg per call</span>
-        </div>
-      </div>
-      <!-- Booked Calls -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-start justify-between mb-3">
-          <p class="text-xs font-medium text-slate-500">Booked Calls</p>
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#ecfdf5;">
-            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-        </div>
-        <div id="kpi-booked-calls" class="text-3xl font-bold text-slate-800 mb-2" style="letter-spacing:-0.5px;">—</div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-slate-400">total bookings made</span>
         </div>
       </div>
     </div>
 
-    <!-- 2. Charts Row: Bar Chart + Donut -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-4 gap-4 grid-kpi">
+      <div class="kpi">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium" style="color:var(--t2);">Total Calls</p>
+          <div class="kpi-icon" style="background:#F0E6D4;">
+            <svg class="w-4 h-4" style="color:#A9814A;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          </div>
+        </div>
+        <div id="kpi-total-calls" class="display text-3xl" style="letter-spacing:-0.03em;">—</div>
+        <p class="text-xs mt-2" style="color:var(--t3);" id="kpi-range-label">last 30 days</p>
+      </div>
+      <div class="kpi">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium" style="color:var(--t2);">Booking Rate</p>
+          <div class="kpi-icon" style="background:#ecfdf5;">
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+        <div id="kpi-booking-rate" class="display text-3xl" style="letter-spacing:-0.03em;color:#059669;">—</div>
+        <p class="text-xs mt-2" style="color:var(--t3);">of calls became bookings</p>
+      </div>
+      <div class="kpi">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium" style="color:var(--t2);">Avg Duration</p>
+          <div class="kpi-icon" style="background:#efe9dc;">
+            <svg class="w-4 h-4" style="color:#5B665F;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v6l4 2"/></svg>
+          </div>
+        </div>
+        <div id="kpi-avg-duration" class="display text-3xl" style="letter-spacing:-0.03em;">—</div>
+        <p class="text-xs mt-2" style="color:var(--t3);">average talk time</p>
+      </div>
+      <div class="kpi">
+        <div class="flex items-start justify-between mb-3">
+          <p class="text-xs font-medium" style="color:var(--t2);">Booked Calls</p>
+          <div class="kpi-icon" style="background:#ecfdf5;">
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <div id="kpi-booked-calls" class="display text-3xl" style="letter-spacing:-0.03em;">—</div>
+        <p class="text-xs mt-2" style="color:var(--t3);">successful conversions</p>
+      </div>
+    </div>
 
-      <!-- Call Volume Bar Chart (col-span-2) -->
-      <div class="col-span-2 card shadow-card p-5">
+    <div class="grid grid-cols-3 gap-4 grid-main">
+      <div class="col-span-2 card shadow-card p-5 panel">
         <div class="flex items-center justify-between mb-5">
           <div>
-            <h3 class="text-sm font-semibold text-slate-800">Call Volume</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Last 30 Days</p>
+            <h3 class="text-sm font-semibold" style="color:var(--t1);">Call volume</h3>
+            <p class="text-xs mt-0.5" style="color:var(--t3);" id="volume-sub">Daily breakdown</p>
           </div>
-          <span class="text-xs font-medium px-2 py-1 rounded-md" style="background:#F0E6D4;color:#4f46e5;">Daily breakdown</span>
+          <span class="badge" style="background:#F0E6D4;color:#16332B;border:1px solid #C9A46E;" id="volume-peak">—</span>
         </div>
-        <!-- Bar chart -->
-        <div style="position:relative;">
-          <div class="flex">
-            <div id="bar-y-labels" class="flex flex-col justify-between text-right pr-2" style="width:30px;height:120px;">
-              <span style="color:#94a3b8;font-size:9px;">—</span>
-              <span style="color:#94a3b8;font-size:9px;">—</span>
-              <span style="color:#94a3b8;font-size:9px;">—</span>
-              <span style="color:#94a3b8;font-size:9px;">—</span>
-              <span style="color:#94a3b8;font-size:9px;">0</span>
+        <div class="flex">
+          <div id="bar-y-labels" class="flex flex-col justify-between text-right pr-2" style="width:28px;height:140px;"></div>
+          <div class="flex-1 relative">
+            <div style="position:absolute;inset:0;pointer-events:none;">
+              <div style="position:absolute;top:0;left:0;right:0;border-top:1px dashed #efe9dc;"></div>
+              <div style="position:absolute;top:25%;left:0;right:0;border-top:1px dashed #efe9dc;"></div>
+              <div style="position:absolute;top:50%;left:0;right:0;border-top:1px dashed #efe9dc;"></div>
+              <div style="position:absolute;top:75%;left:0;right:0;border-top:1px dashed #efe9dc;"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;border-top:1px solid #e8dfcf;"></div>
             </div>
-            <div class="flex-1 relative">
-              <div style="position:absolute;inset:0;pointer-events:none;">
-                <div style="position:absolute;top:0%;left:0;right:0;border-top:1px dashed #f1f5f9;"></div>
-                <div style="position:absolute;top:25%;left:0;right:0;border-top:1px dashed #f1f5f9;"></div>
-                <div style="position:absolute;top:50%;left:0;right:0;border-top:1px dashed #f1f5f9;"></div>
-                <div style="position:absolute;top:75%;left:0;right:0;border-top:1px dashed #f1f5f9;"></div>
-                <div style="position:absolute;top:100%;left:0;right:0;border-top:1px solid #e8edf2;"></div>
-              </div>
-              <div id="bar-chart-bars" class="flex items-end gap-0.5" style="height:120px;"></div>
-            </div>
+            <div id="bar-chart-bars" class="flex items-end gap-px" style="height:140px;"></div>
           </div>
-          <div class="flex mt-1.5" style="padding-left:30px;">
-            <div id="bar-x-labels" class="flex justify-between w-full" style="font-size:9px;color:#94a3b8;"></div>
-          </div>
+        </div>
+        <div class="flex mt-2" style="padding-left:28px;">
+          <div id="bar-x-labels" class="flex justify-between w-full" style="font-size:9px;color:#8A918A;"></div>
         </div>
       </div>
 
-      <!-- Outcome Breakdown Donut (col-span-1) -->
-      <div class="col-span-1 card shadow-card p-5">
-        <div class="mb-5">
-          <h3 class="text-sm font-semibold text-slate-800">Outcome Breakdown</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Call result distribution</p>
+      <div class="card shadow-card p-5 panel">
+        <div class="mb-4">
+          <h3 class="text-sm font-semibold" style="color:var(--t1);">Call status</h3>
+          <p class="text-xs mt-0.5" style="color:var(--t3);">How calls finished</p>
         </div>
-        <div class="flex justify-center mb-5">
-          <div id="donut-chart" class="donut">
+        <div class="flex justify-center mb-4">
+          <div id="donut-chart" class="donut" style="background:#efe9dc;">
             <div class="donut-hole">
-              <span id="donut-total" class="text-xs font-bold text-slate-800">—</span>
-              <span style="font-size:9px;color:#94a3b8;">calls</span>
+              <span id="donut-total" class="text-sm font-bold" style="color:var(--t1);">—</span>
+              <span style="font-size:9px;color:var(--t3);">calls</span>
             </div>
           </div>
         </div>
@@ -303,133 +284,159 @@ function logout() {
       </div>
     </div>
 
-    <!-- 3. Second Charts Row: Line Chart + Horizontal Bar -->
-    <div class="grid grid-cols-2 gap-4">
-
-      <!-- Booking Rate Trend — SVG Line Chart -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-center justify-between mb-5">
+    <div class="grid grid-cols-2 gap-4 grid-mid">
+      <div class="card shadow-card p-5 panel">
+        <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-800">Booking Rate Trend</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Weekly trend</p>
+            <h3 class="text-sm font-semibold" style="color:var(--t1);">Booking rate trend</h3>
+            <p class="text-xs mt-0.5" style="color:var(--t3);">Weekly conversion</p>
           </div>
-          <span id="trend-badge" class="text-xs font-medium px-2 py-1 rounded-md" style="background:#ecfdf5;color:#059669;">—</span>
+          <span id="trend-badge" class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">—</span>
         </div>
-        <div style="position:relative;">
-          <svg id="trend-svg" viewBox="0 0 380 130" class="w-full chart-svg" style="height:130px;">
-            <defs>
-              <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#16332B" stop-opacity="0.15"/>
-                <stop offset="100%" stop-color="#16332B" stop-opacity="0.01"/>
-              </linearGradient>
-            </defs>
-            <line x1="38" y1="10" x2="380" y2="10" stroke="#f1f5f9" stroke-width="1"/>
-            <line x1="38" y1="37" x2="380" y2="37" stroke="#f1f5f9" stroke-width="1"/>
-            <line x1="38" y1="64" x2="380" y2="64" stroke="#f1f5f9" stroke-width="1"/>
-            <line x1="38" y1="91" x2="380" y2="91" stroke="#f1f5f9" stroke-width="1"/>
-            <line x1="38" y1="118" x2="380" y2="118" stroke="#e8edf2" stroke-width="1"/>
-            <text id="tl-y4" x="30" y="13" text-anchor="end" font-size="9" fill="#94a3b8">—</text>
-            <text id="tl-y3" x="30" y="40" text-anchor="end" font-size="9" fill="#94a3b8">—</text>
-            <text id="tl-y2" x="30" y="67" text-anchor="end" font-size="9" fill="#94a3b8">—</text>
-            <text id="tl-y1" x="30" y="94" text-anchor="end" font-size="9" fill="#94a3b8">—</text>
-            <polygon id="trend-area" fill="url(#lineGrad)"/>
-            <polyline id="trend-line" fill="none" stroke="#16332B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-            <g id="trend-dots"></g>
-            <g id="trend-xlabels"></g>
-          </svg>
-        </div>
+        <svg id="trend-svg" viewBox="0 0 380 130" class="w-full" style="height:130px;overflow:visible;">
+          <defs>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#16332B" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#16332B" stop-opacity="0.01"/>
+            </linearGradient>
+          </defs>
+          <line x1="38" y1="10" x2="380" y2="10" stroke="#efe9dc" stroke-width="1"/>
+          <line x1="38" y1="37" x2="380" y2="37" stroke="#efe9dc" stroke-width="1"/>
+          <line x1="38" y1="64" x2="380" y2="64" stroke="#efe9dc" stroke-width="1"/>
+          <line x1="38" y1="91" x2="380" y2="91" stroke="#efe9dc" stroke-width="1"/>
+          <line x1="38" y1="118" x2="380" y2="118" stroke="#e8dfcf" stroke-width="1"/>
+          <text id="tl-y4" x="30" y="13" text-anchor="end" font-size="9" fill="#8A918A">—</text>
+          <text id="tl-y3" x="30" y="40" text-anchor="end" font-size="9" fill="#8A918A">—</text>
+          <text id="tl-y2" x="30" y="67" text-anchor="end" font-size="9" fill="#8A918A">—</text>
+          <text id="tl-y1" x="30" y="94" text-anchor="end" font-size="9" fill="#8A918A">—</text>
+          <polygon id="trend-area" fill="url(#lineGrad)"/>
+          <polyline id="trend-line" fill="none" stroke="#16332B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <g id="trend-dots"></g>
+          <g id="trend-xlabels"></g>
+        </svg>
       </div>
 
-      <!-- Top Call Outcomes — Horizontal Bar -->
-      <div class="card shadow-card p-5">
-        <div class="flex items-center justify-between mb-5">
+      <div class="card shadow-card p-5 panel">
+        <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-800">Top Call Outcomes</h3>
-            <p class="text-xs text-slate-400 mt-0.5">By call volume</p>
+            <h3 class="text-sm font-semibold" style="color:var(--t1);">Top call reasons</h3>
+            <p class="text-xs mt-0.5" style="color:var(--t3);">Most common summaries</p>
           </div>
-          <span id="intents-total-badge" class="text-xs font-medium px-2 py-1 rounded-md" style="background:#F0E6D4;color:#4f46e5;">—</span>
+          <span id="intents-total-badge" class="badge" style="background:#F0E6D4;color:#16332B;border:1px solid #C9A46E;">—</span>
         </div>
-        <div id="intents-bars" class="space-y-3"></div>
+        <div id="intents-bars" class="space-y-3.5"></div>
       </div>
     </div>
 
-    <!-- 4. Agent Performance Table -->
-    <div class="card shadow-card">
-      <div class="flex items-center justify-between px-5 py-3.5" style="border-bottom:1px solid #f1f5f9;">
+    <div class="card shadow-card panel">
+      <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid var(--border-soft);">
         <div>
-          <h3 class="text-sm font-semibold text-slate-800">Agent Performance Comparison <span id="agent-total-count" class="text-slate-400 font-normal"></span></h3>
-          <p class="text-xs text-slate-400 mt-0.5">Side-by-side metrics for all active agents</p>
+          <h3 class="text-sm font-semibold" style="color:var(--t1);">Agent performance <span id="agent-total-count" class="font-normal" style="color:var(--t3);"></span></h3>
+          <p class="text-xs mt-0.5" style="color:var(--t3);">Compare conversion, talk time, and handoffs</p>
         </div>
       </div>
-      <table class="w-full">
-        <thead>
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style="color:#94a3b8;">Agent</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:#94a3b8;">Total Calls</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:#94a3b8;">Booking Rate</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:#94a3b8;">Avg Duration</th>
-          </tr>
-        </thead>
-        <tbody id="agent-table-body">
-          <tr><td colspan="4" class="px-5 py-8 text-center text-xs text-slate-400">Loading—</td></tr>
-        </tbody>
-      </table>
-      <!-- Pagination -->
-      <div id="agent-pagination" class="flex items-center justify-between px-5 py-3" style="border-top:1px solid #f1f5f9;"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-soft);background:#faf8f2;">
+              <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Agent</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Calls</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Booking rate</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Avg duration</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Handoff</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style="color:var(--t3);">Sentiment</th>
+            </tr>
+          </thead>
+          <tbody id="agent-table-body">
+            <tr><td colspan="6" class="px-5 py-10 text-center text-xs" style="color:var(--t3);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="agent-pagination" class="flex items-center justify-between px-5 py-3" style="border-top:1px solid var(--border-soft);"></div>
     </div>
 
-    <!-- 5. Call Volume by Hour — Heatmap -->
-    <div class="card shadow-card p-5">
-      <div class="flex items-center justify-between mb-5">
+    <div class="card shadow-card p-5 panel">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h3 class="text-sm font-semibold text-slate-800">Call Volume by Hour</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Average calls per hour across all agents</p>
+          <h3 class="text-sm font-semibold" style="color:var(--t1);">Activity by hour</h3>
+          <p class="text-xs mt-0.5" style="color:var(--t3);">When callers reach your agents</p>
         </div>
         <div class="flex items-center gap-2">
-          <span style="font-size:9px;color:#94a3b8;">Low</span>
+          <span style="font-size:9px;color:var(--t3);">Low</span>
           <div class="flex gap-0.5">
-            <div style="width:14px;height:14px;border-radius:3px;background:#F0E6D4;"></div>
-            <div style="width:14px;height:14px;border-radius:3px;background:#C9A46E;"></div>
-            <div style="width:14px;height:14px;border-radius:3px;background:#A9814A;"></div>
-            <div style="width:14px;height:14px;border-radius:3px;background:#16332B;"></div>
-            <div style="width:14px;height:14px;border-radius:3px;background:#3730a3;"></div>
+            <div style="width:14px;height:14px;border-radius:4px;background:#efe9dc;"></div>
+            <div style="width:14px;height:14px;border-radius:4px;background:#C9A46E;"></div>
+            <div style="width:14px;height:14px;border-radius:4px;background:#A9814A;"></div>
+            <div style="width:14px;height:14px;border-radius:4px;background:#1F4839;"></div>
+            <div style="width:14px;height:14px;border-radius:4px;background:#16332B;"></div>
           </div>
-          <span style="font-size:9px;color:#94a3b8;">High</span>
+          <span style="font-size:9px;color:var(--t3);">High</span>
         </div>
       </div>
-      <div id="heatmap-cells" class="flex gap-1.5 justify-between"></div>
-      <p id="heatmap-peak-label" class="text-xs text-slate-400 mt-3">Loading—</p>
+      <div id="heatmap-cells" class="grid gap-1.5" style="grid-template-columns:repeat(24,minmax(0,1fr));"></div>
+      <p id="heatmap-peak-label" class="text-xs mt-4" style="color:var(--t3);">—</p>
     </div>
 
-  </div><!-- end scroll -->
+  </div>
 </main>
 
 <script>
-  // -- State --------------------------------------------------------------------
   let currentDays = 30;
   let currentAgentId = '';
   let agentPage = 1;
-  const AGENT_PAGE_SIZE = 5;
+  const AGENT_PAGE_SIZE = 8;
+  let agentsLoaded = false;
 
-  const OUTCOME_COLORS = {
-    booked:       '#16332B',
-    faq_resolved: '#10b981',
-    no_outcome:   '#94a3b8',
+  const STATUS_COLORS = {
+    completed: '#16332B',
+    'in-progress': '#A9814A',
+    failed: '#b91c1c',
+    'no-answer': '#8A918A',
+    ringing: '#C9A46E',
+    busy: '#d97706',
+    transferred: '#1F4839',
   };
-  const OUTCOME_LABELS = {
-    booked:       'Booked',
-    faq_resolved: 'Resolved',
-    no_outcome:   'No Outcome',
+  const STATUS_LABELS = {
+    completed: 'Completed',
+    'in-progress': 'In progress',
+    failed: 'Failed',
+    'no-answer': 'No answer',
+    ringing: 'Ringing',
+    busy: 'Busy',
+    transferred: 'Transferred',
   };
 
   function authHeaders() {
     const t = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
     return { 'Authorization': 'Bearer ' + t };
   }
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  function fmtDuration(s) {
+    s = Math.round(Number(s) || 0);
+    const m = Math.floor(s / 60), sec = s % 60;
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+  function sentimentLabel(v) {
+    if (v == null) return { text: '—', color: '#8A918A' };
+    if (v >= 0.25) return { text: 'Positive', color: '#059669' };
+    if (v <= -0.25) return { text: 'Negative', color: '#b91c1c' };
+    return { text: 'Neutral', color: '#A9814A' };
+  }
+  function statusBadge(status) {
+    const s = (status || '').toLowerCase();
+    if (s === 'live') return 'b-live';
+    if (s === 'paused') return 'b-paused';
+    return 'b-draft';
+  }
 
-  // -- Fetch + render ------------------------------------------------------------
   async function loadAnalytics(page) {
-    if (page !== undefined) agentPage = page;
+    if (page !== undefined) agentPage = Math.max(1, Number(page) || 1);
     try {
       const params = new URLSearchParams({
         days: currentDays,
@@ -438,329 +445,383 @@ function logout() {
       });
       if (currentAgentId) params.set('agent_id', currentAgentId);
 
-      const res  = await fetch('/api/calls/analytics/?' + params, { headers: authHeaders() });
+      const res = await fetch('/api/calls/analytics/?' + params, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = '/api/auth/login/';
+        return;
+      }
       const json = await res.json();
-      if (!json.success) return;
+      if (!json.success || !json.data) {
+        showToast(json.message || 'Failed to load analytics', 'error');
+        return;
+      }
       const d = json.data;
-
+      if (!agentsLoaded && d.agents) {
+        populateAgentFilter(d.agents);
+        agentsLoaded = true;
+      }
+      renderInsight(d.kpis);
       renderKPIs(d.kpis);
-      renderBarChart(d.call_volume);
-      renderDonut(d.outcome_breakdown, d.kpis.total_calls);
-      renderTrend(d.booking_trend);
-      renderIntents(d.top_intents, d.kpis.total_calls);
-      renderAgentTable(d.agent_performance);
-      renderHeatmap(d.hourly_heatmap);
-    } catch(e) { console.error('Analytics error', e); }
+      renderBarChart(d.call_volume || []);
+      renderDonut(d.outcome_breakdown || [], d.kpis.total_calls || 0);
+      renderTrend(d.booking_trend || []);
+      renderIntents(d.top_intents || [], d.kpis.total_calls || 0);
+      renderAgentTable(d.agent_performance || { results: [], pagination: {} });
+      renderHeatmap(d.hourly_heatmap || []);
+    } catch (e) {
+      console.error(e);
+      showToast('Could not load analytics', 'error');
+    }
   }
 
-  // -- KPIs ---------------------------------------------------------------------
-  function fmtDuration(s) {
-    const m = Math.floor(s / 60), sec = s % 60;
-    return m + ':' + String(sec).padStart(2, '0');
+  function populateAgentFilter(agents) {
+    const sel = document.getElementById('agent-filter');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All agents</option>' +
+      agents.map(a => `<option value="${esc(a.id)}">${esc(a.agent_name)}</option>`).join('');
+    sel.value = cur || '';
   }
-  function setText(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
+
+  function renderInsight(kpis) {
+    const total = kpis.total_calls || 0;
+    const booked = kpis.booked_calls || 0;
+    const rate = kpis.booking_rate || 0;
+    const completion = kpis.completion_rate != null
+      ? kpis.completion_rate
+      : (total ? Math.round((kpis.completed_calls || 0) / total * 1000) / 10 : 0);
+
+    let headline;
+    if (!total) {
+      headline = 'No calls in this period yet. Once traffic starts, trends appear here.';
+    } else if (rate >= 40) {
+      headline = `Strong conversion — ${rate}% of ${total.toLocaleString()} calls became bookings.`;
+    } else if (rate >= 15) {
+      headline = `${total.toLocaleString()} calls with a ${rate}% booking rate across the last ${currentDays} days.`;
+    } else {
+      headline = `${total.toLocaleString()} calls handled. Booking rate sits at ${rate}% — room to improve scripts.`;
+    }
+
+    setText('insight-text', headline);
+    setText('insight-sub', `Showing last ${currentDays} days${currentAgentId ? ' · filtered by agent' : ' · all agents'}`);
+    setText('insight-completion', completion + '%');
+    setText('insight-bookings', booked.toLocaleString());
   }
+
   function renderKPIs(kpis) {
-    setText('kpi-total-calls',   kpis.total_calls.toLocaleString());
-    setText('kpi-booking-rate',  kpis.booking_rate + '%');
-    setText('kpi-avg-duration',  fmtDuration(kpis.avg_duration_seconds));
-    setText('kpi-booked-calls',  kpis.booked_calls.toLocaleString());
-    setText('kpi-range-label',   'last ' + currentDays + ' days');
+    setText('kpi-total-calls', (kpis.total_calls || 0).toLocaleString());
+    setText('kpi-booking-rate', (kpis.booking_rate || 0) + '%');
+    setText('kpi-avg-duration', fmtDuration(kpis.avg_duration_seconds));
+    setText('kpi-booked-calls', (kpis.booked_calls || 0).toLocaleString());
+    setText('kpi-range-label', 'last ' + currentDays + ' days');
   }
 
-  // -- Bar Chart -----------------------------------------------------------------
   function renderBarChart(volume) {
-    const barsEl  = document.getElementById('bar-chart-bars');
+    const barsEl = document.getElementById('bar-chart-bars');
     const xLabels = document.getElementById('bar-x-labels');
     const yLabels = document.getElementById('bar-y-labels');
-    if (!barsEl || !volume.length) return;
+    setText('volume-sub', `Last ${currentDays} days · daily`);
+
+    if (!volume.length) {
+      barsEl.innerHTML = '';
+      yLabels.innerHTML = '';
+      xLabels.innerHTML = '';
+      setText('volume-peak', 'No data');
+      return;
+    }
 
     const maxCount = Math.max(...volume.map(v => v.count), 1);
-    // Y-axis labels (4 ticks)
-    const ticks = [maxCount, Math.round(maxCount*0.75), Math.round(maxCount*0.5), Math.round(maxCount*0.25), 0];
-    yLabels.innerHTML = ticks.map(t => `<span style="color:#94a3b8;font-size:9px;">${t}</span>`).join('');
+    const peak = volume.reduce((a, b) => a.count >= b.count ? a : b);
+    const peakDate = new Date(peak.date + 'T00:00:00');
+    setText('volume-peak', peak.count
+      ? `Peak ${peakDate.getMonth()+1}/${peakDate.getDate()} · ${peak.count}`
+      : 'Quiet period');
 
-    // Bars
+    const ticks = [maxCount, Math.round(maxCount * 0.75), Math.round(maxCount * 0.5), Math.round(maxCount * 0.25), 0];
+    yLabels.innerHTML = ticks.map(t => `<span style="color:#8A918A;font-size:9px;">${t}</span>`).join('');
+
     barsEl.innerHTML = volume.map(v => {
-      const pct = Math.max(2, Math.round(v.count / maxCount * 100));
-      const d   = new Date(v.date);
+      const pct = v.count ? Math.max(4, Math.round(v.count / maxCount * 100)) : 0;
+      const d = new Date(v.date + 'T00:00:00');
       const label = (d.getMonth()+1) + '/' + d.getDate();
-      return `<div class="bar-chart-bar flex-1" style="height:${pct}%;" title="${label} — ${v.count} calls"></div>`;
+      return `<div class="bar flex-1" style="height:${pct}%;opacity:${v.count?1:0.18};" title="${label} — ${v.count} calls"></div>`;
     }).join('');
 
-    // X-axis: show ~7 labels evenly spaced
     const step = Math.max(1, Math.floor(volume.length / 7));
-    const xItems = volume.filter((_, i) => i % step === 0 || i === volume.length - 1);
-    xLabels.innerHTML = xItems.map(v => {
-      const d = new Date(v.date);
-      return `<span>${(d.getMonth()+1) + '/' + d.getDate()}</span>`;
+    xLabels.innerHTML = volume.filter((_, i) => i % step === 0 || i === volume.length - 1).map(v => {
+      const d = new Date(v.date + 'T00:00:00');
+      return `<span>${(d.getMonth()+1)}/${d.getDate()}</span>`;
     }).join('');
   }
 
-  // -- Donut ---------------------------------------------------------------------
   function renderDonut(breakdown, total) {
-    const donut  = document.getElementById('donut-chart');
+    const donut = document.getElementById('donut-chart');
     const legend = document.getElementById('donut-legend');
-    setText('donut-total', total.toLocaleString());
-    if (!breakdown.length) return;
+    setText('donut-total', (total || 0).toLocaleString());
 
-    // Build conic-gradient
+    if (!breakdown.length || !total) {
+      donut.style.background = '#efe9dc';
+      legend.innerHTML = '<p class="text-xs text-center" style="color:var(--t3);">No status data</p>';
+      return;
+    }
+
     let pct = 0;
     const stops = breakdown.map(item => {
-      const color = OUTCOME_COLORS[item.outcome] || '#94a3b8';
-      const share = total ? (item.count / total * 100) : 0;
-      const from  = pct.toFixed(1);
+      const color = STATUS_COLORS[item.outcome] || '#8A918A';
+      const share = (item.count / total) * 100;
+      const from = pct.toFixed(1);
       pct += share;
       return `${color} ${from}% ${pct.toFixed(1)}%`;
     });
     donut.style.background = `conic-gradient(${stops.join(',')})`;
 
     legend.innerHTML = breakdown.map(item => {
-      const color = OUTCOME_COLORS[item.outcome] || '#94a3b8';
-      const label = OUTCOME_LABELS[item.outcome] || item.outcome;
-      const share = total ? Math.round(item.count / total * 100) : 0;
+      const color = STATUS_COLORS[item.outcome] || '#8A918A';
+      const label = STATUS_LABELS[item.outcome] || item.outcome;
+      const share = Math.round(item.count / total * 100);
       return `
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-sm" style="background:${color};"></div>
-            <span class="text-xs text-slate-600">${label}</span>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-2 h-2 rounded-sm flex-shrink-0" style="background:${color};"></div>
+            <span class="text-xs truncate" style="color:var(--t2);">${esc(label)}</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="prog w-16" style="height:5px;"><div class="prog-fill" style="width:${share}%;background:${color};height:100%;border-radius:2px;"></div></div>
-            <span class="text-xs font-semibold text-slate-700">${share}%</span>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="prog w-14"><div class="prog-fill" style="width:${share}%;background:${color};"></div></div>
+            <span class="text-xs font-semibold w-8 text-right" style="color:var(--t1);">${share}%</span>
           </div>
         </div>`;
     }).join('');
   }
 
-  // -- Booking Trend SVG ---------------------------------------------------------
   function renderTrend(trend) {
-    if (!trend.length) return;
+    const badge = document.getElementById('trend-badge');
+    if (!trend.length) {
+      document.getElementById('trend-area').setAttribute('points', '');
+      document.getElementById('trend-line').setAttribute('points', '');
+      document.getElementById('trend-dots').innerHTML = '';
+      document.getElementById('trend-xlabels').innerHTML = '';
+      badge.textContent = 'No trend';
+      badge.style.background = '#efe9dc';
+      badge.style.color = '#5B665F';
+      badge.style.borderColor = '#e8dfcf';
+      return;
+    }
+
     const SVG_W = 380, SVG_H = 130, PAD_L = 38, PAD_B = 12, PAD_T = 10, PAD_R = 10;
     const chartW = SVG_W - PAD_L - PAD_R;
     const chartH = SVG_H - PAD_T - PAD_B;
-
     const rates = trend.map(t => t.rate);
-    const minR  = Math.max(0, Math.floor(Math.min(...rates) - 5));
-    const maxR  = Math.min(100, Math.ceil(Math.max(...rates) + 5));
+    const minR = Math.max(0, Math.floor(Math.min(...rates) - 5));
+    const maxR = Math.min(100, Math.ceil(Math.max(...rates) + 5));
     const rangeR = maxR - minR || 1;
-
     const toX = i => PAD_L + (i / (trend.length - 1 || 1)) * chartW;
     const toY = r => PAD_T + chartH - ((r - minR) / rangeR) * chartH;
-
     const pts = trend.map((t, i) => [toX(i), toY(t.rate)]);
     const ptStr = pts.map(p => p.join(',')).join(' ');
     const areaStr = ptStr + ` ${pts[pts.length-1][0]},${PAD_T+chartH} ${pts[0][0]},${PAD_T+chartH}`;
 
     document.getElementById('trend-area').setAttribute('points', areaStr);
     document.getElementById('trend-line').setAttribute('points', ptStr);
-
-    // Dots
-    const dotsEl = document.getElementById('trend-dots');
-    dotsEl.innerHTML = pts.map((p, i) => {
+    document.getElementById('trend-dots').innerHTML = pts.map((p, i) => {
       const isLast = i === pts.length - 1;
-      return `<circle cx="${p[0]}" cy="${p[1]}" r="${isLast ? 5 : 4}" fill="#16332B" stroke="white" stroke-width="${isLast ? 2.5 : 2}"/>`;
-    }).join('') +
-    (pts.length ? `<text x="${pts[pts.length-1][0]}" y="${pts[pts.length-1][1] - 8}" text-anchor="middle" font-size="10" fill="#4f46e5" font-weight="600">${rates[rates.length-1]}%</text>` : '');
+      return `<circle cx="${p[0]}" cy="${p[1]}" r="${isLast ? 5 : 3.5}" fill="#16332B" stroke="white" stroke-width="${isLast ? 2.5 : 2}"/>`;
+    }).join('') + (pts.length
+      ? `<text x="${pts[pts.length-1][0]}" y="${pts[pts.length-1][1] - 10}" text-anchor="middle" font-size="10" fill="#A9814A" font-weight="600">${rates[rates.length-1]}%</text>`
+      : '');
 
-    // X labels (up to 7)
-    const xEl   = document.getElementById('trend-xlabels');
-    const step  = Math.max(1, Math.floor(trend.length / 7));
-    xEl.innerHTML = trend.map((t, i) => {
+    const step = Math.max(1, Math.floor(trend.length / 6));
+    document.getElementById('trend-xlabels').innerHTML = trend.map((t, i) => {
       if (i % step !== 0 && i !== trend.length - 1) return '';
-      const d = new Date(t.week);
-      const label = (d.getMonth()+1) + '/' + d.getDate();
-      return `<text x="${toX(i)}" y="${SVG_H}" text-anchor="middle" font-size="9" fill="#94a3b8">${label}</text>`;
+      const d = new Date(t.week + (String(t.week).includes('T') ? '' : 'T00:00:00'));
+      return `<text x="${toX(i)}" y="${SVG_H}" text-anchor="middle" font-size="9" fill="#8A918A">${d.getMonth()+1}/${d.getDate()}</text>`;
     }).join('');
 
-    // Y labels
     const step4 = rangeR / 4;
     ['tl-y4','tl-y3','tl-y2','tl-y1'].forEach((id, i) => setText(id, Math.round(maxR - step4 * i) + '%'));
 
-    // Badge
     if (rates.length >= 2) {
-      const diff = (rates[rates.length-1] - rates[0]).toFixed(1);
-      const badge = document.getElementById('trend-badge');
-      badge.textContent = (diff >= 0 ? '? ' : '? ') + Math.abs(diff) + ' pts';
-      badge.style.background = diff >= 0 ? '#ecfdf5' : '#fff1f2';
-      badge.style.color       = diff >= 0 ? '#059669' : '#e11d48';
+      const diff = +(rates[rates.length - 1] - rates[0]).toFixed(1);
+      const up = diff >= 0;
+      badge.textContent = (up ? '▲ +' : '▼ ') + Math.abs(diff) + ' pts';
+      badge.style.background = up ? '#ecfdf5' : '#fff1f2';
+      badge.style.color = up ? '#059669' : '#b91c1c';
+      badge.style.border = up ? '1px solid #a7f3d0' : '1px solid #fecdd3';
     }
   }
 
-  // -- Top Intents ---------------------------------------------------------------
   function renderIntents(intents, total) {
     const el = document.getElementById('intents-bars');
-    setText('intents-total-badge', total.toLocaleString() + ' calls');
-    if (!intents.length) { el.innerHTML = '<p class="text-xs text-slate-400">No data</p>'; return; }
+    setText('intents-total-badge', (total || 0).toLocaleString() + ' calls');
+    if (!intents.length) {
+      el.innerHTML = '<p class="text-xs py-6 text-center" style="color:var(--t3);">No summaries yet for this range</p>';
+      return;
+    }
     const maxC = Math.max(...intents.map(i => i.count), 1);
-    el.innerHTML = intents.slice(0, 6).map((item, idx) => {
-      const pct  = Math.round(item.count / maxC * 100);
-      const label = OUTCOME_LABELS[item.intent] || item.intent;
-      const color = idx === intents.length - 1 ? '#e2e8f0' : 'linear-gradient(90deg,#16332B,#A9814A)';
+    el.innerHTML = intents.slice(0, 6).map(item => {
+      const pct = Math.round(item.count / maxC * 100);
+      const label = STATUS_LABELS[item.intent] || item.intent || '—';
+      const short = label.length > 56 ? label.slice(0, 54) + '…' : label;
       return `
         <div>
-          <div class="flex justify-between mb-1">
-            <span class="text-xs font-medium text-slate-700">${label}</span>
-            <span class="text-xs text-slate-500">${item.count}</span>
+          <div class="flex justify-between gap-3 mb-1.5">
+            <span class="text-xs font-medium truncate" style="color:var(--t1);" title="${esc(label)}">${esc(short)}</span>
+            <span class="text-xs flex-shrink-0" style="color:var(--t3);">${item.count}</span>
           </div>
-          <div class="prog" style="height:7px;"><div class="prog-fill" style="width:${pct}%;background:${color};height:100%;border-radius:3px;"></div></div>
+          <div class="prog" style="height:6px;"><div class="prog-fill" style="width:${pct}%;background:linear-gradient(90deg,#16332B,#A9814A);"></div></div>
         </div>`;
     }).join('');
   }
 
-  // -- Agent Table ---------------------------------------------------------------
-  const AGENT_GRADIENT_COLORS = [
-    'linear-gradient(135deg,#16332B,#A9814A)',
-    'linear-gradient(135deg,#059669,#34d399)',
-    'linear-gradient(135deg,#d97706,#fbbf24)',
-    'linear-gradient(135deg,#e11d48,#fb7185)',
-    'linear-gradient(135deg,#7c3aed,#a78bfa)',
-  ];
   function renderAgentTable(perf) {
-    const tbody   = document.getElementById('agent-table-body');
-    const pagEl   = document.getElementById('agent-pagination');
-    const { pagination, results } = perf;
-
-    const totalEl = document.getElementById('agent-total-count');
-    if (totalEl) totalEl.textContent = `(${perf.pagination?.total ?? results.length})`;
+    const tbody = document.getElementById('agent-table-body');
+    const pagEl = document.getElementById('agent-pagination');
+    const results = perf.results || [];
+    const pagination = perf.pagination || {};
+    setText('agent-total-count', `(${pagination.total ?? results.length})`);
 
     if (!results.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-xs text-slate-400">No agents found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-10 text-center text-xs" style="color:var(--t3);">No agents found</td></tr>';
       pagEl.innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = results.map((agent, idx) => {
-      const initials = agent.agent_name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-      const grad     = AGENT_GRADIENT_COLORS[idx % AGENT_GRADIENT_COLORS.length];
-      const brColor  = agent.booking_rate >= 60 ? '#059669' : agent.booking_rate >= 30 ? '#d97706' : '#e11d48';
-      const brBg     = agent.booking_rate >= 60 ? '#10b981' : agent.booking_rate >= 30 ? '#d97706' : '#e11d48';
+    tbody.innerHTML = results.map(agent => {
+      const initials = (agent.agent_name || '?').split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const br = agent.booking_rate || 0;
+      const brColor = br >= 40 ? '#059669' : br >= 15 ? '#A9814A' : '#b91c1c';
+      const sent = sentimentLabel(agent.avg_sentiment);
       return `
         <tr class="trow">
           <td class="px-5 py-3.5">
             <div class="flex items-center gap-3">
-              <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:${grad};">${initials}</div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:linear-gradient(135deg,#16332B,#A9814A);">${esc(initials)}</div>
               <div>
-                <div class="text-xs font-semibold text-slate-800">${agent.agent_name}</div>
-                <div class="text-xs text-slate-400">${agent.status}</div>
+                <div class="text-xs font-semibold" style="color:var(--t1);">${esc(agent.agent_name)}</div>
+                <span class="badge ${statusBadge(agent.status)} mt-0.5">${esc(agent.status || '—')}</span>
               </div>
             </div>
           </td>
-          <td class="px-4 py-3.5 text-xs font-semibold text-slate-800">${agent.total_calls}</td>
+          <td class="px-4 py-3.5 text-xs font-semibold" style="color:var(--t1);">${agent.total_calls}</td>
           <td class="px-4 py-3.5">
             <div class="flex items-center gap-2">
-              <div class="prog w-16"><div class="prog-fill" style="width:${agent.booking_rate}%;background:${brBg};"></div></div>
-              <span class="text-xs font-semibold" style="color:${brColor};">${agent.booking_rate}%</span>
+              <div class="prog w-16"><div class="prog-fill" style="width:${Math.min(100, br)}%;background:${brColor};"></div></div>
+              <span class="text-xs font-semibold" style="color:${brColor};">${br}%</span>
             </div>
           </td>
-          <td class="px-4 py-3.5 text-xs font-mono text-slate-700">${fmtDuration(agent.avg_duration)}</td>
+          <td class="px-4 py-3.5 text-xs font-mono" style="color:var(--t2);">${fmtDuration(agent.avg_duration)}</td>
+          <td class="px-4 py-3.5 text-xs font-semibold" style="color:var(--t1);">${agent.handoff_rate ?? 0}%</td>
+          <td class="px-4 py-3.5 text-xs font-semibold" style="color:${sent.color};">${sent.text}</td>
         </tr>`;
     }).join('');
 
-    // Pagination
-    const { total, page, page_size, total_pages } = pagination;
+    const { total = 0, page = 1, page_size = AGENT_PAGE_SIZE, total_pages = 1 } = pagination;
     if (total_pages <= 1) { pagEl.innerHTML = ''; return; }
-
     const from = (page - 1) * page_size + 1;
-    const to   = Math.min(page * page_size, total);
-    const btnBase = 'font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1px solid #e8edf2;background:white;color:#64748b;font-weight:450;';
-    const btnActive = 'font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1px solid #16332B;background:#F0E6D4;color:#16332B;font-weight:500;';
-
+    const to = Math.min(page * page_size, total);
     let btns = '';
-    for (let p = 1; p <= total_pages; p++) {
-      if (total_pages > 7 && p > 2 && p < total_pages - 1 && Math.abs(p - page) > 1) {
-        if (p === 3 || p === total_pages - 2) btns += `<span style="font-size:11px;color:#94a3b8;padding:0 3px;">—</span>`;
-        continue;
-      }
-      btns += `<button onclick="loadAnalytics(${p})" style="${p === page ? btnActive : btnBase}">${p}</button>`;
+    const start = Math.max(1, page - 2), end = Math.min(total_pages, page + 2);
+    for (let p = start; p <= end; p++) {
+      btns += `<button class="pg-btn ${p === page ? 'active' : ''}" onclick="loadAnalytics(${p})">${p}</button>`;
     }
-
     pagEl.innerHTML = `
-      <span class="text-xs text-slate-400">${from}—${to} of ${total} agents</span>
+      <span class="text-xs" style="color:var(--t3);">Showing ${from}–${to} of ${total}</span>
       <div class="flex items-center gap-1">
-        <button onclick="loadAnalytics(${page-1})" ${page===1?'disabled':''} style="${btnBase}opacity:${page===1?0.4:1};">—</button>
+        <button class="pg-btn" onclick="loadAnalytics(${page - 1})" ${page <= 1 ? 'disabled' : ''}>Prev</button>
         ${btns}
-        <button onclick="loadAnalytics(${page+1})" ${page===total_pages?'disabled':''} style="${btnBase}opacity:${page===total_pages?0.4:1};">—</button>
+        <button class="pg-btn" onclick="loadAnalytics(${page + 1})" ${page >= total_pages ? 'disabled' : ''}>Next</button>
       </div>`;
   }
 
-  // -- Heatmap -------------------------------------------------------------------
   function renderHeatmap(heatmap) {
     const el = document.getElementById('heatmap-cells');
     const peakLabel = document.getElementById('heatmap-peak-label');
-    if (!heatmap.length) return;
-
+    if (!heatmap.length) {
+      el.innerHTML = '';
+      peakLabel.textContent = 'No hourly data';
+      return;
+    }
     const maxC = Math.max(...heatmap.map(h => h.count), 1);
     const heatColor = (count) => {
       const ratio = count / maxC;
-      if (ratio === 0)       return '#F0E6D4';
-      if (ratio < 0.2)       return '#F0E6D4';
-      if (ratio < 0.4)       return '#C9A46E';
-      if (ratio < 0.65)      return '#A9814A';
-      if (ratio < 0.85)      return '#16332B';
-      return '#3730a3';
+      if (!count) return '#efe9dc';
+      if (ratio < 0.25) return '#C9A46E';
+      if (ratio < 0.5) return '#A9814A';
+      if (ratio < 0.75) return '#1F4839';
+      return '#16332B';
     };
-
-    const peaks = heatmap.filter(h => h.count >= maxC * 0.75).map(h => h.hour + ':00');
+    const peaks = heatmap.filter(h => h.count >= maxC * 0.75 && h.count > 0)
+      .map(h => String(h.hour).padStart(2, '0') + ':00');
     peakLabel.textContent = peaks.length
       ? 'Peak hours: ' + peaks.join(', ')
-      : 'No call data in this period';
+      : 'No strong peak hours in this period';
 
     el.innerHTML = heatmap.map(h => {
-      const bg  = heatColor(h.count);
-      const isPeak = h.count >= maxC * 0.75;
-      const labelColor = isPeak ? '#16332B' : '#94a3b8';
-      const fw = isPeak ? '600' : 'normal';
+      const bg = heatColor(h.count);
+      const light = !h.count || h.count / maxC < 0.5;
       return `
         <div class="flex flex-col items-center gap-1">
-          <div class="heat-cell" style="background:${bg};" title="${h.hour}:00 — ${h.count} calls"></div>
-          <span style="font-size:9px;color:${labelColor};font-weight:${fw};">${h.hour}</span>
+          <div class="heat" style="background:${bg};" title="${String(h.hour).padStart(2,'0')}:00 — ${h.count} calls"></div>
+          <span style="font-size:8px;color:${light ? '#8A918A' : '#16332B'};font-weight:${h.count >= maxC * 0.75 ? 600 : 400};">${h.hour}</span>
         </div>`;
     }).join('');
   }
 
-  // -- Tab switching -------------------------------------------------------------
-  document.querySelectorAll('.tab-range').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab-range').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const map = {'7d': 7, '30d': 30, '90d': 90, 'Custom': 30};
-      currentDays = map[tab.textContent.trim()] || 30;
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentDays = Number(btn.dataset.days) || 30;
       agentPage = 1;
       loadAnalytics();
     });
   });
 
-  // -- Profile dropdown ---------------------------------------------------------
+  function onAgentChange() {
+    currentAgentId = document.getElementById('agent-filter').value;
+    agentPage = 1;
+    loadAnalytics();
+  }
+
   function toggleProfileDropdown() {
     document.getElementById('profile-dropdown').classList.toggle('hidden');
   }
   function closeProfileDropdown() {
     document.getElementById('profile-dropdown').classList.add('hidden');
   }
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function (e) {
     const wrap = document.getElementById('profile-btn-wrap');
     if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
   });
+
+  function logout() {
+    const refresh = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token') || '';
+    fetch('/api/auth/logout/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    }).finally(() => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
+      window.location.href = '/api/auth/login/';
+    });
+  }
+
   async function loadHeaderProfile() {
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
-      const res  = await fetch('/api/auth/profile/', { headers: { 'Authorization': 'Bearer ' + token } });
+      const res = await fetch('/api/auth/profile/', { headers: authHeaders() });
       const json = await res.json();
       if (!json.success) return;
       const d = json.data;
       const initials = d.initials || 'U';
       const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
-      setTxt('header-avatar',   initials);
+      setTxt('header-avatar', initials);
       setTxt('header-username', d.full_name || d.email);
-      setTxt('dd-avatar',       initials);
-      setTxt('dd-name',         d.full_name);
-      setTxt('dd-email',        d.email);
-      setTxt('dd-plan',         d.plan_label || 'Free');
-      setTxt('dd-business',     d.business_name || '');
-    } catch(e) {}
+      setTxt('dd-avatar', initials);
+      setTxt('dd-name', d.full_name);
+      setTxt('dd-email', d.email);
+      setTxt('dd-business', d.business_name || '');
+    } catch (_) {}
   }
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from core.auth_utils import RenderAPIView
 from core.pagination import Pagination
-from core.response_schemas import success_response
+from core.response_schemas import success_response, error_response
 from core.logger import logger
 from calls.models import CallLog
 from agents.models import Agent, Booking
@@ -21,28 +21,39 @@ from .serializers import (
 )
 
 
+def _owned_bookings(user):
+    """Bookings owned via agent. Orphans are excluded to avoid cross-tenant leaks."""
+    return Booking.objects.filter(agent__owner=user)
+
+
+def _owned_calls(user):
+    """Calls owned via agent. Orphans are excluded to avoid cross-tenant leaks."""
+    return CallLog.objects.filter(agent__owner=user)
+
+
 class DashboardStatsView(APIView):
     def get(self, request):
         try:
             now    = timezone.now()
             month  = now - timedelta(days=30)
             agents = Agent.objects.filter(owner=request.user)
-            calls  = CallLog.objects.filter(agent__owner=request.user)
-            bookings_qs = Booking.objects.filter(agent__owner=request.user)
+            calls  = _owned_calls(request.user)
+            month_calls = calls.filter(created_at__gte=month)
+            bookings_qs = _owned_bookings(request.user)
 
             data = {
                 "total_agents":         agents.count(),
                 "live_agents":          agents.filter(status="live").count(),
-                "total_calls":          calls.filter(created_at__gte=month).count(),
+                "total_calls":          month_calls.count(),
                 "room_bookings":        bookings_qs.filter(booking_type="room",  created_at__gte=month).count(),
                 "table_bookings":       bookings_qs.filter(booking_type="table", created_at__gte=month).count(),
-                "avg_duration_seconds": calls.aggregate(avg=Avg("duration_seconds"))["avg"] or 0,
+                "avg_duration_seconds": month_calls.aggregate(avg=Avg("duration_seconds"))["avg"] or 0,
             }
             serializer = DashboardStatsSerializer(data)
             return Response(success_response(data=serializer.data, message="Dashboard stats fetched"))
         except Exception as e:
             logger.error(f"DashboardStatsView error: {e}")
-            return Response(success_response(message="Something went wrong"), status=500)
+            return Response(error_response(message="Something went wrong"), status=500)
 
 
 class BookingsView(APIView):
@@ -51,7 +62,7 @@ class BookingsView(APIView):
             now   = timezone.now()
             month = now - timedelta(days=30)
 
-            all_bookings_qs = Booking.objects.filter(agent__owner=request.user)
+            all_bookings_qs = _owned_bookings(request.user)
 
             stats_data = {
                 "total_booking":      all_bookings_qs.count(),
@@ -87,6 +98,7 @@ class BookingsView(APIView):
                 qs = qs.filter(
                     Q(guest_name__icontains=search) |
                     Q(guest_email__icontains=search) |
+                    Q(guest_phone__icontains=search) |
                     Q(agent__agent_name__icontains=search)
                 )
 
@@ -101,14 +113,17 @@ class BookingsView(APIView):
             return Response(success_response(data=paginated, message="Bookings fetched"))
         except Exception as e:
             logger.error(f"BookingsView error: {e}")
-            return Response(success_response(message="Something went wrong"), status=500)
+            from core.response_schemas import error_response
+            return Response(error_response(message="Something went wrong"), status=500)
 
 
 class ConfirmBookingView(APIView):
     def post(self, request, booking_id):
         try:
-            booking = Booking.objects.select_related("agent__owner").get(
-                id=booking_id, agent__owner=request.user
+            booking = (
+                _owned_bookings(request.user)
+                .select_related("agent__owner")
+                .get(id=booking_id)
             )
             confirmed = request.data.get("confirmed")
             if confirmed is None:

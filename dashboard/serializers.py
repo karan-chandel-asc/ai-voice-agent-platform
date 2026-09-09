@@ -4,32 +4,45 @@ from agents.models import Booking
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    agent_name = serializers.CharField(source="agent.agent_name", read_only=True, default="")
+    agent_name = serializers.SerializerMethodField()
     nights     = serializers.SerializerMethodField()
+    reservation_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
             "id", "booking_type", "agent_name",
-            "guest_name", "guest_email", "guests",
+            "guest_name", "guest_email", "guest_phone", "guests",
             "check_in", "check_out", "nights",
+            "reservation_date_time", "reservation_time",
             "is_confirmed", "confirmed_at", "created_at",
         ]
+
+    def get_agent_name(self, obj):
+        return obj.agent.agent_name if obj.agent_id else "—"
 
     def get_nights(self, obj):
         if obj.check_in and obj.check_out:
             return (obj.check_out - obj.check_in).days
         return None
 
+    def get_reservation_time(self, obj):
+        if not obj.reservation_date_time:
+            return None
+        # Local clock time for table covers (HH:MM)
+        return obj.reservation_date_time.strftime("%H:%M")
+
 
 class BookingDetailSerializer(serializers.ModelSerializer):
     nights = serializers.SerializerMethodField()
+    reservation_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
-            "id", "booking_type", "guest_name", "guest_email", "guests",
+            "id", "booking_type", "guest_name", "guest_email", "guest_phone", "guests",
             "check_in", "check_out", "nights",
+            "reservation_date_time", "reservation_time",
             "is_confirmed", "confirmed_at",
         ]
 
@@ -38,9 +51,14 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             return (obj.check_out - obj.check_in).days
         return None
 
+    def get_reservation_time(self, obj):
+        if not obj.reservation_date_time:
+            return None
+        return obj.reservation_date_time.strftime("%H:%M")
+
 
 class BookingCallSerializer(serializers.ModelSerializer):
-    agent_name   = serializers.CharField(source="agent.agent_name", read_only=True)
+    agent_name   = serializers.SerializerMethodField()
     duration     = serializers.SerializerMethodField()
     booking      = serializers.SerializerMethodField()
     booking_type = serializers.SerializerMethodField()
@@ -53,6 +71,9 @@ class BookingCallSerializer(serializers.ModelSerializer):
             "status", "created_at", "started_at", "ended_at",
             "booking", "booking_type",
         ]
+
+    def get_agent_name(self, obj):
+        return obj.agent.agent_name if obj.agent_id else "—"
 
     def get_duration(self, obj):
         minutes, seconds = divmod(obj.duration_seconds or 0, 60)

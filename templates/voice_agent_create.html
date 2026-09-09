@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create Agent — Deskline</title>
+<title>Create Agent - Deskline</title>
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 <script>
@@ -24,6 +24,7 @@ function logout() {
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
+<script src="{% static 'js/deskline-toast.js' %}"></script>
 <style>
   :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
@@ -48,9 +49,22 @@ function logout() {
   .field-label{display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:6px;}
   textarea.field-input{resize:vertical;font-size:13px;}
   select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;cursor:pointer;padding-right:32px;}
-  .voice-card{border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;background:white;flex:1;}
-  .voice-card:hover{border-color:#a5b4fc;background:#fafbff;}
-  .voice-card.selected{border-color:#16332B;background:#F0E6D4;}
+  .dd-wrap{position:relative;}
+  .dd-trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;width:100%;}
+  .dd-trigger .dd-chevron{width:14px;height:14px;color:#94a3b8;flex-shrink:0;transition:transform 0.15s;}
+  .dd-wrap.open .dd-chevron{transform:rotate(180deg);}
+  .dd-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 28px rgba(22,51,43,0.12);max-height:240px;overflow-y:auto;}
+  .dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background 0.12s;}
+  .dd-item:last-child{border-bottom:none;}
+  .dd-item:hover{background:#f8fafc;}
+  .dd-item.active{background:#F0E6D4;}
+  .dd-item-main{min-width:0;flex:1;}
+  .dd-item-title{font-size:12.5px;font-weight:550;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dd-item-sub{font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dd-play{width:28px;height:28px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:#16332B;transition:all 0.15s;}
+  .dd-play:hover{background:#F0E6D4;border-color:#C9A46E;}
+  .dd-play:disabled{opacity:0.35;cursor:not-allowed;}
+  .dd-empty,.dd-loading{padding:12px;font-size:12px;color:#94a3b8;text-align:center;}
   .toggle-wrap{display:flex;align-items:center;gap:3px;}
   .toggle-track{width:36px;height:20px;border-radius:10px;background:#e2e8f0;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
   .toggle-track.on{background:#10b981;}
@@ -71,8 +85,6 @@ function logout() {
   .modal-enter{animation:fadeIn 0.2s ease-out forwards;}
   .check-circle{stroke-dasharray:120;stroke-dashoffset:120;animation:circleDraw 0.5s 0.4s ease-out forwards;}
   .check-mark{stroke-dasharray:40;stroke-dashoffset:40;animation:checkDraw 0.4s 0.9s ease-out forwards;}
-  .waveform{display:flex;align-items:center;gap:1.5px;height:14px;}
-  .waveform-bar{width:2.5px;border-radius:2px;background:#16332B;opacity:0.7;}
   .section-num{width:22px;height:22px;border-radius:50%;background:var(--accent-l);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;}
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -121,10 +133,6 @@ function logout() {
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
       New Agent
     </a>
-    <a href="/api/agents/manage-tools/" class="nav-item">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-      My Tools
-    </a>
     <p class="nav-sec">CALLS</p>
     <a href="{% url 'voice-call-history' %}" class="nav-item">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -161,7 +169,6 @@ function logout() {
       <h1 id="page-heading" class="text-sm font-semibold text-slate-800">Create Agent</h1>
     </div>
     <div class="flex items-center gap-3">
-      <button id="btn-save-draft" class="btn-ghost" onclick="startDeploy(true)">Save Draft</button>
       <button id="btn-deploy" class="btn-primary flex items-center gap-2" onclick="startDeploy()">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z"/></svg>
         Save &amp; Deploy
@@ -185,7 +192,6 @@ function logout() {
               </div>
             </div>
             <div class="mt-2.5 flex items-center justify-between">
-              <span id="dd-plan" class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#F0E6D4;color:#7a5a2e;">Free</span>
               <span id="dd-business" class="text-xs text-slate-400 truncate max-w-[100px]">—</span>
             </div>
           </div>
@@ -253,70 +259,86 @@ function logout() {
             </div>
           </div>
           <div class="p-5 space-y-5">
-            <!-- Dynamic voice cards -->
-            <div>
-              <label class="field-label mb-3">Voice Selection <span style="color:#f43f5e;">*</span></label>
-              <div id="voices-grid" class="flex gap-3 flex-wrap min-h-16">
-                <!-- Skeleton -->
-                <div class="voice-card flex-1 skeleton" style="min-height:80px;border:2px solid #f1f5f9;"></div>
-                <div class="voice-card flex-1 skeleton" style="min-height:80px;border:2px solid #f1f5f9;"></div>
-                <div class="voice-card flex-1 skeleton" style="min-height:80px;border:2px solid #f1f5f9;"></div>
-              </div>
-              <p id="voice-err" class="hidden text-xs mt-1.5" style="color:#f43f5e;">Please select a voice for your agent.</p>
-            </div>
-
-            <!-- Speed & Language row -->
-            <div class="grid grid-cols-2 gap-5">
+            <!-- Language + Voice dropdowns -->
+            <div class="space-y-5">
               <div>
-                <label class="field-label">Language <span style="color:#f43f5e;">*</span></label>
-                <select id="language-select" class="field-input">
-                  <option value="en">English (US)</option>
-                </select>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="field-label mb-0">Language <span style="color:#f43f5e;">*</span></label>
+                  <button type="button" id="btn-sync-languages" onclick="syncLanguages()" class="btn-ghost" style="padding:4px 8px;font-size:11px;">
+                    Fetch languages
+                  </button>
+                </div>
+                <div class="dd-wrap" id="language-dd">
+                  <button type="button" id="language-trigger" class="field-input dd-trigger" onclick="toggleDropdown('language')">
+                    <span id="language-trigger-label">English (US) (en-US)</span>
+                    <svg class="dd-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  <input type="hidden" id="language-select" value="en-US" />
+                  <div id="language-panel" class="dd-panel hidden scrollbar" onscroll="onLanguageScroll(this)">
+                    <div id="language-list"></div>
+                    <div id="language-loading" class="dd-loading hidden">Loading more…</div>
+                  </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-1.5">Scroll inside the dropdown to load more locales</p>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="field-label mb-0">Voice Selection <span style="color:#f43f5e;">*</span></label>
+                  <button type="button" id="btn-sync-voices" onclick="syncVoices()" class="btn-ghost" style="padding:4px 8px;font-size:11px;">
+                    Fetch voices
+                  </button>
+                </div>
+                <div class="dd-wrap" id="voice-dd">
+                  <button type="button" id="voice-trigger" class="field-input dd-trigger" onclick="toggleDropdown('voice')">
+                    <span id="voice-trigger-label">Select a voice</span>
+                    <svg class="dd-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  <div id="voice-panel" class="dd-panel hidden scrollbar" onscroll="onVoiceScroll(this)">
+                    <div id="voice-list"></div>
+                    <div id="voice-loading" class="dd-loading hidden">Loading more…</div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between mt-1.5 gap-2">
+                  <p id="voice-err" class="hidden text-xs" style="color:#f43f5e;">Please select a voice for your agent.</p>
+                  <p id="voices-page-hint" class="text-xs text-slate-400 ml-auto"></p>
+                </div>
+                <div id="voice-preview-row" class="hidden mt-2 flex items-center gap-2">
+                  <button type="button" id="btn-play-selected-voice" onclick="playSelectedVoice()" class="btn-ghost" style="padding:5px 10px;font-size:11px;">
+                    Play sample
+                  </button>
+                  <span id="voice-preview-hint" class="text-xs text-slate-400">Preview this voice</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- SECTION 3: Tools & Integrations -->
+        <!-- SECTION 3: Phone Number -->
         <div class="card shadow-card">
           <div class="flex items-center gap-3 px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
             <div class="section-num">3</div>
-            <div>
-              <h2 class="text-sm font-semibold text-slate-800">Tools &amp; Integrations</h2>
-              <p class="text-xs text-slate-400">Enable the capabilities your agent can use during calls</p>
-            </div>
-          </div>
-          <div class="p-5 space-y-1">
-
-            <!-- My Tools -->
-            <div id="panel-mytools">
-              <div id="user-tools-list">
-                <p class="text-xs text-slate-400 py-3">Loading your tools—</p>
-              </div>
-              <a href="/api/agents/manage-tools/" class="flex items-center gap-2 mt-3 text-xs font-medium" style="color:#16332B;">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-                Manage / create tools
-              </a>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- SECTION 4: Phone Number -->
-        <div class="card shadow-card">
-          <div class="flex items-center gap-3 px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-            <div class="section-num">4</div>
             <div>
               <h2 class="text-sm font-semibold text-slate-800">Phone Number</h2>
               <p class="text-xs text-slate-400">Assign an inbound number to your agent</p>
             </div>
           </div>
           <div class="p-5">
-            <label class="field-label">Phone Number</label>
-            <input class="field-input" id="phone-number-input" type="text" placeholder="+1XXXXXXXXXX" style="max-width:320px;"
-              oninput="setFieldError(this,false);document.getElementById('phone-err').classList.add('hidden')" />
-            <p class="text-xs text-slate-400 mt-1.5">Optional reference number. Live voice runs on Retell, not Twilio.</p>
-            <p id="phone-err" class="hidden text-xs mt-1.5" style="color:#f43f5e;">Please enter a phone number.</p>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="field-label mb-0">Phone Number</label>
+              <button type="button" id="btn-sync-phones" onclick="syncPhones()" class="btn-ghost" style="padding:4px 8px;font-size:11px;">
+                Sync numbers
+              </button>
+            </div>
+            <select id="phone-number-input" class="field-input" style="max-width:420px;"
+              onchange="updatePreviewPhone();setFieldError(this,false);document.getElementById('phone-err').classList.add('hidden')">
+              <option value="">No number (assign later)</option>
+            </select>
+            <div class="flex items-center justify-between mt-1.5">
+              <p class="text-xs text-slate-400">One number per agent. Import Twilio numbers into Retell, then sync.</p>
+              <button type="button" id="btn-phones-more" onclick="loadPhones(true)" class="hidden text-xs font-medium" style="color:#16332B;background:none;border:none;cursor:pointer;">Load more</button>
+            </div>
+            <p id="phone-err" class="hidden text-xs mt-1.5" style="color:#f43f5e;">Please select a phone number.</p>
           </div>
         </div>
 
@@ -333,41 +355,30 @@ function logout() {
               </div>
               <div>
                 <div id="preview-name" class="text-sm font-semibold text-white">Unnamed Agent</div>
-                <div class="text-xs" style="color:rgba(255,255,255,0.7);">ElevenLabs — <span id="preview-voice">—</span></div>
+                <div class="text-xs" style="color:rgba(255,255,255,0.7);">Retell — <span id="preview-voice">—</span></div>
               </div>
             </div>
-            <span class="badge" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);font-size:10px;">DRAFT</span>
+            <span class="badge" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);font-size:10px;">LIVE</span>
           </div>
 
           <!-- Details -->
           <div class="p-4 space-y-4">
-            <!-- Phone -->
             <div>
               <div class="text-xs font-medium text-slate-500 mb-1">Phone Number</div>
-              <div class="text-xs font-semibold text-slate-700">Will be assigned after deploy</div>
+              <div id="preview-phone" class="text-xs font-semibold text-slate-700">Not assigned</div>
             </div>
             <!-- Status -->
             <div>
               <div class="text-xs font-medium text-slate-500 mb-1">Status</div>
-              <span class="badge" style="background:#fffbeb;color:#d97706;border:1px solid #fde68a;">DRAFT</span>
+              <span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">LIVE</span>
             </div>
-            <!-- Active tools -->
             <div>
-              <div class="text-xs font-medium text-slate-500 mb-2">Active Tools</div>
-              <div class="space-y-1.5" id="preview-tools">
-                <span class="text-xs text-slate-400">Loading tools...</span>
-              </div>
+              <div class="text-xs font-medium text-slate-500 mb-1">Language</div>
+              <div id="preview-language" class="text-xs font-semibold text-slate-700">en-US</div>
             </div>
 
             <!-- Divider -->
             <div style="border-top:1px solid #f1f5f9;"></div>
-
-            <!-- Test call button (disabled) -->
-            <button disabled class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium" style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed;border:1px solid #e2e8f0;">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-              Test with a call
-            </button>
-            <p class="text-center text-xs" style="color:#94a3b8;margin-top:6px;">Available after deployment</p>
           </div>
         </div>
       </div><!-- end right panel -->
@@ -426,11 +437,23 @@ function logout() {
 <script>
   const API_BASE       = '/api';
   const EDIT_AGENT_ID  = new URLSearchParams(window.location.search).get('edit') || null;
+  if (EDIT_AGENT_ID) document.title = 'Edit Agent - Deskline';
 
   // -- State ------------------------------------------------------------------
   let selectedVoiceId    = null;
   let selectedVoiceName  = null;
-  let enabledUserToolIds = new Set();
+  let selectedVoiceUrl   = null;
+  let voicesPage         = 1;
+  let voicesHasNext      = false;
+  let voicesLoading      = false;
+  let languagesPage      = 1;
+  let languagesHasNext   = false;
+  let languagesLoading   = false;
+  let phonesPage         = 1;
+  let phonesHasNext      = false;
+  const PAGE_SIZE        = 20;
+  const voiceCache       = {};
+  let previewAudio       = null;
 
   // -- Auth -------------------------------------------------------------------
   function getToken() {
@@ -459,21 +482,30 @@ function logout() {
 
     if (EDIT_AGENT_ID) {
       applyEditModeUI();
-      const results = await Promise.all([
-        loadVoices(),
-        loadUserTools(),
+      // Don't let voice/language load failures block agent hydration
+      const settled = await Promise.allSettled([
+        loadVoices(false),
+        loadLanguages(false),
+        loadPhones(false),
         fetchAgentData(),
       ]);
-      const agent = results[3];
-      if (agent) populateEditForm(agent);
+      const agentResult = settled[3];
+      const agent = agentResult.status === 'fulfilled' ? agentResult.value : null;
+      if (agent) {
+        populateEditForm(agent);
+      } else {
+        showToast('Could not load this agent for editing. Open Edit from My Agents again.', 'error', 5000);
+      }
     } else {
-      loadVoices();
-      loadUserTools();
+      loadVoices(false);
+      loadLanguages(false);
+      loadPhones(false);
     }
   });
 
   // -- Edit mode helpers -------------------------------------------------------
   function applyEditModeUI() {
+    document.title = 'Edit Agent - Deskline';
     const breadcrumb = document.getElementById('breadcrumb-page');
     const heading    = document.getElementById('page-heading');
     const deployBtn  = document.getElementById('btn-deploy');
@@ -488,10 +520,18 @@ function logout() {
   async function fetchAgentData() {
     try {
       const res = await authFetch(`${API_BASE}/agents/get-agent-detail/${EDIT_AGENT_ID}/`);
-      if (!res || !res.ok) return null;
+      if (!res) return null;
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        showToast(json.message || 'Agent not found for edit', 'error');
+        return null;
+      }
       const json = await res.json();
       return json.data || null;
-    } catch (_) { return null; }
+    } catch (_) {
+      showToast('Failed to load agent details', 'error');
+      return null;
+    }
   }
 
   function populateEditForm(agent) {
@@ -502,32 +542,38 @@ function logout() {
     const promptEl = document.getElementById('system-prompt-ta');
     if (promptEl) { promptEl.value = agent.system_prompt || ''; updateCharCount(promptEl); }
 
-    const langEl = document.getElementById('language-select');
-    if (langEl && agent.language) langEl.value = agent.language;
-
-    // Voice card — select by DB UUID
-    if (agent.elevenlabs_voice_db_id) {
-      const card = document.querySelector(`.voice-card[data-voice-id="${agent.elevenlabs_voice_db_id}"]`);
-      if (card) selectVoiceCard(card);
+    const langCode = agent.language || 'en-US';
+    document.getElementById('language-select').value = langCode;
+    document.getElementById('language-trigger-label').textContent = langCode;
+    updatePreviewLanguage();
+    const langItem = document.querySelector(`#language-list .dd-item[data-code="${langCode}"]`);
+    if (langItem) {
+      document.getElementById('language-trigger-label').textContent = langItem.dataset.label || langCode;
+      markActiveLanguage(langCode);
     }
 
-    // Tools — restore user tool toggles
-    const enabledUserToolIdsFromAgent = new Set(
-      (agent.user_tools || []).filter(t => t.is_active).map(t => String(t.user_tool_id))
-    );
-    enabledUserToolIds.clear();
-    document.querySelectorAll('[data-user-tool-id]').forEach(wrap => {
-      const toolId = wrap.dataset.userToolId;
-      const track  = wrap.querySelector('.toggle-track');
-      if (!track) return;
-      const on = enabledUserToolIdsFromAgent.has(toolId);
-      track.classList.toggle('on', on);
-      if (on) enabledUserToolIds.add(toolId);
-    });
-    updatePreviewTools();
+    const voiceDbId = agent.elevenlabs_voice_db_id || '';
+    const voiceName = agent.voice_name || agent.retell_voice_name || 'Selected voice';
+    if (voiceDbId) {
+      const cached = voiceCache[voiceDbId];
+      selectVoice(voiceDbId, cached?.name || voiceName, cached?.recording_url || '');
+    } else if (agent.retell_voice_id) {
+      // Synced Retell agent may not have local voice FK yet — show name, require re-pick to save
+      selectedVoiceName = voiceName;
+      updatePreviewVoice(voiceName);
+      document.getElementById('voice-trigger-label').textContent = voiceName + ' (pick voice to keep)';
+    }
+
     const phoneInput = document.getElementById('phone-number-input');
     if (phoneInput && agent.phone_number) {
+      if (![...phoneInput.options].some(o => o.value === agent.phone_number)) {
+        const opt = document.createElement('option');
+        opt.value = agent.phone_number;
+        opt.textContent = agent.phone_number + ' (current)';
+        phoneInput.appendChild(opt);
+      }
       phoneInput.value = agent.phone_number;
+      updatePreviewPhone();
     }
   }
 
@@ -544,178 +590,342 @@ function logout() {
     } catch (_) {}
   }
 
-  // -- Voices -----------------------------------------------------------------
-  const BAR_PATTERNS = [
-    [4,9,14,10,6,12,7],
-    [7,12,14,8,11,9,5],
-    [5,10,8,13,9,7,11],
-    [6,11,7,14,9,5,12],
-    [8,5,13,9,14,7,10],
-  ];
+  // -- Scrollable dropdowns ---------------------------------------------------
+  function toggleDropdown(kind) {
+    const wrap = document.getElementById(kind === 'voice' ? 'voice-dd' : 'language-dd');
+    const panel = document.getElementById(kind === 'voice' ? 'voice-panel' : 'language-panel');
+    const otherWrap = document.getElementById(kind === 'voice' ? 'language-dd' : 'voice-dd');
+    const otherPanel = document.getElementById(kind === 'voice' ? 'language-panel' : 'voice-panel');
+    if (otherWrap) otherWrap.classList.remove('open');
+    if (otherPanel) otherPanel.classList.add('hidden');
+    const opening = panel.classList.contains('hidden');
+    wrap.classList.toggle('open', opening);
+    panel.classList.toggle('hidden', !opening);
+  }
 
-  async function loadVoices() {
-    const grid = document.getElementById('voices-grid');
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#language-dd') && !e.target.closest('#voice-dd')) {
+      document.getElementById('language-dd')?.classList.remove('open');
+      document.getElementById('voice-dd')?.classList.remove('open');
+      document.getElementById('language-panel')?.classList.add('hidden');
+      document.getElementById('voice-panel')?.classList.add('hidden');
+    }
+  });
+
+  function onLanguageScroll(panel) {
+    if (!languagesHasNext || languagesLoading) return;
+    if (panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 40) {
+      loadLanguages(true);
+    }
+  }
+
+  function onVoiceScroll(panel) {
+    if (!voicesHasNext || voicesLoading) return;
+    if (panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 40) {
+      loadVoices(true);
+    }
+  }
+
+  function markActiveLanguage(code) {
+    document.querySelectorAll('#language-list .dd-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.code === code);
+    });
+  }
+
+  function markActiveVoice(id) {
+    document.querySelectorAll('#voice-list .dd-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === id);
+    });
+  }
+
+  async function loadVoices(append = false) {
+    const list = document.getElementById('voice-list');
+    const loading = document.getElementById('voice-loading');
+    if (voicesLoading) return;
+    voicesLoading = true;
+    if (loading) loading.classList.remove('hidden');
     try {
-      const res   = await authFetch(API_BASE + '/agents/voices-list-api/');
+      if (!append) {
+        voicesPage = 1;
+        list.innerHTML = '';
+        Object.keys(voiceCache).forEach(k => delete voiceCache[k]);
+        if (!selectedVoiceId) {
+          selectedVoiceName = null;
+          selectedVoiceUrl = null;
+          document.getElementById('voice-trigger-label').textContent = 'Select a voice';
+          document.getElementById('voice-preview-row').classList.add('hidden');
+        }
+      }
+      const res = await authFetch(`${API_BASE}/agents/voices-list-api/?page=${voicesPage}&page_size=${PAGE_SIZE}`);
       if (!res) return;
-      const json  = await res.json();
+      const json = await res.json();
       const voices = json.results?.data || [];
-      grid.innerHTML = '';
+      voicesHasNext = !!json.next;
 
-      if (!voices.length) {
-        grid.innerHTML = '<p class="text-xs text-slate-400 py-2">No voices available. Add voices in admin.</p>';
+      const hint = document.getElementById('voices-page-hint');
+      voices.forEach(v => { voiceCache[v.id] = v; });
+      const totalLoaded = Object.keys(voiceCache).length;
+      if (hint) hint.textContent = voicesHasNext ? `${totalLoaded}+ voices` : `${totalLoaded} voices`;
+
+      if (!append && !voices.length && !totalLoaded) {
+        list.innerHTML = '<div class="dd-empty">No voices yet. Click Fetch voices.</div>';
         return;
       }
 
       voices.forEach((voice, i) => {
-        const bars    = BAR_PATTERNS[i % BAR_PATTERNS.length];
-        const isFirst = i === 0;
-        if (isFirst) { selectedVoiceId = voice.id; selectedVoiceName = voice.name; updatePreviewVoice(voice.name); }
+        if (list.querySelector(`.dd-item[data-id="${voice.id}"]`)) return;
+        const row = document.createElement('div');
+        row.className = 'dd-item' + (selectedVoiceId === voice.id ? ' active' : '');
+        row.dataset.id = voice.id;
 
-        const card = document.createElement('div');
-        card.className    = 'voice-card' + (isFirst ? ' selected' : '');
-        card.dataset.voiceId   = voice.id;
-        card.dataset.voiceName = voice.name;
-        card.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <div class="waveform">
-              ${bars.map(h => `<div class="waveform-bar" style="height:${h}px;${!isFirst ? 'background:#94a3b8;' : ''}"></div>`).join('')}
-            </div>
-            <div class="voice-dot w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                 style="border-color:${isFirst ? '#16332B' : '#e2e8f0'};background:${isFirst ? '#16332B' : 'white'};">
-              ${isFirst ? '<div style="width:6px;height:6px;border-radius:50%;background:white;"></div>' : ''}
-            </div>
-          </div>
-          <div class="text-xs font-semibold text-slate-800 mb-0.5">${escHtml(voice.name)}</div>
-          <div class="text-xs text-slate-500">ElevenLabs</div>
-          <div class="text-xs mt-1" style="color:#94a3b8;font-size:10px;">Voice — ${escHtml(voice.voice_id.substring(0,8))}—</div>
-        `;
-        card.addEventListener('click', () => selectVoiceCard(card));
-        grid.appendChild(card);
+        const main = document.createElement('div');
+        main.className = 'dd-item-main';
+        main.innerHTML = `
+            <div class="dd-item-title">${escHtml(voice.name)}</div>
+            <div class="dd-item-sub">${escHtml(voice.voice_id || '')}</div>`;
+        main.addEventListener('click', () => selectVoice(voice.id, voice.name, voice.recording_url || ''));
+
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.className = 'dd-play';
+        playBtn.disabled = !voice.recording_url;
+        playBtn.title = voice.recording_url ? 'Play sample' : 'No sample available';
+        playBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        playBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          playVoiceUrl(voice.recording_url || '');
+        });
+
+        row.appendChild(main);
+        row.appendChild(playBtn);
+        list.appendChild(row);
+
+        if (!selectedVoiceId && !append && i === 0) {
+          selectVoice(voice.id, voice.name, voice.recording_url || '');
+        }
       });
+
+      if (voicesHasNext) voicesPage += 1;
     } catch (_) {
-      grid.innerHTML = '<p class="text-xs text-red-400 py-2">Failed to load voices</p>';
+      if (!append) list.innerHTML = '<div class="dd-empty" style="color:#e11d48;">Failed to load voices</div>';
+    } finally {
+      voicesLoading = false;
+      if (loading) loading.classList.add('hidden');
     }
   }
 
-  function selectVoiceCard(card) {
-    document.querySelectorAll('.voice-card').forEach(c => {
-      c.classList.remove('selected');
-      const dot = c.querySelector('.voice-dot');
-      if (dot) { dot.style.borderColor = '#e2e8f0'; dot.style.background = 'white'; dot.innerHTML = ''; }
-      c.querySelectorAll('.waveform-bar').forEach(b => b.style.background = '#94a3b8');
-    });
-    card.classList.add('selected');
-    const dot = card.querySelector('.voice-dot');
-    if (dot) {
-      dot.style.borderColor = '#16332B';
-      dot.style.background  = '#16332B';
-      dot.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:white;"></div>';
-    }
-    card.querySelectorAll('.waveform-bar').forEach(b => b.style.background = '#16332B');
-    selectedVoiceId   = card.dataset.voiceId;
-    selectedVoiceName = card.dataset.voiceName;
-    updatePreviewVoice(card.dataset.voiceName);
-    document.getElementById('voices-grid').style.outline = '';
+  function selectVoice(id, name, url) {
+    selectedVoiceId = id;
+    selectedVoiceName = name;
+    selectedVoiceUrl = url || '';
+    document.getElementById('voice-trigger-label').textContent = name || 'Select a voice';
+    updatePreviewVoice(name);
+    markActiveVoice(id);
     document.getElementById('voice-err').classList.add('hidden');
+    document.getElementById('voice-trigger').style.borderColor = '';
+    document.getElementById('voice-trigger').style.boxShadow = '';
+    const row = document.getElementById('voice-preview-row');
+    const hint = document.getElementById('voice-preview-hint');
+    const btn = document.getElementById('btn-play-selected-voice');
+    if (row) {
+      row.classList.remove('hidden');
+      if (selectedVoiceUrl) {
+        btn.disabled = false;
+        hint.textContent = 'Preview this voice';
+      } else {
+        btn.disabled = true;
+        hint.textContent = 'No sample URL for this voice';
+      }
+    }
+    document.getElementById('voice-dd')?.classList.remove('open');
+    document.getElementById('voice-panel')?.classList.add('hidden');
   }
 
-  // -- Tools ------------------------------------------------------------------
-  const TOOL_ICONS = {
-    google_calendar: { bg:'#ecfdf5', color:'#059669', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>' },
-    faq_kb:          { bg:'#F0E6D4', color:'#1F4839', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>' },
-    sms_followup:    { bg:'#eff6ff', color:'#3b82f6', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>' },
-    crm_sync:        { bg:'#f5f3ff', color:'#7c3aed', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>' },
-    webhook:         { bg:'#f8fafc', color:'#64748b', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>' },
-  };
-  const DEFAULT_ICON = { bg:'#f1f5f9', color:'#64748b', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>' };
-
-  // -- Tool tabs --------------------------------------------------------------
-  // -- My Tools ---------------------------------------------------------------
-  const USER_TOOL_ICON = { bg:'#f0f9ff', color:'#0284c7', svg:'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>' };
-
-  async function loadUserTools() {
-    const list = document.getElementById('user-tools-list');
+  function playVoiceUrl(url) {
+    if (!url) { showToast('No recording available for this voice', 'error'); return; }
     try {
-      const res  = await authFetch(API_BASE + '/agents/user-tools/');
+      if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+      previewAudio = new Audio(url);
+      previewAudio.play().catch(() => showToast('Could not play voice sample', 'error'));
+    } catch (_) {
+      showToast('Could not play voice sample', 'error');
+    }
+  }
+
+  function playSelectedVoice() {
+    playVoiceUrl(selectedVoiceUrl);
+  }
+
+  async function loadLanguages(append = false) {
+    const list = document.getElementById('language-list');
+    const loading = document.getElementById('language-loading');
+    if (languagesLoading) return;
+    languagesLoading = true;
+    if (loading) loading.classList.remove('hidden');
+    try {
+      if (!append) {
+        languagesPage = 1;
+        list.innerHTML = '';
+      }
+      const res = await authFetch(`${API_BASE}/agents/languages-list-api/?page=${languagesPage}&page_size=${PAGE_SIZE}`);
       if (!res) return;
       const json = await res.json();
-      const tools = json.results?.data || [];
+      const langs = json.results?.data || [];
+      languagesHasNext = !!json.next;
 
-      const countEl = document.getElementById('my-tools-count');
-      if (countEl) countEl.textContent = tools.length ? `(${tools.length})` : '';
-
-      list.innerHTML = '';
-      if (!tools.length) {
-        list.innerHTML = '<p class="text-xs text-slate-400 py-2">No custom tools yet. Create one below.</p>';
+      if (!append && !langs.length) {
+        list.innerHTML = '<div class="dd-empty">No languages yet. Click Fetch languages.</div>';
         return;
       }
 
-      tools.forEach(tool => {
-        if (!tool.is_active) return;
+      const current = document.getElementById('language-select').value || 'en-US';
+      langs.forEach(lang => {
+        if (list.querySelector(`.dd-item[data-code="${lang.code}"]`)) return;
+        const label = `${lang.label} (${lang.code})`;
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between py-3';
-        row.style.borderBottom = '1px solid #f8fafc';
-        const typeLabel = tool.tool_type === 'webhook' ? 'Webhook' : 'Built-in';
-        row.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:${USER_TOOL_ICON.bg};">
-              <svg class="w-4 h-4" style="color:${USER_TOOL_ICON.color};" fill="none" stroke="currentColor" viewBox="0 0 24 24">${USER_TOOL_ICON.svg}</svg>
-            </div>
-            <div>
-              <div class="flex items-center gap-1.5">
-                <div class="text-xs font-semibold text-slate-800 ut-name">${escHtml(tool.name)}</div>
-                <span class="text-xs px-1.5 py-0.5 rounded" style="background:#f1f5f9;color:#64748b;font-size:9.5px;">${typeLabel}</span>
-              </div>
-              <div class="text-xs text-slate-400">${escHtml(tool.description || '')}</div>
-            </div>
-          </div>
-          <div class="toggle-wrap" data-user-tool-id="${tool.id}" onclick="toggleUserTool(this, '${tool.id}')">
-            <div class="toggle-track"><div class="toggle-thumb"></div></div>
-          </div>
-        `;
+        row.className = 'dd-item' + (lang.code === current ? ' active' : '');
+        row.dataset.code = lang.code;
+        row.dataset.label = label;
+        row.onclick = () => selectLanguage(lang.code, label);
+        row.innerHTML = `<div class="dd-item-main"><div class="dd-item-title">${escHtml(label)}</div></div>`;
         list.appendChild(row);
       });
+
+      if (!append) {
+        const active = list.querySelector(`.dd-item[data-code="${current}"]`);
+        if (active) {
+          document.getElementById('language-trigger-label').textContent = active.dataset.label;
+        }
+        updatePreviewLanguage();
+      }
+      if (languagesHasNext) languagesPage += 1;
     } catch (_) {
-      list.innerHTML = '<p class="text-xs text-red-400 py-2">Failed to load your tools</p>';
+      if (!append) list.innerHTML = '<div class="dd-empty" style="color:#e11d48;">Failed to load languages</div>';
+    } finally {
+      languagesLoading = false;
+      if (loading) loading.classList.add('hidden');
     }
   }
 
-  function toggleUserTool(wrap, toolId) {
-    const track = wrap.querySelector('.toggle-track');
-    track.classList.toggle('on');
-    if (track.classList.contains('on')) {
-      enabledUserToolIds.add(toolId);
-    } else {
-      enabledUserToolIds.delete(toolId);
-    }
-    updatePreviewTools();
+  function selectLanguage(code, label) {
+    document.getElementById('language-select').value = code;
+    document.getElementById('language-trigger-label').textContent = label;
+    markActiveLanguage(code);
+    updatePreviewLanguage();
+    document.getElementById('language-dd')?.classList.remove('open');
+    document.getElementById('language-panel')?.classList.add('hidden');
   }
 
-  function updatePreviewTools() {
-    const preview = document.getElementById('preview-tools');
-    let html = '';
-    // Catalog tools — walk up to the row div, then find .tool-name in the sibling info div
-    document.querySelectorAll('[data-tool-id]').forEach(wrap => {
-      if (wrap.querySelector('.toggle-track').classList.contains('on')) {
-        const row  = wrap.closest('[style*="border-bottom"]') || wrap.parentElement;
-        const name = row?.querySelector('.tool-name')?.textContent?.trim() || '';
-        if (name) html += `<div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:#10b981;"></div><span class="text-xs text-slate-600">${escHtml(name)}</span></div>`;
+  async function loadPhones(append = false) {
+    const select = document.getElementById('phone-number-input');
+    const moreBtn = document.getElementById('btn-phones-more');
+    try {
+      const keep = select.value || '';
+      if (!append) {
+        phonesPage = 1;
+        select.innerHTML = '<option value="">No number (assign later)</option>';
       }
-    });
-    // User tools — indigo dot
-    document.querySelectorAll('[data-user-tool-id]').forEach(wrap => {
-      if (wrap.querySelector('.toggle-track').classList.contains('on')) {
-        const row  = wrap.closest('[style*="border-bottom"]') || wrap.parentElement;
-        const name = row?.querySelector('.ut-name')?.textContent?.trim() || '';
-        if (name) html += `<div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:#1F4839;"></div><span class="text-xs text-slate-600">${escHtml(name)}</span></div>`;
+      // Show available numbers; keep current assignment visible via edit populate
+      const res = await authFetch(`${API_BASE}/agents/phones-list-api/?page=${phonesPage}&page_size=${PAGE_SIZE}&available=true`);
+      if (!res) return;
+      const json = await res.json();
+      const phones = json.results?.data || [];
+      phonesHasNext = !!json.next;
+      if (moreBtn) moreBtn.classList.toggle('hidden', !phonesHasNext);
+
+      phones.forEach(p => {
+        if ([...select.options].some(o => o.value === p.phone_number)) return;
+        const opt = document.createElement('option');
+        opt.value = p.phone_number;
+        const label = p.nickname ? `${p.phone_number_pretty || p.phone_number} — ${p.nickname}` : (p.phone_number_pretty || p.phone_number);
+        opt.textContent = label;
+        select.appendChild(opt);
+      });
+
+      if (!append && keep && [...select.options].some(o => o.value === keep)) {
+        select.value = keep;
       }
-    });
-    // Human Handoff
-    if (document.getElementById('handoff-track')?.classList.contains('on')) {
-      html += `<div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:#10b981;"></div><span class="text-xs text-slate-600">Human Handoff</span></div>`;
+      updatePreviewPhone();
+      if (phonesHasNext) phonesPage += 1;
+    } catch (_) {
+      if (!append) showToast('Failed to load phone numbers', 'error');
     }
-    preview.innerHTML = html || '<span class="text-xs text-slate-400">No tools enabled</span>';
+  }
+
+  async function syncLanguages() {
+    const btn = document.getElementById('btn-sync-languages');
+    if (btn) { btn.disabled = true; btn.textContent = 'Fetching…'; }
+    try {
+      const res = await authFetch(`${API_BASE}/agents/sync-retell-languages/`, { method: 'POST', body: '{}' });
+      if (!res) return;
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.message || 'Failed to fetch languages', 'error');
+        return;
+      }
+      const d = json.data || {};
+      showToast(`${json.message} (${d.total || 0} total)`, 'success');
+      await loadLanguages(false);
+    } catch (_) {
+      showToast('Failed to fetch languages', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Fetch languages'; }
+    }
+  }
+
+  async function syncVoices() {
+    const btn = document.getElementById('btn-sync-voices');
+    if (btn) { btn.disabled = true; btn.textContent = 'Fetching…'; }
+    try {
+      const res = await authFetch(`${API_BASE}/agents/sync-retell-voices/`, { method: 'POST', body: '{}' });
+      if (!res) return;
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.message || 'Failed to fetch voices', 'error');
+        return;
+      }
+      const d = json.data || {};
+      showToast(`${json.message}\nCreated: ${d.created || 0} · Updated: ${d.updated || 0} · Total: ${d.total || 0}`, 'success', 5000);
+      Object.keys(voiceCache).forEach(k => delete voiceCache[k]);
+      await loadVoices(false);
+    } catch (_) {
+      showToast('Failed to fetch voices', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Fetch voices'; }
+    }
+  }
+
+  async function syncPhones() {
+    const btn = document.getElementById('btn-sync-phones');
+    if (btn) { btn.disabled = true; btn.textContent = 'Syncing…'; }
+    try {
+      const res = await authFetch(`${API_BASE}/agents/sync-retell-phones/`, { method: 'POST', body: '{}' });
+      if (!res) return;
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.message || 'Failed to sync phones', 'error');
+        return;
+      }
+      const d = json.data || {};
+      showToast(`${json.message}\nTotal: ${d.total || 0} · In Retell: ${d.retell_count || 0}`, 'success', 5000);
+      await loadPhones(false);
+    } catch (_) {
+      showToast('Failed to sync phones', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sync numbers'; }
+    }
+  }
+
+  function updatePreviewPhone() {
+    const el = document.getElementById('preview-phone');
+    const v = document.getElementById('phone-number-input')?.value || '';
+    if (el) el.textContent = v || 'Not assigned';
+  }
+
+  function updatePreviewLanguage() {
+    const el = document.getElementById('preview-language');
+    const v = document.getElementById('language-select')?.value || 'en-US';
+    if (el) el.textContent = v;
   }
 
   // -- Char count -------------------------------------------------------------
@@ -748,7 +958,6 @@ function logout() {
     const fallback = document.getElementById('fallback-field');
     track.classList.toggle('on');
     fallback.style.display = track.classList.contains('on') ? '' : 'none';
-    updatePreviewTools();
   }
 
 
@@ -773,15 +982,21 @@ function logout() {
     if (!systemPrompt) ok = false;
 
     // Voice required
-    const voicesGrid = document.getElementById('voices-grid');
+    const voiceTrigger = document.getElementById('voice-trigger');
     const voiceErr   = document.getElementById('voice-err');
     if (!selectedVoiceId) {
-      if (voicesGrid) voicesGrid.style.outline = '2px solid #f43f5e';
-      if (voiceErr)   voiceErr.classList.remove('hidden');
+      if (voiceTrigger) {
+        voiceTrigger.style.borderColor = '#f43f5e';
+        voiceTrigger.style.boxShadow = '0 0 0 3px rgba(244,63,94,0.12)';
+      }
+      if (voiceErr) voiceErr.classList.remove('hidden');
       ok = false;
     } else {
-      if (voicesGrid) voicesGrid.style.outline = '';
-      if (voiceErr)   voiceErr.classList.add('hidden');
+      if (voiceTrigger) {
+        voiceTrigger.style.borderColor = '';
+        voiceTrigger.style.boxShadow = '';
+      }
+      if (voiceErr) voiceErr.classList.add('hidden');
     }
 
     // Phone number required
@@ -800,7 +1015,7 @@ function logout() {
   }
 
   // -- Deploy / Submit --------------------------------------------------------
-  async function startDeploy(draft) {
+  async function startDeploy() {
     if (!validateForm()) return;
 
     const agentName    = document.getElementById('agent-name-input').value.trim();
@@ -811,9 +1026,7 @@ function logout() {
       system_prompt:       systemPrompt,
       language:            document.getElementById('language-select').value,
       elevenlabs_voice_id: selectedVoiceId,
-      user_tools:          Array.from(enabledUserToolIds),
       phone_number:        document.getElementById('phone-number-input').value.trim() || '',
-      is_draft:            !!draft,
     };
 
     const modal    = document.getElementById('deploy-modal');
@@ -841,7 +1054,13 @@ function logout() {
       const method = isEdit ? 'PUT' : 'POST';
 
       const res  = await authFetch(url, { method, body: JSON.stringify(payload) });
-      const json = await res.json();
+      if (!res) {
+        loading.classList.add('hidden');
+        document.getElementById('deploy-error-msg').textContent = 'Please log in again.';
+        errState.classList.remove('hidden');
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
 
       if (res.ok) {
         setTimeout(() => {
@@ -851,11 +1070,8 @@ function logout() {
             success.classList.remove('hidden');
 
             if (isEdit) {
-              document.getElementById('success-title').textContent    = draft ? 'Draft saved!' : 'Agent updated!';
+              document.getElementById('success-title').textContent    = 'Agent updated!';
               document.getElementById('success-subtitle').textContent = 'Your changes have been saved.';
-            } else if (draft) {
-              document.getElementById('success-title').textContent    = 'Agent saved as draft!';
-              document.getElementById('success-subtitle').textContent = "Change status to live whenever you're ready to take calls.";
             } else {
               document.getElementById('success-title').textContent    = 'Agent deployed!';
               document.getElementById('success-subtitle').textContent = 'Your agent is live and ready to take calls.';
@@ -919,7 +1135,6 @@ function logout() {
       setTxt('dd-avatar',       initials);
       setTxt('dd-name',         d.full_name);
       setTxt('dd-email',        d.email);
-      setTxt('dd-plan',         d.plan_label || 'Free');
       setTxt('dd-business',     d.business_name || '');
     } catch(e) {}
   }

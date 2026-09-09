@@ -20,7 +20,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import CustomUser
-from agents.models import Agent, AgentUserTool, Booking, ElevenLabsVoice, UserTool
+from agents.models import Agent, Booking, ElevenLabsVoices
 from calls.models import CallLog, CallTranscript
 
 
@@ -99,8 +99,7 @@ class Command(BaseCommand):
 
         user = self._user()
         voices = self._voices()
-        tools = self._tools(user)
-        agents = self._agents(user, voices, tools)
+        agents = self._agents(user, voices)
         calls = self._calls(agents)
         self._transcripts(calls)
         bookings = self._bookings(agents, calls)
@@ -110,7 +109,6 @@ class Command(BaseCommand):
         self.stdout.write(f"  User:     {DEMO_EMAIL}")
         self.stdout.write(f"  Password: {DEMO_PASSWORD}")
         self.stdout.write(f"  Agents:   {len(agents)}")
-        self.stdout.write(f"  Tools:    {len(tools)}")
         self.stdout.write(f"  Calls:    {len(calls)}")
         self.stdout.write(f"  Bookings: {bookings}")
         self.stdout.write("")
@@ -127,7 +125,6 @@ class Command(BaseCommand):
                 "last_name": "Moreau",
                 "business_name": "The Harbor Inn & Bistro",
                 "phone": "+14155550100",
-                "plan": "pro",
                 "is_active": True,
             },
         )
@@ -136,12 +133,11 @@ class Command(BaseCommand):
         user.last_name = "Moreau"
         user.business_name = "The Harbor Inn & Bistro"
         user.phone = "+14155550100"
-        user.plan = "pro"
         user.save()
         self.stdout.write(self.style.SUCCESS(f"{'Created' if created else 'Updated'} demo user"))
         return user
 
-    def _voices(self) -> list[ElevenLabsVoice]:
+    def _voices(self) -> list[ElevenLabsVoices]:
         """Ensure demo ElevenLabs voice rows exist."""
         specs = [
 
@@ -151,85 +147,15 @@ class Command(BaseCommand):
         ]
         voices = []
         for name, vid in specs:
-            v, _ = ElevenLabsVoice.objects.get_or_create(
+            v, _ = ElevenLabsVoices.objects.get_or_create(
                 voice_id=vid,
                 defaults={"name": name, "is_active": True},
             )
             voices.append(v)
         return voices
 
-    def _tools(self, user: CustomUser) -> list[UserTool]:
-        """Create built-in booking tools for the demo user."""
-        specs = [
-
-            (
-                "book_room",
-                "Book a hotel room after the guest confirms name, email, check-in, check-out, and guests.",
-                {
-                    "type": "object",
-                    "properties": {
-                        "guest_name": {"type": "string", "description": "Guest full name"},
-                        "email": {"type": "string", "description": "Guest email"},
-                        "check_in_date": {"type": "string", "description": "YYYY-MM-DD"},
-                        "check_out_date": {"type": "string", "description": "YYYY-MM-DD"},
-                        "guests": {"type": "integer", "description": "Number of guests"},
-                    },
-                    "required": ["guest_name", "email", "check_in_date", "check_out_date", "guests"],
-                },
-                True,
-            ),
-            (
-                "book_table",
-                "Book a restaurant table after the guest confirms name, date, and party size.",
-                {
-                    "type": "object",
-                    "properties": {
-                        "guest_name": {"type": "string"},
-                        "date": {"type": "string", "description": "YYYY-MM-DD"},
-                        "guests": {"type": "integer"},
-                        "email": {"type": "string"},
-                    },
-                    "required": ["guest_name", "date", "guests"],
-                },
-                True,
-            ),
-            (
-                "check_availability",
-                "Check open room or table slots for a given date.",
-                {
-                    "type": "object",
-                    "properties": {
-                        "date": {"type": "string"},
-                        "booking_type": {"type": "string", "enum": ["room", "table"]},
-                    },
-                    "required": ["date"],
-                },
-                True,
-            ),
-            (
-                "transfer_to_human",
-                "Transfer the caller to a human front-desk agent (inactive demo tool).",
-                {"type": "object", "properties": {"reason": {"type": "string"}}, "required": []},
-                False,
-            ),
-        ]
-        tools = []
-        for name, desc, params, active in specs:
-            tool, _ = UserTool.objects.update_or_create(
-                owner=user,
-                name=name,
-                defaults={
-                    "description": desc,
-                    "tool_type": "builtin",
-                    "parameters": params,
-                    "is_active": active,
-                },
-            )
-            tools.append(tool)
-        return tools
-
-    def _agents(self, user, voices, tools) -> list[Agent]:
-        """Create demo agents and attach their tools."""
+    def _agents(self, user, voices) -> list[Agent]:
+        """Create demo agents."""
         specs = [
 
             {
@@ -242,9 +168,8 @@ class Command(BaseCommand):
                     "You are Maya, the overnight front-desk voice agent for The Harbor Inn. "
                     "Help guests with room bookings, FAQs, and late-night requests. "
                     "Ask whether they need a room, a restaurant table, or both. "
-                    "Confirm details, then call book_room or book_table."
+                    "Confirm details before booking."
                 ),
-                "tool_names": ["book_room", "book_table", "check_availability"],
             },
             {
                 "agent_name": "Bistro Host Alex",
@@ -255,27 +180,24 @@ class Command(BaseCommand):
                 "prompt": (
                     "You are Alex, the restaurant host for Harbor Bistro. "
                     "Take table reservations, answer menu questions, and note dietary needs. "
-                    "Confirm party size and date, then call book_table."
+                    "Confirm party size and date before booking."
                 ),
-                "tool_names": ["book_table", "check_availability"],
             },
             {
                 "agent_name": "Concierge Sofia",
-                "status": "paused",
+                "status": "live",
                 "phone_number": "+18605551003",
                 "is_demo": False,
                 "voice": voices[2],
                 "prompt": "You are Sofia, a concierge agent for spa bookings and guest services.",
-                "tool_names": ["check_availability"],
             },
             {
-                "agent_name": "Draft — Events Bot",
-                "status": "draft",
-                "phone_number": "",
+                "agent_name": "Events Bot",
+                "status": "live",
+                "phone_number": "+18605551004",
                 "is_demo": False,
-                "voice": None,
-                "prompt": "Draft agent for private dining events.",
-                "tool_names": [],
+                "voice": voices[0] if voices else None,
+                "prompt": "You handle private dining and events inquiries for the hotel.",
             },
         ]
 
@@ -285,7 +207,6 @@ class Command(BaseCommand):
         ).delete()
 
         agents = []
-        tool_by_name = {t.name: t for t in tools}
         for spec in specs:
             agent, _ = Agent.objects.update_or_create(
                 owner=user,
@@ -299,11 +220,6 @@ class Command(BaseCommand):
                     "language": "en",
                 },
             )
-            AgentUserTool.objects.filter(agent=agent).delete()
-            for tname in spec["tool_names"]:
-                ut = tool_by_name.get(tname)
-                if ut:
-                    AgentUserTool.objects.create(agent=agent, user_tool=ut, is_active=True)
             agents.append(agent)
         return agents
 
@@ -327,31 +243,19 @@ class Command(BaseCommand):
             duration = random.randint(45, 420)
             ended = started + timedelta(seconds=duration)
 
-            roll = random.random()
-            if roll < 0.42:
-                outcome = "booked"
-            elif roll < 0.72:
-                outcome = "faq_resolved"
-            else:
-                outcome = "no_outcome"
-
-            status = "completed" if random.random() > 0.08 else random.choice(["no-answer", "failed", "busy"])
+            status = "completed" if random.random() > 0.08 else random.choice(["no-answer", "failed"])
             if status != "completed":
-                outcome = "no_outcome"
                 duration = random.randint(5, 40)
 
-            sentiment = round(random.uniform(-0.2, 0.85), 2)
-            if outcome == "booked":
-                sentiment = round(random.uniform(0.25, 0.9), 2)
+            sentiment = random.choice(["positive", "neutral", "negative", "neutral"])
 
             guest_name, _ = GUEST_NAMES[i % len(GUEST_NAMES)]
             call = CallLog.objects.create(
                 agent=agent,
                 twilio_call_sid=f"CA{uuid.uuid4().hex}",
                 caller_phone=PHONES[i % len(PHONES)],
-                direction=random.choice(["inbound", "inbound", "inbound", "outbound"]),
+                direction=random.choice(["inbound", "inbound", "inbound", "web_call"]),
                 status=status,
-                outcome=outcome,
                 reason=random.choice(INTENTS),
                 duration_seconds=duration,
                 sentiment_score=sentiment,
@@ -384,7 +288,7 @@ class Command(BaseCommand):
         Booking.objects.filter(agent__in=agents).delete()
         live = [a for a in agents if a.status == "live"]
         today = date.today()
-        booked_calls = [c for c in calls if c.outcome == "booked"]
+        booked_calls = [c for c in calls if c.status == "completed"][:12]
         count = 0
 
         # Today’s reservations for dashboard panel
