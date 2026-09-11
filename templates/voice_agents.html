@@ -76,13 +76,29 @@ function logout() {
   .modal-backdrop:not(.hidden){display:flex;}
   .modal-box{background:white;border-radius:16px;padding:28px;width:420px;box-shadow:0 24px 60px rgba(22,51,43,0.2);animation:modal-in 0.18s ease;}
   .modal-box.wide{width:480px;}
+  .modal-box.test-call-shell{width:min(920px,94vw);padding:0;overflow:hidden;display:flex;max-height:min(90vh,720px);}
+  .test-call-left{flex:0 0 360px;padding:28px;border-right:1px solid #efe9dc;display:flex;flex-direction:column;}
+  .test-call-right{flex:1;min-width:0;padding:22px 24px;background:#faf7f1;overflow-y:auto;}
+  .ask-guide-title{font-size:13px;font-weight:650;color:#16332B;margin:0 0 4px;}
+  .ask-guide-sub{font-size:11.5px;color:#5B665F;margin:0 0 14px;line-height:1.45;}
+  .ask-section{margin-bottom:14px;}
+  .ask-section-label{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#A9814A;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+  .ask-chip{display:block;width:100%;text-align:left;background:white;border:1px solid #e8dfce;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;line-height:1.4;color:#16332B;cursor:pointer;transition:border-color .12s,background .12s,box-shadow .12s;}
+  .ask-chip:hover{border-color:#A9814A;background:#fffdf8;box-shadow:0 2px 8px rgba(169,129,74,0.12);}
+  .ask-chip:active{transform:scale(0.995);}
+  .ask-meta{font-size:11px;color:#7a847c;margin-top:10px;padding-top:10px;border-top:1px dashed #e2d8c4;line-height:1.45;}
+  @media (max-width:780px){
+    .modal-box.test-call-shell{flex-direction:column;width:min(480px,94vw);max-height:92vh;}
+    .test-call-left{flex:none;border-right:none;border-bottom:1px solid #efe9dc;}
+    .test-call-right{max-height:45vh;}
+  }
   @keyframes modal-in{from{opacity:0;transform:scale(0.96) translateY(8px);}to{opacity:1;transform:scale(1) translateY(0);}}
   .test-pulse{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#A9814A,#16332B);display:flex;align-items:center;justify-content:center;position:relative;}
   .test-pulse::before,.test-pulse::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid rgba(169,129,74,0.45);animation:test-ring 1.8s ease-out infinite;}
   .test-pulse::after{animation-delay:0.6s;}
   @keyframes test-ring{0%{transform:scale(1);opacity:0.7;}100%{transform:scale(1.55);opacity:0;}}
   .test-pulse.idle::before,.test-pulse.idle::after{animation:none;opacity:0;}
-  #test-transcript{max-height:160px;overflow-y:auto;font-size:12px;line-height:1.45;background:#f8fafc;border:1px solid #efe9dc;border-radius:10px;padding:10px 12px;}
+  #test-transcript{max-height:120px;overflow-y:auto;font-size:12px;line-height:1.45;background:#f8fafc;border:1px solid #efe9dc;border-radius:10px;padding:10px 12px;}
   .tx-agent{color:#16332B;margin-bottom:6px;}
   .tx-user{color:#5B665F;margin-bottom:6px;}
   .btn-test{background:linear-gradient(135deg,#16332B,#1f4a3f);color:#F0E6D4;font-size:12px;font-weight:600;padding:6px 12px;border-radius:4px;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;}
@@ -466,39 +482,51 @@ function logout() {
   </div>
 </div>
 
-<!-- ========== TEST WEB CALL MODAL ========== -->
+<!-- ========== TEST WEB CALL MODAL + ASK GUIDE ========== -->
 <div id="test-call-modal" class="modal-backdrop hidden">
-  <div class="modal-box wide">
-    <div class="flex items-start justify-between gap-3 mb-4">
-      <div>
-        <h2 class="text-sm font-semibold text-slate-800">Test web call</h2>
-        <p class="text-xs text-slate-500 mt-0.5" id="test-call-agent-name">Agent</p>
+  <div class="modal-box test-call-shell">
+    <!-- Left: call controls -->
+    <div class="test-call-left">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-800">Test web call</h2>
+          <p class="text-xs text-slate-500 mt-0.5" id="test-call-agent-name">Agent</p>
+        </div>
+        <button type="button" class="kebab-btn" onclick="closeTestCallModal()" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
-      <button type="button" class="kebab-btn" onclick="closeTestCallModal()" title="Close">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
+
+      <div class="flex flex-col items-center gap-3 py-4 flex-1">
+        <div id="test-pulse" class="test-pulse idle">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+        </div>
+        <div id="test-call-status" class="text-xs font-medium text-slate-500 text-center">Ready — allow microphone when prompted</div>
+        <div id="test-call-id" class="text-xs text-slate-400"></div>
+      </div>
+
+      <div id="test-transcript" class="mb-4 hidden"></div>
+
+      <div class="flex items-center justify-end gap-2.5">
+        <button type="button" class="btn-ghost" id="test-call-cancel-btn" onclick="closeTestCallModal()">Close</button>
+        <button type="button" class="btn-green" id="test-call-start-btn" onclick="startTestWebCall()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Start call
+        </button>
+        <button type="button" class="btn-red hidden" id="test-call-end-btn" onclick="endTestWebCall()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 10h6v4H9z"/></svg>
+          End call
+        </button>
+      </div>
     </div>
 
-    <div class="flex flex-col items-center gap-3 py-4">
-      <div id="test-pulse" class="test-pulse idle">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+    <!-- Right: what to ask (Groq from agent prompt) -->
+    <div class="test-call-right">
+      <h3 class="ask-guide-title">What you can ask</h3>
+      <p class="ask-guide-sub">Generated from this agent's system prompt. Click a line to copy, then say it on the call.</p>
+      <div id="ask-guide-body">
+        <div class="ask-meta" style="border:none;margin:0;padding:0;">Loading suggestions from agent prompt…</div>
       </div>
-      <div id="test-call-status" class="text-xs font-medium text-slate-500">Ready — allow microphone when prompted</div>
-      <div id="test-call-id" class="text-xs text-slate-400"></div>
-    </div>
-
-    <div id="test-transcript" class="mb-4 hidden"></div>
-
-    <div class="flex items-center justify-end gap-2.5">
-      <button type="button" class="btn-ghost" id="test-call-cancel-btn" onclick="closeTestCallModal()">Close</button>
-      <button type="button" class="btn-green" id="test-call-start-btn" onclick="startTestWebCall()">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Start call
-      </button>
-      <button type="button" class="btn-red hidden" id="test-call-end-btn" onclick="endTestWebCall()">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 10h6v4H9z"/></svg>
-        End call
-      </button>
     </div>
   </div>
 </div>
@@ -898,6 +926,67 @@ function logout() {
   let RetellWebClientClass = null;
   let testCallActive = false;
 
+  async function copyAskPrompt(btn) {
+    const text = (btn?.textContent || '').trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Prompt copied — say it on the call', 'success');
+    } catch (_) {
+      showToast(text, 'info');
+    }
+  }
+
+  function escapeAskHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderAskGuide(data) {
+    const body = document.getElementById('ask-guide-body');
+    if (!body) return;
+    const sections = data?.sections || [];
+    if (!sections.length) {
+      body.innerHTML = '<div class="ask-meta" style="border:none;margin:0;padding:0;">No suggestions available for this agent.</div>';
+      return;
+    }
+    const source = data?.source === 'groq' ? 'Groq · from agent prompt' : 'Fallback · from agent prompt keywords';
+    let html = sections.map(sec => {
+      const chips = (sec.prompts || []).map(p =>
+        `<button type="button" class="ask-chip" onclick="copyAskPrompt(this)">${escapeAskHtml(p)}</button>`
+      ).join('');
+      return `<div class="ask-section"><div class="ask-section-label">${escapeAskHtml(sec.title || 'Suggestions')}</div>${chips}</div>`;
+    }).join('');
+    const notes = data?.notes ? `<div class="ask-meta">${escapeAskHtml(data.notes)}<br/><span style="opacity:.8">${escapeAskHtml(source)}</span></div>`
+      : `<div class="ask-meta">${escapeAskHtml(source)}</div>`;
+    body.innerHTML = html + notes;
+  }
+
+  async function loadAskPromptsForAgent(agentId) {
+    const body = document.getElementById('ask-guide-body');
+    if (body) body.innerHTML = '<div class="ask-meta" style="border:none;margin:0;padding:0;">Reading agent prompt &amp; generating questions…</div>';
+    const token = getValidToken();
+    if (!token || !agentId) {
+      renderAskGuide({ sections: [], notes: 'Sign in required.' });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/agents/test-ask-prompts/${agentId}/`, {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load prompts');
+      renderAskGuide(json.data || {});
+    } catch (e) {
+      if (body) {
+        body.innerHTML = `<div class="ask-meta" style="border:none;margin:0;padding:0;">${escapeAskHtml(e.message || 'Could not load suggestions')}</div>`;
+      }
+    }
+  }
+
   async function loadRetellWebClient() {
     if (RetellWebClientClass) return RetellWebClientClass;
     const mod = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3.0.1/+esm');
@@ -969,6 +1058,7 @@ function logout() {
     if (box) { box.innerHTML = ''; box.classList.add('hidden'); }
     setTestCallUI('ready');
     openModal('test-call-modal');
+    loadAskPromptsForAgent(testCallAgentId);
   }
 
   async function closeTestCallModal() {

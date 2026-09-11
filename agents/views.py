@@ -311,6 +311,28 @@ class CreateWebCallApiView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class TestAskPromptsApiView(APIView):
+    """Generate 'what you can ask' prompts from this agent's system prompt (Groq)."""
+
+    def get(self, request, pk):
+        try:
+            logger.info(f"Request received for TestAskPromptsApiView pk={pk}")
+            agent, message = AgentMechanism().get_agent_by_id(pk, request.user)
+            if agent is None:
+                return Response(error_response(message=message), status=status.HTTP_404_NOT_FOUND)
+
+            from .groq_services import generate_test_prompts
+
+            data, msg = generate_test_prompts(
+                agent_name=agent.agent_name or "Agent",
+                system_prompt=agent.system_prompt or "",
+            )
+            return Response(success_response(message=msg, data=data), status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"TestAskPromptsApiView error: {e}")
+            return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class RetellPhoneListApiView(APIView):
     pagination_class = Pagination
 
