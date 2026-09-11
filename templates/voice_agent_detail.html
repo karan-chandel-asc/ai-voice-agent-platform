@@ -87,6 +87,21 @@ function logout() {
   .page-btn:hover:not(:disabled){background:var(--bg);color:var(--t1);}
   .page-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
   .page-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .test-call-shell{background:white;border-radius:16px;width:min(920px,94vw);max-height:min(90vh,720px);box-shadow:0 24px 60px rgba(22,51,43,0.2);display:flex;overflow:hidden;padding:0;}
+  .test-call-left{flex:0 0 360px;padding:28px;border-right:1px solid #efe9dc;display:flex;flex-direction:column;}
+  .test-call-right{flex:1;min-width:0;padding:22px 24px;background:#faf7f1;overflow-y:auto;}
+  .ask-guide-title{font-size:13px;font-weight:650;color:#16332B;margin:0 0 4px;}
+  .ask-guide-sub{font-size:11.5px;color:#5B665F;margin:0 0 14px;line-height:1.45;}
+  .ask-section{margin-bottom:14px;}
+  .ask-section-label{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#A9814A;margin-bottom:7px;}
+  .ask-chip{display:block;width:100%;text-align:left;background:white;border:1px solid #e8dfce;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;line-height:1.4;color:#16332B;cursor:pointer;transition:border-color .12s,background .12s,box-shadow .12s;}
+  .ask-chip:hover{border-color:#A9814A;background:#fffdf8;box-shadow:0 2px 8px rgba(169,129,74,0.12);}
+  .ask-meta{font-size:11px;color:#7a847c;margin-top:10px;padding-top:10px;border-top:1px dashed #e2d8c4;line-height:1.45;}
+  @media (max-width:780px){
+    .test-call-shell{flex-direction:column;width:min(480px,94vw);max-height:92vh;}
+    .test-call-left{flex:none;border-right:none;border-bottom:1px solid #efe9dc;}
+    .test-call-right{max-height:45vh;}
+  }
 </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -374,22 +389,31 @@ function logout() {
   </div><!-- /page body -->
 </main>
 
-<!-- Test web call modal -->
+<!-- Test web call modal + ask guide -->
 <div id="test-call-modal" class="hidden" style="position:fixed;inset:0;background:rgba(22,51,43,0.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;padding:28px;width:420px;box-shadow:0 24px 60px rgba(22,51,43,0.2);">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:#16332B;">Test web call</div>
-        <div id="test-call-agent-name" style="font-size:12px;color:#5B665F;margin-top:2px;">Agent</div>
+  <div class="test-call-shell">
+    <div class="test-call-left">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#16332B;">Test web call</div>
+          <div id="test-call-agent-name" style="font-size:12px;color:#5B665F;margin-top:2px;">Agent</div>
+        </div>
+        <button type="button" onclick="closeDetailTestCall()" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;font-size:18px;">×</button>
       </div>
-      <button type="button" onclick="closeDetailTestCall()" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;font-size:18px;">×</button>
+      <div id="test-call-status" style="font-size:12px;color:#5B665F;margin:auto 0 12px;text-align:center;">Ready — allow microphone when prompted</div>
+      <div id="test-call-id" style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:auto;">
+        <button type="button" class="btn-ghost" onclick="closeDetailTestCall()">Close</button>
+        <button type="button" id="test-call-start-btn" class="btn-ghost" style="background:#16332B;color:#F0E6D4;border:none;" onclick="startDetailTestCall()">Start call</button>
+        <button type="button" id="test-call-end-btn" class="btn-ghost hidden" style="background:#e11d48;color:white;border:none;" onclick="endDetailTestCall()">End call</button>
+      </div>
     </div>
-    <div id="test-call-status" style="font-size:12px;color:#5B665F;margin-bottom:16px;text-align:center;">Ready — allow microphone when prompted</div>
-    <div id="test-call-id" style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:12px;"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button type="button" class="btn-ghost" onclick="closeDetailTestCall()">Close</button>
-      <button type="button" id="test-call-start-btn" class="btn-ghost" style="background:#16332B;color:#F0E6D4;border:none;" onclick="startDetailTestCall()">Start call</button>
-      <button type="button" id="test-call-end-btn" class="btn-ghost hidden" style="background:#e11d48;color:white;border:none;" onclick="endDetailTestCall()">End call</button>
+    <div class="test-call-right">
+      <h3 class="ask-guide-title">What you can ask</h3>
+      <p class="ask-guide-sub">Generated from this agent's system prompt. Click a line to copy, then say it on the call.</p>
+      <div id="ask-guide-body">
+        <div class="ask-meta" style="border:none;margin:0;padding:0;">Loading suggestions from agent prompt…</div>
+      </div>
     </div>
   </div>
 </div>
@@ -723,6 +747,69 @@ function logout() {
   let detailCallActive = false;
   let DetailRetellWebClient = null;
 
+  async function copyAskPrompt(btn) {
+    const text = (btn?.textContent || '').trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (typeof showToast === 'function') showToast('Prompt copied — say it on the call', 'success');
+    } catch (_) {
+      if (typeof showToast === 'function') showToast(text, 'info');
+      else alert(text);
+    }
+  }
+
+  function escapeAskHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderAskGuide(data) {
+    const body = document.getElementById('ask-guide-body');
+    if (!body) return;
+    const sections = data?.sections || [];
+    if (!sections.length) {
+      body.innerHTML = '<div class="ask-meta" style="border:none;margin:0;padding:0;">No suggestions available for this agent.</div>';
+      return;
+    }
+    const source = data?.source === 'groq' ? 'Groq · from agent prompt' : 'Fallback · from agent prompt keywords';
+    let html = sections.map(sec => {
+      const chips = (sec.prompts || []).map(p =>
+        `<button type="button" class="ask-chip" onclick="copyAskPrompt(this)">${escapeAskHtml(p)}</button>`
+      ).join('');
+      return `<div class="ask-section"><div class="ask-section-label">${escapeAskHtml(sec.title || 'Suggestions')}</div>${chips}</div>`;
+    }).join('');
+    const notes = data?.notes
+      ? `<div class="ask-meta">${escapeAskHtml(data.notes)}<br/><span style="opacity:.8">${escapeAskHtml(source)}</span></div>`
+      : `<div class="ask-meta">${escapeAskHtml(source)}</div>`;
+    body.innerHTML = html + notes;
+  }
+
+  async function loadAskPromptsForAgent(agentId) {
+    const body = document.getElementById('ask-guide-body');
+    if (body) body.innerHTML = '<div class="ask-meta" style="border:none;margin:0;padding:0;">Reading agent prompt &amp; generating questions…</div>';
+    const token = getToken();
+    if (!token || !agentId) {
+      renderAskGuide({ sections: [], notes: 'Sign in required.' });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/agents/test-ask-prompts/${agentId}/`, {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load prompts');
+      renderAskGuide(json.data || {});
+    } catch (e) {
+      if (body) {
+        body.innerHTML = `<div class="ask-meta" style="border:none;margin:0;padding:0;">${escapeAskHtml(e.message || 'Could not load suggestions')}</div>`;
+      }
+    }
+  }
+
   function openDetailTestCall() {
     if (!currentAgentCache?.retell_agent_id) {
       showToast?.('Sync this agent to Retell first', 'error') || alert('Sync this agent to Retell first');
@@ -736,6 +823,7 @@ function logout() {
     const modal = document.getElementById('test-call-modal');
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
+    loadAskPromptsForAgent(AGENT_ID);
   }
 
   async function closeDetailTestCall() {
