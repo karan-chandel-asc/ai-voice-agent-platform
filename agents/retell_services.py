@@ -17,6 +17,42 @@ load_dotenv(_BASE / ".env")
 from core.logger import logger  # noqa: E402
 
 
+def _retell_list_page(list_fn, *, limit=100, pagination_key=None):
+    """Call Retell *.list() across SDK versions.
+
+    Newer SDKs (v5+) accept limit / pagination_key.
+    Older SDKs (e.g. 4.41) take no kwargs and return a bare list.
+    """
+    kwargs = {}
+    if limit is not None:
+        kwargs["limit"] = limit
+    if pagination_key:
+        kwargs["pagination_key"] = pagination_key
+    try:
+        return list_fn(**kwargs) if kwargs else list_fn()
+    except TypeError as e:
+        msg = str(e)
+        if "unexpected keyword argument" not in msg:
+            raise
+        # Old SDK: drop unsupported kwargs and retry once
+        logger.warning(f"Retell list() does not accept pagination kwargs ({e}); retrying without them")
+        return list_fn()
+
+
+def _retell_page_items(page):
+    """Normalize Retell list responses (paginated object or bare list)."""
+    items = getattr(page, "items", None)
+    if items is not None:
+        return list(items)
+    if isinstance(page, list):
+        return page
+    # Some SDK versions return an iterable / SyncPage-like object
+    try:
+        return list(page)
+    except TypeError:
+        return []
+
+
 # Official Retell create-agent Language enum (no list-languages API).
 RETELL_LANGUAGE_CATALOG = [
     ("en-US", "English (US)"),
@@ -166,18 +202,17 @@ class RetellServices:
         """Yield phone number objects across Retell pagination."""
         pagination_key = None
         while True:
-            kwargs = {"limit": 100}
-            if pagination_key:
-                kwargs["pagination_key"] = pagination_key
-            page = self.retell.phone_number.list(**kwargs)
-            items = getattr(page, "items", None)
-            if items is None:
-                # Older SDK may return a bare list
-                items = page if isinstance(page, list) else []
+            page = _retell_list_page(
+                self.retell.phone_number.list,
+                limit=100,
+                pagination_key=pagination_key,
+            )
+            items = _retell_page_items(page)
             for item in items:
                 yield item
             has_more = bool(getattr(page, "has_more", False))
             pagination_key = getattr(page, "pagination_key", None)
+            # Old SDKs return a full list with no pagination metadata — stop after one call
             if not has_more or not pagination_key:
                 break
 
@@ -347,13 +382,12 @@ class RetellServices:
             ids = set()
             pagination_key = None
             while True:
-                kwargs = {"limit": 100}
-                if pagination_key:
-                    kwargs["pagination_key"] = pagination_key
-                page = self.retell.agent.list(**kwargs)
-                items = getattr(page, "items", None)
-                if items is None:
-                    items = page if isinstance(page, list) else []
+                page = _retell_list_page(
+                    self.retell.agent.list,
+                    limit=100,
+                    pagination_key=pagination_key,
+                )
+                items = _retell_page_items(page)
                 for a in items:
                     aid = getattr(a, "agent_id", None) or ""
                     if aid:
