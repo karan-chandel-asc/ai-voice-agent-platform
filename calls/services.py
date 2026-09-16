@@ -9,11 +9,14 @@ from .models import CallLog
 class CallLogService:
 
     def _owned_qs(self, user):
-        """Calls owned via agent. Orphans excluded to avoid cross-tenant leaks."""
+        """Calls owned via agent. Viewers read the admin workspace."""
+        from accounts.roles import workspace_owner
+
+        owner = workspace_owner(user)
         return (
             CallLog.objects
             .select_related("agent")
-            .filter(agent__owner=user)
+            .filter(agent__owner=owner)
             .order_by("-created_at")
         )
 

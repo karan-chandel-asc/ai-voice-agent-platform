@@ -25,6 +25,7 @@ function logout() {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <script src="{% static 'js/deskline-toast.js' %}"></script>
+<script src="{% static 'js/deskline-role.js' %}"></script>
 <style>
   :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
@@ -113,7 +114,7 @@ function logout() {
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       My Agents
     </a>
-    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+    <a href="{% url 'voice-create-agent' %}" class="nav-item" data-admin-only>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
       New Agent
     </a>
@@ -151,7 +152,7 @@ function logout() {
       <p class="text-xs text-slate-400 mt-0.5">All documents across your agents — indexed into Pinecone</p>
     </div>
     <div class="flex items-center gap-3">
-      <button class="btn-primary" onclick="openUploadModal()">
+      <button class="btn-primary" data-admin-only onclick="openUploadModal()">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         Upload Document
       </button>
@@ -405,12 +406,14 @@ function renderRows(docs) {
       error:      '<span class="badge b-red">ERROR</span>',
     }[doc.status] || `<span class="badge b-gray">${doc.status.toUpperCase()}</span>`;
 
-    const action = (doc.status === 'processing' || doc.status === 'pending')
+    const action = (window.DESKLINE_IS_ADMIN === false)
+      ? `<span class="text-xs text-slate-300">—</span>`
+      : ((doc.status === 'processing' || doc.status === 'pending')
       ? `<button class="btn-cancel" disabled style="opacity:0.5;cursor:not-allowed;">Indexing—</button>`
-      : `<button class="btn-red-ghost" onclick="openDeleteModal('${doc.id}','${(doc.title||'').replace(/'/g,"\\'")}',${doc.chunk_count})">
+      : `<button class="btn-red-ghost" data-admin-only onclick="openDeleteModal('${doc.id}','${(doc.title||'').replace(/'/g,"\\'")}',${doc.chunk_count})">
            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
            Delete
-         </button>`;
+         </button>`);
 
     return `
       <tr style="border-bottom:1px solid #f8fafc;">

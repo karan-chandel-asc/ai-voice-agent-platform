@@ -17,6 +17,7 @@ from core.response_schemas import success_response, error_response
 from core.pagination import Pagination
 from core.logger import logger
 from core.auth_utils import RenderAPIView
+from accounts.roles import IsDesklineAdmin, IsDesklineAdminStrict
 from django.shortcuts import render
 
 
@@ -28,7 +29,12 @@ class VoiceAgentsRender(RenderAPIView):
 
 class VoiceCreateAgentRender(RenderAPIView):
     def get(self, request):
+        from accounts.roles import is_deskline_admin
+        from django.http import HttpResponseRedirect
+
         logger.info("Request received for voice create agent Render Html")
+        if not is_deskline_admin(request.user):
+            return HttpResponseRedirect("/api/agents/voice-agents/")
         return render(request, 'voice_agent_create.html')
 
 
@@ -64,6 +70,7 @@ class ElevenlabsVoiceListView(APIView):
 
 class SyncRetellVoicesApiView(APIView):
     """Pull all voices from Retell and save into ElevenLabsVoices."""
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request):
         try:
@@ -102,6 +109,8 @@ class AgentListApiView(APIView):
             return Response(error_response(message="Something went wrong"), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AgentCRUDApiView(APIView):
+    """GET readable by viewers; create/update/delete admin-only."""
+    permission_classes = [IsDesklineAdmin]
 
     def get(self, request, pk):
         try:
@@ -177,6 +186,8 @@ class AgentCRUDApiView(APIView):
 
 
 class DeleteAllAgentsView(APIView):
+    permission_classes = [IsDesklineAdminStrict]
+
     def delete(self, request):
         try:
             queryset = Agent.objects.filter(owner=request.user)
@@ -201,6 +212,7 @@ class DeleteAllAgentsView(APIView):
 
 class SyncRetellLanguagesApiView(APIView):
     """Upsert Retell language catalog into RetellLanguage."""
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request):
         try:
@@ -234,6 +246,7 @@ class RetellLanguageListApiView(APIView):
 
 class SyncRetellPhonesApiView(APIView):
     """Sync Retell phone numbers + seed Twilio env numbers."""
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request):
         try:
@@ -249,6 +262,7 @@ class SyncRetellPhonesApiView(APIView):
 
 class SyncRetellAgentsApiView(APIView):
     """Upsert Retell agents locally; delete Deskline agents removed on Retell (never deletes on Retell)."""
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request):
         try:
@@ -264,6 +278,7 @@ class SyncRetellAgentsApiView(APIView):
 
 class CreateWebCallApiView(APIView):
     """Create a Retell web call access token for in-browser agent testing."""
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request, pk):
         try:

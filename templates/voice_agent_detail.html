@@ -19,6 +19,7 @@ function logout() {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <script src="{% static 'js/deskline-toast.js' %}"></script>
+<script src="{% static 'js/deskline-role.js' %}"></script>
 <style>
   :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;--mint:#C9A46E;}
   *{box-sizing:border-box;}
@@ -128,7 +129,7 @@ function logout() {
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       My Agents
     </a>
-    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+    <a href="{% url 'voice-create-agent' %}" class="nav-item" data-admin-only>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
       New Agent
     </a>
@@ -173,13 +174,13 @@ function logout() {
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <a id="edit-agent-btn" href="{% url 'voice-create-agent' %}{% if pk %}?edit={{ pk }}{% endif %}" class="btn-ghost">
+      <a id="edit-agent-btn" href="{% url 'voice-create-agent' %}{% if pk %}?edit={{ pk }}{% endif %}" class="btn-ghost" data-admin-only>
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         Edit Agent
       </a>
-      <button id="test-call-btn" type="button" onclick="openDetailTestCall()" class="btn-ghost" style="background:linear-gradient(135deg,#16332B,#1f4a3f);color:#F0E6D4;border:none;">
+      <button id="test-call-btn" type="button" onclick="openDesklineDemoVideo()" class="btn-ghost" style="background:linear-gradient(135deg,#16332B,#1f4a3f);color:#F0E6D4;border:none;" title="Watch Deskline demo video">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 18.5v.01M18.364 5.636a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728M12 12h.01"/></svg>
-        Test call
+        See test
       </button>
       <div class="relative" id="profile-btn-wrap">
         <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200" style="cursor:pointer;background:none;">

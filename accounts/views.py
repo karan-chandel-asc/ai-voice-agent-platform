@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from .schemas import LoginViewSchema, ForgotPasswordSchema, ResetPasswordSchema
 from .service import UserService
 from .tasks import send_password_reset_email
+from .roles import IsDesklineAdminStrict
 from core.logger import logger
 from core.response_schemas import success_response, error_response
 from django.shortcuts import render
@@ -66,6 +67,9 @@ class LoginAPIView(APIView):
                 data={
                     "access": access_token,
                     "refresh": str(refresh),
+                    "role": getattr(user, "role", "admin") or "admin",
+                    "is_admin": bool(getattr(user, "is_deskline_admin", True)),
+                    "email": user.email,
                 }
             ), status=status.HTTP_200_OK)
             response.set_cookie('access_token', access_token, samesite='Lax', httponly=False)
@@ -230,6 +234,8 @@ class UserProfileApiView(APIView):
                     "business_name": user.business_name or "",
                     "phone":         user.phone or "",
                     "initials":      (full_name[0] if full_name else "U").upper(),
+                    "role":          getattr(user, "role", "admin") or "admin",
+                    "is_admin":      bool(getattr(user, "is_deskline_admin", True)),
                 }
             ), status=status.HTTP_200_OK)
         except Exception as e:
@@ -239,6 +245,12 @@ class UserProfileApiView(APIView):
     def put(self, request):
         """Update profile fields and return the saved profile."""
         try:
+            from accounts.roles import is_deskline_admin
+            if not is_deskline_admin(request.user):
+                return Response(
+                    error_response(message="Read-only account. Only an admin can update profile settings."),
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             user         = request.user
             first_name   = request.data.get("first_name", "").strip()
             last_name    = request.data.get("last_name", "").strip()
@@ -272,6 +284,8 @@ class UserProfileApiView(APIView):
                     "business_name": user.business_name or "",
                     "phone":         user.phone or "",
                     "initials":      (full_name[0] if full_name else "U").upper(),
+                    "role":          getattr(user, "role", "admin") or "admin",
+                    "is_admin":      bool(getattr(user, "is_deskline_admin", True)),
                 }
             ), status=status.HTTP_200_OK)
         except Exception as e:
@@ -284,7 +298,9 @@ class DeleteAccountView(APIView):
 
     Cascades related data owned by the user.
     Requires a valid JWT; no request body needed.
+    Admin-only (viewers are read-only).
     """
+    permission_classes = [IsDesklineAdminStrict]
 
     def delete(self, request):
         """Delete the current user and return a success message."""

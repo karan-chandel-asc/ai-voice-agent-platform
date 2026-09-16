@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.auth_utils import RenderAPIView
 from core.logger import logger
+from accounts.roles import IsDesklineAdminStrict
 from .models import Integration
 from .serializers import IntegrationSerializer
 from core.response_schemas import success_response, error_response
@@ -32,6 +33,8 @@ class IntegrationListView(APIView):
 
 
 class IntegrationToggleView(APIView):
+    permission_classes = [IsDesklineAdminStrict]
+
     def post(self, request):
         try:
             int_type = request.data.get("type")
