@@ -47,6 +47,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "monitoring.middleware.RequestLoggerMiddleware",
 ]
 
 STORAGES = {
@@ -157,6 +158,10 @@ CELERY_BEAT_SCHEDULE = {
         "task":     "integrations.tasks.send_daily_call_report",
         "schedule": crontab(hour=8, minute=0),  # every day at 8:00 AM
     },
+    "send-daily-outreach-visit-report": {
+        "task":     "monitoring.tasks.send_daily_outreach_visit_report",
+        "schedule": crontab(hour=8, minute=0),  # every day at 8:00 AM (TIME_ZONE)
+    },
 }
 
 CACHES = {
@@ -192,3 +197,5 @@ EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL  = env("EMAIL_HOST_USER", default="")
+# Morning outreach digest: who opened Deskline + country
+OUTREACH_REPORT_EMAIL = env("OUTREACH_REPORT_EMAIL", default="") or EMAIL_HOST_USER

@@ -8,6 +8,7 @@ from core.auth_utils import RenderAPIView
 from core.response_schemas import success_response, error_response
 from core.logger import logger
 
+from accounts.roles import IsDesklineAdminStrict, workspace_owner
 from agents.models import Agent
 from .models import AgentDocument
 from .serializers import AgentDocumentSerializer
@@ -21,7 +22,8 @@ class VoiceKnowledgeBaseRender(RenderAPIView):
 
 class AgentListForKBView(APIView):
     def get(self, request):
-        agents = Agent.objects.filter(owner=request.user).values('id', 'agent_name', 'status')
+        owner = workspace_owner(request.user)
+        agents = Agent.objects.filter(owner=owner).values('id', 'agent_name', 'status')
         return Response(success_response(
             message="Agents fetched",
             data=list(agents),
@@ -34,12 +36,14 @@ class DocumentListView(APIView):
 
         if agent_id:
             try:
-                agent = Agent.objects.get(id=agent_id, owner=request.user)
+                agent = Agent.objects.get(id=agent_id, owner=workspace_owner(request.user))
             except Agent.DoesNotExist:
                 return Response(error_response(message="Agent not found"), status=404)
             docs_qs = AgentDocument.objects.filter(agent=agent).select_related('agent')
         else:
-            docs_qs = AgentDocument.objects.filter(agent__owner=request.user).select_related('agent')
+            docs_qs = AgentDocument.objects.filter(
+                agent__owner=workspace_owner(request.user)
+            ).select_related('agent')
 
         try:
             page = max(1, int(request.query_params.get('page', 1)))
@@ -78,6 +82,7 @@ class DocumentListView(APIView):
 
 class DocumentUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsDesklineAdminStrict]
 
     def post(self, request):
         agent_id = request.data.get('agent_id')
@@ -121,6 +126,8 @@ class DocumentUploadView(APIView):
 
 
 class DocumentDeleteView(APIView):
+    permission_classes = [IsDesklineAdminStrict]
+
     def delete(self, request, doc_id):
         try:
             doc = AgentDocument.objects.get(id=doc_id, agent__owner=request.user)

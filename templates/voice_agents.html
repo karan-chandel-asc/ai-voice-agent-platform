@@ -25,6 +25,7 @@ function logout() {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/deskline-shell.css' %}">
 <script src="{% static 'js/deskline-toast.js' %}"></script>
+<script src="{% static 'js/deskline-role.js' %}"></script>
 <style>
   :root{--bg:#FBF8F1;--sidebar:#16332B;--card:#fff;--border:rgba(22,51,43,0.08);--border-soft:#efe9dc;--t1:#16332B;--t2:#5B665F;--t3:#8A918A;--accent:#A9814A;--accent-l:#F0E6D4;}
   *{box-sizing:border-box;}
@@ -148,7 +149,7 @@ function logout() {
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       My Agents
     </a>
-    <a href="{% url 'voice-create-agent' %}" class="nav-item">
+    <a href="{% url 'voice-create-agent' %}" class="nav-item" data-admin-only>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
       New Agent
     </a>
@@ -188,7 +189,7 @@ function logout() {
         <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search" type="text" placeholder="Search agents..." />
       </div>
-      <a href="{% url 'voice-create-agent' %}" class="btn-primary">
+      <a href="{% url 'voice-create-agent' %}" class="btn-primary" data-admin-only>
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
         New Agent
       </a>
@@ -250,7 +251,7 @@ function logout() {
           Total calls&nbsp;<span class="pill-val" id="stat-calls">—</span>
         </div>
       </div>
-      <button type="button" id="btn-sync-agents" onclick="syncMyAgents()" class="btn-ghost">
+      <button type="button" id="btn-sync-agents" onclick="syncMyAgents()" class="btn-ghost" data-admin-only>
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         Sync Agents
       </button>
@@ -651,24 +652,20 @@ function logout() {
   <!-- Actions -->
   <div class="flex items-center gap-2 pt-1 flex-wrap" style="border-top:1px solid #f1f5f9;">
     <button type="button"
-      data-agent-id="${escapeHtml(String(agent.id || ''))}"
-      data-agent-name="${escapeHtml(String(agent.agent_name || ''))}"
-      data-retell-id="${escapeHtml(String(agent.retell_agent_id || ''))}"
-      onclick="openTestCallModal(this.dataset.agentId, this.dataset.agentName, this.dataset.retellId)"
+      onclick="openDesklineDemoVideo()"
       class="btn-test flex-1 justify-center"
-      ${agent.retell_agent_id ? '' : 'disabled'}
-      title="${agent.retell_agent_id ? 'Test agent in browser' : 'Sync to Retell first'}"
+      title="Watch Deskline demo video"
       style="font-size:12px;padding:6px 10px;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 18.5v.01M18.364 5.636a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728M12 12h.01"/></svg>
-      Test
+      See test
     </button>
     <a href="${AGENT_DETAIL_URL(agent.id)}" class="btn-ghost flex-1 justify-center" style="font-size:12px;padding:6px 10px;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>View
     </a>
-    <a href="${AGENT_CREATE_URL}?edit=${agent.id}" class="btn-ghost justify-center" style="font-size:12px;padding:6px 12px;">
+    <a href="${AGENT_CREATE_URL}?edit=${agent.id}" class="btn-ghost justify-center" data-admin-only style="font-size:12px;padding:6px 12px;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Edit
     </a>
-    <button onclick="openDeleteModal('${agent.id}','${escapeHtml(agent.agent_name)}','${escapeHtml(agent.phone_number||'')}')" class="btn-ghost justify-center" style="font-size:12px;padding:6px 10px;color:#e11d48;border-color:#fecdd3;">
+    <button onclick="openDeleteModal('${agent.id}','${escapeHtml(agent.agent_name)}','${escapeHtml(agent.phone_number||'')}')" class="btn-ghost justify-center" data-admin-only style="font-size:12px;padding:6px 10px;color:#e11d48;border-color:#fecdd3;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete
     </button>
   </div>
@@ -689,16 +686,18 @@ function logout() {
               <div class="text-sm font-semibold text-slate-700">No agents yet</div>
               <div class="text-xs text-slate-400 mt-1">Create your first AI voice agent to get started</div>
             </div>
-            <a href="${AGENT_CREATE_URL}" class="btn-primary" onclick="event.stopPropagation()">
+            <a href="${AGENT_CREATE_URL}" class="btn-primary" data-admin-only onclick="event.stopPropagation()">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
               Create Agent
             </a>
           </div>
         </div>`;
+      if (window.loadDesklineRole) window.loadDesklineRole();
       return;
     }
     grid.innerHTML = agents.map((a, i) => renderAgentCard(a, i)).join('');
     cardIndex = agents.length;
+    if (window.loadDesklineRole) window.loadDesklineRole();
   }
 
   function appendAgents(agents) {

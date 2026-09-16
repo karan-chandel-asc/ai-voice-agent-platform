@@ -16,6 +16,7 @@ from core.response_schemas import success_response, error_response
 from rest_framework import status
 from .services import CallLogService
 from core.pagination import Pagination
+from accounts.roles import IsDesklineAdminStrict
 
 _SENTIMENT_NUMERIC = {"positive": 1.0, "neutral": 0.0, "negative": -1.0}
 
@@ -141,6 +142,8 @@ class CallLogDetailView(APIView):
 
 
 class CallLogBulkDeleteView(APIView):
+    permission_classes = [IsDesklineAdminStrict]
+
     def delete(self, request):
         try:
             ids = request.data.get("ids", [])

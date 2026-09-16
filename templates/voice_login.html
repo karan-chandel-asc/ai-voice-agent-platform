@@ -185,7 +185,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       return;
     }
     sessionStorage.removeItem(AUTH_LOOP_KEY);
-    storeTokens(data.data.access, data.data.refresh);
+    storeTokens(data.data.access, data.data.refresh, data.data);
     showToast('Login successful! Redirecting...', 'success');
     setTimeout(() => { window.location.href = resolveNextUrl(); }, 400);
   } catch {
@@ -196,9 +196,12 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-function storeTokens(access, refresh) {
+function storeTokens(access, refresh, payload) {
   localStorage.setItem('access_token',  access);
   localStorage.setItem('refresh_token', refresh);
+  const isAdmin = !(payload && (payload.is_admin === false || payload.role === 'viewer'));
+  localStorage.setItem('deskline_is_admin', isAdmin ? '1' : '0');
+  localStorage.setItem('deskline_role', (payload && payload.role) || (isAdmin ? 'admin' : 'viewer'));
   syncAccessCookie(access);
 }
 

@@ -234,10 +234,13 @@ class AgentMechanism:
 
     def get_agent_by_id(self, agent_id, user):
         try:
+            from accounts.roles import workspace_owner
+
+            owner = workspace_owner(user)
             agent = (
                 Agent.objects
                 .select_related("owner", "elevenlabs_voice")
-                .get(id=agent_id, owner=user)
+                .get(id=agent_id, owner=owner)
             )
             return agent, "Agent fetched successfully"
         except Agent.DoesNotExist:
@@ -263,10 +266,12 @@ class AgentMechanism:
         try:
             from django.db.models import Avg, Count, FloatField, Value
             from django.db.models.functions import Coalesce
+            from accounts.roles import workspace_owner
 
+            owner = workspace_owner(user)
             agents = (
                 Agent.objects
-                .filter(owner=user)
+                .filter(owner=owner)
                 .select_related("owner", "elevenlabs_voice")
                 .annotate(
                     total_calls=Count("calls", distinct=True),

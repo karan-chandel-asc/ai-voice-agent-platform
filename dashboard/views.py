@@ -10,6 +10,7 @@ from core.auth_utils import RenderAPIView
 from core.pagination import Pagination
 from core.response_schemas import success_response, error_response
 from core.logger import logger
+from accounts.roles import IsDesklineAdminStrict
 from calls.models import CallLog
 from agents.models import Agent, Booking
 
@@ -22,21 +23,30 @@ from .serializers import (
 
 
 def _owned_bookings(user):
-    """Bookings owned via agent. Orphans are excluded to avoid cross-tenant leaks."""
-    return Booking.objects.filter(agent__owner=user)
+    """Bookings owned via agent. Viewers read the admin workspace."""
+    from accounts.roles import workspace_owner
+
+    owner = workspace_owner(user)
+    return Booking.objects.filter(agent__owner=owner)
 
 
 def _owned_calls(user):
-    """Calls owned via agent. Orphans are excluded to avoid cross-tenant leaks."""
-    return CallLog.objects.filter(agent__owner=user)
+    """Calls owned via agent. Viewers read the admin workspace."""
+    from accounts.roles import workspace_owner
+
+    owner = workspace_owner(user)
+    return CallLog.objects.filter(agent__owner=owner)
 
 
 class DashboardStatsView(APIView):
     def get(self, request):
         try:
+            from accounts.roles import workspace_owner
+
             now    = timezone.now()
             month  = now - timedelta(days=30)
-            agents = Agent.objects.filter(owner=request.user)
+            owner  = workspace_owner(request.user)
+            agents = Agent.objects.filter(owner=owner)
             calls  = _owned_calls(request.user)
             month_calls = calls.filter(created_at__gte=month)
             bookings_qs = _owned_bookings(request.user)
@@ -118,6 +128,8 @@ class BookingsView(APIView):
 
 
 class ConfirmBookingView(APIView):
+    permission_classes = [IsDesklineAdminStrict]
+
     def post(self, request, booking_id):
         try:
             booking = (
