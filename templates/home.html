@@ -8,6 +8,51 @@
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,500;9..144,600;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ---- demo modal ---- */
+.demo-overlay {
+  position: fixed; inset: 0; background: rgba(22,33,29,0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100; opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+}
+.demo-overlay.is-open { opacity: 1; pointer-events: auto; }
+.demo-modal {
+  background: var(--paper); color: var(--ink); width: 100%; max-width: 480px;
+  border-radius: 10px; overflow: hidden; position: relative;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+  transform: translateY(14px) scale(.98); opacity: 0;
+  transition: transform .3s cubic-bezier(.22,.61,.36,1), opacity .3s ease;
+}
+.demo-overlay.is-open .demo-modal { transform: translateY(0) scale(1); opacity: 1; }
+.demo-modal-head {
+  background: var(--pine); color: var(--paper); padding: 22px 24px;
+  position: relative; border-bottom: 1px solid var(--line-on-dark);
+}
+.demo-modal-close {
+  position: absolute; top: 16px; right: 16px; width: 28px; height: 28px;
+  border-radius: 50%; border: 1px solid rgba(246,241,228,0.28); background: transparent;
+  color: var(--paper); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1; transition: border-color .15s, background .15s;
+}
+.demo-modal-close:hover { border-color: rgba(246,241,228,0.55); background: rgba(246,241,228,0.06); }
+.demo-modal-body { padding: 28px 26px 26px; }
+.demo-modal-thumb {
+  border-radius: 6px; border: 1px solid var(--line); background: var(--pine-2);
+  aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.demo-play-btn {
+  width: 58px; height: 58px; border-radius: 50%; background: var(--brass);
+  display: flex; align-items: center; justify-content: center; color: #1B1408;
+  transition: background .15s, transform .15s;
+}
+.demo-modal-thumb:hover .demo-play-btn { background: var(--brass-light); transform: scale(1.06); }
+.demo-modal-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.demo-modal-foot { font-size: 12px; color: var(--slate); margin-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-overlay, .demo-modal { transition: none; }
+}
   :root {
     --pine: #16332B;
     --pine-2: #1F4839;
@@ -262,7 +307,10 @@
         </p>
         <div class="hero-enter e4 flex flex-wrap items-center gap-3">
           <a href="/api/auth/login/?next={% url 'voice-dashboard' %}" class="btn-brass js-auth-gate" data-authed-href="{% url 'voice-dashboard' %}" data-guest-href="/api/auth/login/?next={% url 'voice-dashboard' %}">Open the console</a>
-          <a href="#workflow" class="btn-outline-light">See how it works</a>
+          <a href="https://drive.google.com/file/d/1_bEuzB7uE2Hy5_4Ys7FgZBNtsLviUVrW/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn-outline-light">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            See live demo
+          </a>
         </div>
       </div>
 
@@ -569,6 +617,35 @@
     <span>Front desk — Restaurant — Concierge</span>
   </div>
 </footer>
+<!-- Demo modal -->
+<div class="demo-overlay" id="demo-overlay" aria-hidden="true">
+  <div class="demo-modal" role="dialog" aria-modal="true" aria-labelledby="demo-modal-title">
+    <div class="demo-modal-head">
+      <span class="kicker" style="font-size:13px;">Two minutes, start to finish</span>
+      <h3 id="demo-modal-title" class="display text-xl mt-1" style="letter-spacing:-0.01em;">See Deskline in action</h3>
+      <button type="button" class="demo-modal-close" id="demo-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="demo-modal-body">
+      <a href="https://drive.google.com/file/d/1_bEuzB7uE2Hy5_4Ys7FgZBNtsLviUVrW/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="demo-modal-thumb" style="text-decoration:none;">
+        <span class="demo-play-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </span>
+      </a>
+      <p class="text-sm leading-relaxed mb-5" style="color:var(--slate);">
+        Watch a call come in, land on the booking board, and show up in the transcript — the same walkthrough we run in client meetings.
+      </p>
+      <div class="demo-modal-actions">
+        <a href="https://drive.google.com/file/d/1_bEuzB7uE2Hy5_4Ys7FgZBNtsLviUVrW/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn-brass">
+          Watch the demo
+        </a>
+        <button type="button" id="demo-modal-dismiss" class="btn-ink" style="background:transparent; color:var(--ink); border:1px solid var(--line);">
+          Maybe later
+        </button>
+      </div>
+      <p class="demo-modal-foot">Opens in Google Drive — no login required.</p>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -596,6 +673,34 @@
   if (navLogin && loggedIn) navLogin.textContent = 'Dashboard';
 })();
 </script>
+<script>
+  (function () {
+    var overlay = document.getElementById('demo-overlay');
+    var closeBtn = document.getElementById('demo-modal-close');
+    var dismissBtn = document.getElementById('demo-modal-dismiss');
+    if (!overlay) return;
+  
+    function openModal() {
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal() {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  
+    setTimeout(openModal, 3000);
+  
+    closeBtn.addEventListener('click', closeModal);
+    dismissBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeModal();
+    });
+  })();
+  </script>
 
 </body>
 </html>

@@ -312,7 +312,13 @@ def handle_call_ended(call: dict) -> dict:
     log.direction = _direction(call)
     log.status = _map_ended_status(call)
     log.duration_seconds = _duration_seconds(call)
-    log.recording_url = (call.get("recording_url") or call.get("public_log_url") or "")[:200]
+    # Prefer real audio URL only (public_log_url is an HTML page, not playable audio)
+    raw_recording = (
+        call.get("recording_url")
+        or call.get("recording_multi_channel_url")
+        or ""
+    )
+    log.recording_url = str(raw_recording)[:1000]
     log.reason = (call.get("disconnection_reason") or log.reason or "")[:100]
     log.was_transferred = "transfer" in (call.get("disconnection_reason") or "").lower()
 
@@ -360,8 +366,27 @@ def handle_call_analyzed(call: dict) -> dict:
         logger.info(f"{LOG} found CallLog id={log.id} for analysis")
 
     if not _apply_call_analysis(log, call):
-        logger.info(f"{LOG} ✓ call_analyzed done — nothing new to store call_id={call_id}")
+        # Still try to backfill recording if analysis payload includes it
+        raw_recording = (
+            call.get("recording_url")
+            or call.get("recording_multi_channel_url")
+            or ""
+        )
+        if raw_recording and not log.recording_url:
+            log.recording_url = str(raw_recording)[:1000]
+            log.save(update_fields=["recording_url"])
+            logger.info(f"{LOG} ✓ call_analyzed backfilled recording_url call_id={call_id}")
+        else:
+            logger.info(f"{LOG} ✓ call_analyzed done — nothing new to store call_id={call_id}")
         return {"ok": True, "message": "No call_analysis to store", "call_id": call_id, "id": str(log.id)}
+
+    raw_recording = (
+        call.get("recording_url")
+        or call.get("recording_multi_channel_url")
+        or ""
+    )
+    if raw_recording and not log.recording_url:
+        log.recording_url = str(raw_recording)[:1000]
 
     log.save()
     logger.info(

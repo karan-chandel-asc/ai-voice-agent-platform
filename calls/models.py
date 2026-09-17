@@ -37,7 +37,7 @@ class CallLog(models.Model):
         max_length=20, choices=SENTIMENT_CHOICES, blank=True, default=""
     )
     was_transferred = models.BooleanField(default=False)
-    recording_url = models.URLField(blank=True)
+    recording_url = models.URLField(max_length=1000, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
