@@ -19,7 +19,8 @@ class CallLogSerializer(serializers.ModelSerializer):
             "id", "agent", "agent_name", "twilio_call_sid",
             "caller_phone", "direction", "status",
             "reason", "duration_seconds", "duration", "sentiment_score",
-            "sentiment", "was_transferred", "started_at", "ended_at", "created_at",
+            "sentiment", "was_transferred", "recording_url",
+            "started_at", "ended_at", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
 

@@ -237,20 +237,19 @@ function logout() {
       <div class="flex flex-col gap-4" style="flex:0 0 60%;">
 
         <!-- Audio Player -->
-        <div class="card p-4">
+        <div class="card p-4" id="audio-card">
           <div class="text-xs font-semibold text-slate-600 mb-3">Audio Recording</div>
-          <div class="audio-bar">
-            <button class="play-btn" id="playBtn" onclick="togglePlay()">
+          <div class="audio-bar" id="audio-bar">
+            <button class="play-btn" id="playBtn" type="button" onclick="togglePlay()" title="Play">
               <svg id="playIcon" class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </button>
-            <div class="progress-track" onclick="seekAudio(event)">
+            <div class="progress-track" id="progressTrack" onclick="seekAudio(event)">
               <div class="progress-fill" id="progressFill"></div>
             </div>
             <span class="text-xs text-slate-400 flex-shrink-0" id="timeDisplay">0:00 / 0:00</span>
-            <button style="background:none;border:none;cursor:pointer;color:var(--t3);padding:0 2px;" title="Volume">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 6v12m0 0l-3-3m3 3l3-3M6.343 6.343a8 8 0 000 11.314"/></svg>
-            </button>
           </div>
+          <div id="audio-empty" class="hidden text-xs text-slate-400">No recording available for this call.</div>
+          <audio id="callAudio" preload="metadata" style="display:none;"></audio>
         </div>
 
         <!-- Transcript -->
@@ -305,11 +304,11 @@ function logout() {
 
 <script>
   let playing = false;
-  let progress = 0;
-  let timer;
   let totalDurationSeconds = 0;
   let currentTranscriptRows = [];
   let currentCallStartedAt = null;
+  let recordingUrl = '';
+  let audioEl = null;
 
   const apiHeaders = () => {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
@@ -448,7 +447,8 @@ function logout() {
     applyBadgeStyle(sentimentBadge, sentiment);
 
     totalDurationSeconds = Number(call.duration_seconds || 0);
-    document.getElementById('timeDisplay').textContent = `0:00 / ${formatSeconds(totalDurationSeconds)}`;
+    recordingUrl = (call.recording_url || '').trim();
+    setupAudioPlayer(recordingUrl, totalDurationSeconds);
 
     document.getElementById('metadata-caller').textContent = (call.caller_phone && String(call.caller_phone).toLowerCase() !== 'unknown') ? call.caller_phone : ((call.direction === 'web_call' || !call.caller_phone) ? 'Web call' : '—');
     document.getElementById('metadata-call-id').textContent = call.twilio_call_sid || '—';
@@ -503,43 +503,86 @@ function logout() {
     URL.revokeObjectURL(url);
   }
 
-  function togglePlay() {
-    playing = !playing;
-    const icon = document.getElementById('playIcon');
-    if (playing) {
-      icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-      timer = setInterval(tick, 100);
-    } else {
-      icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-      clearInterval(timer);
-    }
-  }
+  function setupAudioPlayer(url, durationSec) {
+    audioEl = document.getElementById('callAudio');
+    const bar = document.getElementById('audio-bar');
+    const empty = document.getElementById('audio-empty');
+    const playBtn = document.getElementById('playBtn');
+    playing = false;
+    document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('timeDisplay').textContent = `0:00 / ${formatSeconds(durationSec)}`;
 
-  function tick() {
-    if (progress >= 100) {
-      playing = false;
-      clearInterval(timer);
-      document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+    if (!url) {
+      bar.classList.add('hidden');
+      empty.classList.remove('hidden');
+      playBtn.disabled = true;
+      audioEl.removeAttribute('src');
+      audioEl.load();
       return;
     }
-    progress += totalDurationSeconds ? 100 / (totalDurationSeconds * 10) : 100;
-    document.getElementById('progressFill').style.width = progress + '%';
-    const elapsed = Math.round(progress / 100 * totalDurationSeconds);
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    document.getElementById('timeDisplay').textContent = m + ':' + String(s).padStart(2,'0') + ' / ' + formatSeconds(totalDurationSeconds);
+
+    bar.classList.remove('hidden');
+    empty.classList.add('hidden');
+    playBtn.disabled = false;
+    audioEl.src = url;
+    audioEl.load();
+
+    audioEl.onloadedmetadata = () => {
+      if (audioEl.duration && isFinite(audioEl.duration)) {
+        totalDurationSeconds = Math.round(audioEl.duration);
+        document.getElementById('timeDisplay').textContent =
+          `0:00 / ${formatSeconds(totalDurationSeconds)}`;
+      }
+    };
+    audioEl.ontimeupdate = () => {
+      if (!audioEl.duration || !isFinite(audioEl.duration)) return;
+      const pct = (audioEl.currentTime / audioEl.duration) * 100;
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('timeDisplay').textContent =
+        `${formatSeconds(audioEl.currentTime)} / ${formatSeconds(audioEl.duration)}`;
+    };
+    audioEl.onended = () => {
+      playing = false;
+      document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+      document.getElementById('progressFill').style.width = '0%';
+    };
+    audioEl.onerror = () => {
+      bar.classList.add('hidden');
+      empty.classList.remove('hidden');
+      empty.textContent = 'Recording URL found but audio could not be played.';
+      playBtn.disabled = true;
+    };
+  }
+
+  function togglePlay() {
+    if (!audioEl || !recordingUrl) return;
+    const icon = document.getElementById('playIcon');
+    if (audioEl.paused) {
+      audioEl.play().then(() => {
+        playing = true;
+        icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      }).catch(() => {
+        playing = false;
+        icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        if (typeof desklineToast === 'function') {
+          desklineToast('Unable to play recording', 'error');
+        }
+      });
+    } else {
+      audioEl.pause();
+      playing = false;
+      icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    }
   }
 
   function seekAudio(e) {
+    if (!audioEl || !recordingUrl || !audioEl.duration || !isFinite(audioEl.duration)) return;
     const track = e.currentTarget;
     const rect = track.getBoundingClientRect();
-    progress = ((e.clientX - rect.left) / rect.width) * 100;
-    progress = Math.min(100, Math.max(0, progress));
-    document.getElementById('progressFill').style.width = progress + '%';
-    const elapsed = Math.round(progress / 100 * totalDurationSeconds);
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    document.getElementById('timeDisplay').textContent = m + ':' + String(s).padStart(2,'0') + ' / ' + formatSeconds(totalDurationSeconds);
+    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    audioEl.currentTime = pct * audioEl.duration;
+    document.getElementById('progressFill').style.width = (pct * 100) + '%';
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
