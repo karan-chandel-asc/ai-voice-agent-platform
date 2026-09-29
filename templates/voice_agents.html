@@ -652,9 +652,12 @@ function logout() {
   <!-- Actions -->
   <div class="flex items-center gap-2 pt-1 flex-wrap" style="border-top:1px solid #f1f5f9;">
     <button type="button"
-      onclick="openDesklineDemoVideo()"
+      data-agent-id="${escapeHtml(String(agent.id || ''))}"
+      data-agent-name="${escapeHtml(String(agent.agent_name || ''))}"
+      data-retell-id="${escapeHtml(String(agent.retell_agent_id || ''))}"
+      onclick="window.DESKLINE_IS_ADMIN ? openTestCallModal(this.dataset.agentId, this.dataset.agentName, this.dataset.retellId) : openDesklineDemoVideo()"
       class="btn-test flex-1 justify-center"
-      title="Watch Deskline demo video"
+      title="Test agent"
       style="font-size:12px;padding:6px 10px;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 18.5v.01M18.364 5.636a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728M12 12h.01"/></svg>
       See test
