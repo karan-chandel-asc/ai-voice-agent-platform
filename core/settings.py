@@ -139,6 +139,16 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"])
+# Django 4+ checks the Origin header on POST (e.g. /admin/ login) — add your public https URL here.
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://*.ngrok-free.app",
+        "https://*.ngrok-free.dev",
+    ],
+)
 CORS_ALLOW_CREDENTIALS = True
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")

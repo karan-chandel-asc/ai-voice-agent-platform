@@ -178,7 +178,7 @@ function logout() {
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         Edit Agent
       </a>
-      <button id="test-call-btn" type="button" onclick="openDesklineDemoVideo()" class="btn-ghost" style="background:linear-gradient(135deg,#16332B,#1f4a3f);color:#F0E6D4;border:none;" title="Watch Deskline demo video">
+      <button id="test-call-btn" type="button" onclick="window.DESKLINE_IS_ADMIN ? openDetailTestCall() : openDesklineDemoVideo()" class="btn-ghost" style="background:linear-gradient(135deg,#16332B,#1f4a3f);color:#F0E6D4;border:none;" title="Test agent">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.536 8.464a5 5 0 010 7.072M12 18.5v.01M18.364 5.636a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728M12 12h.01"/></svg>
         See test
       </button>
