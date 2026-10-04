@@ -407,7 +407,6 @@ def create_table_reservation(data: dict) -> dict:
     required = [
         "guest_name",
         "phone_number",
-        "email",
         "reservation_date",
         "reservation_time",
         "number_of_guests",
@@ -416,8 +415,9 @@ def create_table_reservation(data: dict) -> dict:
     if missing:
         return {"success": False, "message": f"Missing fields: {', '.join(missing)}", "data": None}
 
+    # Email is optional for table bookings
     email = str(data.get("email") or "").strip()
-    if "@" not in email or "." not in email.split("@")[-1]:
+    if email and ("@" not in email or "." not in email.split("@")[-1]):
         return {"success": False, "message": "A valid email address is required.", "data": None}
 
     try:

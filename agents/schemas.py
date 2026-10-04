@@ -151,7 +151,7 @@ class CheckTableAvailabilitySchema(BaseModel):
 class CreateTableReservationSchema(BaseModel):
     guest_name: str
     phone_number: str
-    email: str
+    email: Optional[str] = ""
     reservation_date: str
     reservation_time: str
     number_of_guests: int = Field(..., ge=1)
@@ -160,7 +160,6 @@ class CreateTableReservationSchema(BaseModel):
     @field_validator(
         "guest_name",
         "phone_number",
-        "email",
         "reservation_date",
         "reservation_time",
     )
@@ -174,6 +173,8 @@ class CreateTableReservationSchema(BaseModel):
     @field_validator("email")
     @classmethod
     def validate_email(cls, v):
-        if "@" not in v or "." not in v.split("@")[-1]:
+        # Optional for table bookings (phone agents often don't collect it)
+        v = (v or "").strip()
+        if v and ("@" not in v or "." not in v.split("@")[-1]):
             raise ValueError("A valid email address is required")
         return v
